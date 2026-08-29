@@ -9,9 +9,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 
-# playwright-cli scratch output (snapshots, screenshots, traces) — but keep specs/, which is checked in
-/.playwright/output/
-!/.playwright/specs/
-
-# graphify's own output (cache, graph.json, embeddings) — regenerated, not source
+# Not tracked in this repo (local machine setup / working state, kept on disk only)
+/.claude/
+/.playwright/
+/.research/
 /.graphify/

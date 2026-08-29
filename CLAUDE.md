@@ -1,4 +1,4 @@
-# prod-agent
+# Custodian
 
 Enterprise-grade autonomous AI agent platform — currently in the **research/planning phase**. No implementation code exists yet. `.research/` is the source of truth (search it with the `research` skill/subagent rather than reading this file for what it says); this file and `.claude/` are the scaffolding for building it.
 

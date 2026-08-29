@@ -6,7 +6,7 @@ import { test } from './fixtures'
 // session starts from this file.
 //
 // baseURL in playwright.config.ts is a placeholder until an app exists to test
-// (prod-agent is pre-implementation per CLAUDE.md) — update it once Phase 1 ships,
+// (Custodian is pre-implementation per CLAUDE.md) — update it once Phase 1 ships,
 // and this fixture's goto('/') will pick it up with no other changes.
 test('seed', async ({ page }) => {
   void page // fixture already navigated; empty body tells agents where to start

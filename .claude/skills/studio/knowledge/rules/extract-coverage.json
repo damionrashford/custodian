@@ -1,0 +1,36 @@
+{
+  "id": "extract-coverage",
+  "title": "Extract coverage",
+  "author": "studio",
+  "domain": "rules",
+  "pages": [
+    {
+      "page": 1,
+      "text": "# Extract coverage\n\nLoad when: BEFORE running a URL extraction (fast or `--rendered`) to know what each path captures, and to decide whether to recommend `--rendered`."
+    },
+    {
+      "page": 2,
+      "text": "# Extract coverage\n\n## What the fast path captures\n\n`extract-url.ts` (default, no `--rendered`):\n\n1. `<meta name=\"theme-color\">` → seed brand color (high weight)\n2. All `<link rel=\"stylesheet\" href=\"...\">` (default cap: 5 sheets, 200 KB each; hrefs resolved against the post-redirect URL)\n3. All inline `<style>` blocks\n4. All `style=\"...\"` attributes (lowest confidence)\n\nParsed via `css-tree` (community OSS, MIT). AST walks emit:\n\n- **Custom properties** under `:root`, `html`, `body`, `[data-theme]` → highest-confidence color/spacing/typography candidates\n- **Color values** in `color`, `background`, `background-color`, `border-color`, `fill`, `stroke` — hex / rgb / hsl / oklch / named all parse; frequency-weighted, k-means clustered in OKLCH, emitted as `oklch(...)` tokens with size-dominant role assignment (bg = dominant cluster, so dark themes survive)\n- **Font families** in `font-family:` — classified serif / sans / mono / display via a known-font head table\n- **Font sizes** — unique clustered sizes → `text_scale` roles (xs…display)\n- **Spacing** in `margin`, `padding`, `gap` — base-unit detection (4 vs 8) + top on-grid steps\n- **Border radii** — unique steps → `depth` roles (`radius-sm`…`radius-pill`; 9999px kept categorical)\n- **Shadows** in `box-shadow` — top 3 by frequency → `depth` roles (`shadow-sm/md/lg`)\n- **Transitions / animations** — durations mapped onto the canonical motion roles (`dur_micro` / `dur_short` / `dur_long`)"
+    },
+    {
+      "page": 3,
+      "text": "# Extract coverage\n\n## What the fast path CANNOT capture\n\n| Signal | Why source-only fails | Mitigation |\n|---|---|---|\n| Computed styles after JS hydration | No JS runtime against the page | Use `--rendered` |\n| CSS-in-JS resolved values (Emotion, Styled Components) | Class names hashed; no source-to-intent map | Use `--rendered` |\n| Theme variants resolved (light vs dark) | Needs runtime media-query + state | Use `--rendered` (resolves both) |\n| Critical-path inlined vs deferred CSS | We get both, can't distinguish | Tagged by stylesheet origin |\n| Responsive breakpoint-resolved values | Needs viewport simulation | Use `--rendered` (multi-breakpoint pass) |\n| Web-font load completion | No FOUT/FOIT visibility | N/A — `font-family` declarations are enough |"
+    },
+    {
+      "page": 4,
+      "text": "# Extract coverage\n\n## JS-rendered heuristic\n\n`extract-url.ts` flags `coverage_flags.js_rendered: true` AND sets `confidence_global: 0.4` when fewer than 10 color tokens were recovered AND either:\n- total CSS bytes are zero while scripts are present (pure-JS shell), or\n- `<script>` byte total > 5× total CSS bytes\n\nThis pair almost always indicates a site where source-CSS is a shell and the real styling resolves at runtime.\n\nWhen this flag fires, the agent should:\n1. Tell the user: \"Source-CSS extraction was thin — likely JS-rendered or CSS-in-JS. For higher fidelity run with `--rendered` after `install-chromium`.\"\n2. STOP. Do not auto-install Chromium. Do not auto-rerun.\n3. If the user agrees, run the rendered extraction (see design-store-reference.md § Extract from URL)."
+    },
+    {
+      "page": 5,
+      "text": "# Extract coverage\n\n## What the rendered path adds\n\n`extract-url.ts --rendered` launches Chromium via Playwright. Captures:\n\n- Fully-resolved computed styles after JS hydration\n- CSS-in-JS resolved class values\n- Theme variants resolved (page loaded with `prefers-color-scheme: light` THEN `dark`)\n- One viewport (1280×800) per color scheme — multi-viewport passes are a possible extension, not current behaviour\n- Wait for `document.fonts.ready` before reading\n- Critical-path resolution\n\nCost: ~150 MB Chromium install (one-time), ~5-15 s per extraction."
+    },
+    {
+      "page": 6,
+      "text": "# Extract coverage\n\n## Sticky extraction mode\n\nEvery token records `provenance.extraction_mode = \"fast\" | \"rendered\"`. Drift-check re-extracts using the same mode as the original — apples-to-apples diff. Mode is read from the first color token in the brand:\n\n```bash\nMODE=$(jq -r '.tokens.color[0].provenance.extraction_mode // \"fast\"' design/design.json)\n```\n\nIf the user wants to upgrade fast → rendered for an existing brand, they should:\n1. Run `extract-url.ts --rendered` against the original URL.\n2. Save as a new draft.\n3. Run `merge.ts` with both the old store and the new draft. Rendered values outweigh fast (higher per-token confidence). The merged store becomes rendered."
+    },
+    {
+      "page": 7,
+      "text": "# Extract coverage\n\n## When to recommend rendered vs fast\n\n| Situation | Recommend |\n|---|---|\n| Marketing site, docs, blog, static SSR | fast |\n| WordPress / Shopify / Squarespace storefronts | fast |\n| Modern SPA dashboards (Linear, Vercel, Notion) | rendered |\n| Reverse-engineering for design-system seeding | rendered |\n| User says \"do it quick, partial is fine\" | fast (the default) |\n| Drift-check against an existing store | match `provenance.extraction_mode` |"
+    }
+  ]
+}

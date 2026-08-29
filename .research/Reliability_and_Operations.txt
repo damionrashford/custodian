@@ -1,0 +1,235 @@
+
+RELIABILITY & OPERATIONS
+
+SLOs, Incidents and Recovery
+
+Closes gaps G2, G5, G6, G9 and G19 · Required before production
+
+Document Owner
+[Name / Team]
+Version
+1.0
+Status
+Draft — for review
+Date
+August 29, 2026
+Distribution
+Engineering, Security, Legal, Product
+
+Section 5 contains a two-day regulatory clock. The reportability decision must be pre-assigned.
+
+
+1. Why Agent Reliability Is Different
+Traditional SLOs rest on a deterministic contract: the same input produces the same output, and deviation is unambiguously a failure. Agentic systems break that contract — identical inputs can produce different but plausibly correct outputs, or quiet failures that never surface as errors.
+
+The silent-failure problem
+When an agent fails, the observability stack is frequently silent: HTTP 200, normal latency, zero error rate — while the agent approves something it should not have, writes to the wrong place, or loops through budget. Every mechanism in this document exists to make behavioural failure visible, because infrastructure monitoring alone will not surface it.
+2. Service Level Objectives
+Measure before setting targets. Run for two weeks, take the baseline, then set the objective slightly above it. An agent completing 91% of tasks does not get a 99% SLO. The figures below are calibration from audits of 14 production deployments, not targets to adopt.
+
+SLI
+Reference
+Measurement
+Availability
+99.5%
+Successful responses / total requests. Provider APIs cap what is achievable.
+Latency (non-stream)
+p95 < 3.5s
+End-to-end, excluding human approval waits
+Latency (stream)
+p95 TTFT < 800ms
+Time to first token; the perceived-latency metric
+Answer quality
+≥ 0.85
+LLM-as-judge on production prompt mix, scored daily
+Tool-call success
+≥ 97%
+Returned without retry exhaustion
+Cost per resolution
+Per use case
+Treated as an SLI, not only a finance metric
+Hallucination rate
+≤ 1.5%
+High-stakes prompts only, judge-scored
+Consistency
+Set from baseline
+pass^k across repeated runs — separate from accuracy
+
+Consistency needs its own objective. Across 14 models over 18 months of releases, accuracy improved steadily while reliability improved only modestly. A model can get more answers right on average while becoming less predictable, and only a consistency SLI catches that.
+2.1 Error budgets
+	•	One budget per SLI, running in parallel. The accuracy budget can be healthy while the latency budget burns because a new model is slower.
+	•	Budget health gates autonomy. A clean 30-day record earns a higher autonomy tier; a budget burning at multiples of the sustainable rate triggers escalation and demotion to a lower tier. This is what makes graduated autonomy operational rather than decorative.
+	•	Budget exhaustion freezes deploys. Feature work stops, reliability work starts. The rule is written down in advance so it is not negotiated during the incident.
+3. Detection
+Detection is the failure point, not response. Mean time to detect across available agent-incident case studies is closer to 14 days than 4 hours, because agents act in single transactions that look identical to authorised activity in the audit log.
+
+Signal
+Signature
+Threshold
+Cost spike
+50× hourly cost with flat latency
+Page immediately
+Silent tool failure
+Tool-call success drops, error rate flat
+Page
+Quality drift
+Judge score falls on a rolling window
+Alert; investigate within 4h
+Runaway loop
+N consecutive steps with no state change
+Auto-halt the run
+Approval anomaly
+Rubber-stamp rate rises or approval latency collapses
+Alert — oversight is degrading
+Cross-tenant signal
+Any retrieval returning another tenant's namespace
+Page — treat as breach until disproven
+Budget burn
+Error budget consuming faster than 5× sustainable
+Page
+
+Loop-specific instrumentation. Agent loops break at the perceive or observe step rather than at reasoning; the dominant modes are runaway repetition, context degrading across iterations, and action taken on unverified output. Instrument all three, and enforce a hard iteration ceiling, a no-progress detector, and a per-run cost ceiling as runtime controls rather than dashboard metrics.
+4. Incident Response
+Five phases. The ordering matters more than the tooling.
+
+Phase
+Objective
+Discipline
+Detect
+Recognise a behavioural failure
+Panels from Section 3; agents fail plausibly, not loudly
+Contain
+Bound the blast radius
+Kill switch within 30s of confirmed harm. Not diagnosis.
+Preserve
+Secure evidence
+Freeze before remediation — see Section 5
+Eradicate
+Remove the cause
+Rollback is the default after a deploy-linked incident
+Recover
+Restore service
+Measured tranches with verification between each
+
+Containment precedes root cause. In the first five minutes the objective is blast-radius control, not diagnosis. If the incident followed a deploy, roll back unless there is hard evidence rollback will not help — and never combine rollback with opportunistic cleanup. Recover in measured tranches with a verification step between each; an over-confident first recovery is among the most common causes of a repeat incident.
+
+Cache invalidation is part of rollback
+A documented failure: a prompt edit passed a 1% canary on green dashboards, was promoted, and the semantic cache kept serving the bad answer for forty minutes after rollback. Rolling back the code does not roll back the cache. Cache and routing-memory invalidation are steps in the rollback runbook, not follow-up cleanup.
+
+4.1 Rollback by action class
+Agent actions have different reversal profiles. Where rollback is impossible the runbook must name the substitute: compensating action, customer notification, or regulatory disclosure.
+
+Class
+Reversal
+Owner
+Database writes
+Transactional rollback or compensating write
+Backend on-call
+External API calls
+Idempotent reversal where supported
+Backend on-call
+Payments / billing
+Refund or credit; reconcile ledger
+Finance + Backend
+Notifications sent
+Not reversible — issue correction
+Support
+Permission changes
+Revert from audit log
+Security
+Data writes to tenant systems
+Webhook replay with correction event
+Backend
+Memory writes
+Purge by provenance and time window
+AI/ML on-call
+
+Every incident becomes a regression test. This is the only mechanism that stops the same failure returning in a new form, and it closes the loop into the eval pipeline.
+5. Regulatory Reporting
+Serious-incident reporting under Article 73 runs on clocks measured in days, and the clock starts at awareness.
+
+Trigger
+Deadline
+Serious incident (default)
+15 days from awareness; immediately once causal link established
+Widespread infringement / critical-infrastructure disruption
+2 days
+Death
+10 days
+Deployer notifies provider
+"Immediately" — guidance reads as within 24 hours
+
+The no-alteration rule conflicts with the instinct to fix
+The provider must not perform any investigation that alters the AI system in a way which may affect subsequent evaluation before informing the competent authorities. That directly conflicts with hot-fixing, which is why Preserve is a distinct phase in Section 4. An incomplete initial report is expressly permitted to meet the deadline, so filing early with partial information is the correct move. Authorities may order measures within seven days, and non-compliance carries fines up to €15 million or 3% of worldwide turnover.
+
+Pre-assign the reportability decision. A named role decides whether an incident is reportable, with a named deputy, and an internal deadline shorter than the regulatory one. This decision cannot be made for the first time during an incident with a two-day clock running.
+6. Disaster Recovery
+Tier the estate rather than applying one objective across it.
+
+Tier
+Systems
+RTO / RPO
+1
+Gateway, routing, streaming, billing ledger
+RTO < 15 min / RPO ≈ 0
+2
+Workflow state, agent execution, webhooks
+RTO < 1 h / RPO < 1 min
+3
+Vector indexes, semantic cache, memory
+RTO < 4 h / RPO < 24 h
+4
+Analytics, historical eval scores
+RTO < 24 h / RPO < 24 h
+
+The workflow engine is the strong part. Workflow state writes are synchronously replicated across three availability zones before acknowledgement, giving zero RPO for an AZ failure, with multi-region replication targeting sub-one-minute RPO and automatic conflict resolution after failover.
+Tier 3 is cheaper than it looks. Vector indexes are derived data, rebuildable from source documents, so their RPO is an ingestion-cost question rather than a data-loss question — provided the ingestion pipeline itself is Tier 2. Verify that dependency; if source documents live only in the index, the tiering is wrong.
+
+DR breaks at the configuration layer
+Most teams have the data side covered — backups run, RPO is tested. RTO collapses because IAM, networking and service settings are rebuilt manually under pressure mid-outage, and the gap between documented and actual infrastructure state widens further when agents make production changes. Capture configuration continuously so "last known good" is a real restore target, and include the configuration restore step in every DR test.
+7. Human Oversight Operations
+The volume arithmetic sets the staffing model. Fifty agents at twenty tool calls per hour produce 1,000 approval-eligible events per hour; routing even 10% to human review consumes more than three full-time equivalents doing nothing but rubber-stamping.
+
+Lane
+Risk
+SLA
+On timeout
+Fast
+Low-risk reversible actions
+Seconds
+Auto-approve within limits
+Standard
+Sensitive data access
+Minutes
+Fail safe to denied
+High
+Financial or irreversible actions
+Longer, with escalation
+Fail safe to denied
+
+Time-boxed decision lanes matched to risk, failing safe to denied on timeout with partial context captured for audit. Cap review volume per reviewer per day, publish explicit rejection criteria, and close the feedback loop on overrides.
+Instrument the rubber-stamp rate as a governance metric. A reviewer approving 99% of decisions at under ten seconds average review time is clicking, not reviewing. This belongs on the same dashboard as the SLOs, because degraded oversight is a reliability failure.
+8. Ownership
+Roles are named people, not teams. Three must be assigned before launch.
+
+Role
+Responsibility
+Incident commander
+Runs the response; single decision-maker during an incident
+Reportability decision-maker
+Determines Art.73 applicability; named deputy required
+Emergency halt authority
+Can pause or kill the system without waiting for approval
+Component owners
+Named per component; on the escalation path for their surface
+Oversight lead
+Owns approval-queue health and the rubber-stamp metric
+9. Definition of Done
+	•	Two-week baseline measured; SLOs set from it and signed by engineering and product.
+	•	Parallel error budgets live, with autonomy tiering wired to budget health.
+	•	All seven detection panels deployed and alert-tested.
+	•	Kill switch tested end-to-end, including mid-workflow.
+	•	Rollback runbook complete per action class, including cache invalidation.
+	•	Art.73 decision role assigned with deputy; evidence-preservation step rehearsed.
+	•	DR test passed including configuration restore, not only data restore.
+	•	Oversight lanes staffed; rubber-stamp metric instrumented.

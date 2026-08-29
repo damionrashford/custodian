@@ -1,0 +1,40 @@
+# Graphify corpus scope for prod-agent.
+# gitignore syntax; graphify merges this with .gitignore and .graphifyignore can only
+# ever exclude more, never re-include.
+
+# Secrets — never enters the graph
+.env
+.env.*
+*.pem
+*.key
+
+# Graphify's own output — location set by GRAPHIFY_OUT in .claude/settings.json.
+# Must stay excluded: graphify scans dot-directories by default, so without this
+# the graph ingests its own 134 KB graph.json on every rebuild.
+.graphify/
+
+# Vendored third-party skills — reference manuals for external tools, not this
+# project's knowledge. Including them puts gh/React Router/TypeScript concepts into
+# a graph that should only answer questions about the platform spec.
+.claude/skills/studio/
+.claude/skills/gh/
+.claude/skills/react-router/
+.claude/skills/keep-changelog/
+.claude/skills/readme-wizard/
+.claude/skills/typescript-7/
+.claude/skills/playwright/
+.claude/skills/graphify/
+
+# Tool config, not platform knowledge. Parsed as JSON AST, these dominate the graph:
+# compilerOptions/enabledPlugins/allow became the top god nodes and 4 of 10 communities,
+# burying the spec they were supposed to sit alongside.
+.claude/settings.json
+.claude/skills/tsconfig.json
+tsconfig.json
+
+# Test run artefacts
+test-results/
+
+# Superseded research revisions — _v2 is authoritative, v1 kept for history only
+.research/AI_Agent_Implementation_Plan.txt
+.research/Gap_Register.txt

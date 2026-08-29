@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/bun-docs/schemas",
+  "title": "bun-docs cache schemas",
+  "description": "JSON Schemas for the two on-disk artifacts written by the bun-docs skill: manifest.json (URL -> cached-file mapping, written by fetch.ts) and index.json (BM25 inverted index, written by index.ts). Used by validate.py and by future tooling that wants to inspect or migrate the cache.",
+  "$defs": {
+    "manifestEntry": {
+      "type": "object",
+      "required": ["url", "source", "file", "bytes", "fetchedAt", "contentType"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Canonical page URL (no trailing .md)."
+        },
+        "source": {
+          "type": "string",
+          "enum": ["docs", "reference", "blog"],
+          "description": "Which top-level subtree this page belongs to."
+        },
+        "file": {
+          "type": "string",
+          "pattern": "^raw/.+\\.md$",
+          "description": "Path under ~/.cache/bun-docs/ where the markdown body is cached."
+        },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "fetchedAt": { "type": "string", "format": "date-time" },
+        "contentType": { "type": "string" }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "required": ["version", "fetchedAt", "entries"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "integer", "const": 1 },
+        "fetchedAt": { "type": "string", "format": "date-time" },
+        "entries": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/manifestEntry" }
+        }
+      }
+    },
+    "chunk": {
+      "type": "object",
+      "required": ["id", "url", "source", "docTitle", "section", "body", "length"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}$",
+          "description": "First 8 hex chars of sha256(url + '#' + section)."
+        },
+        "url": { "type": "string", "format": "uri" },
+        "source": { "type": "string", "enum": ["docs", "reference", "blog"] },
+        "docTitle": { "type": "string" },
+        "section": {
+          "type": "string",
+          "description": "The `## ` heading this chunk came from. Empty for the doc preamble."
+        },
+        "body": {
+          "type": "string",
+          "description": "Raw markdown body of the section, including the heading line."
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Token count used for BM25 doc-length normalisation."
+        }
+      }
+    },
+    "index": {
+      "type": "object",
+      "required": ["version", "builtAt", "k1", "b", "n", "avgdl", "chunks", "postings", "df"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "integer", "const": 2 },
+        "builtAt": { "type": "string", "format": "date-time" },
+        "k1": { "type": "number", "description": "BM25 k1 parameter (default 1.2)." },
+        "b": { "type": "number", "description": "BM25 b parameter (default 0.75)." },
+        "n": { "type": "integer", "minimum": 0, "description": "Total chunk count." },
+        "avgdl": { "type": "number", "minimum": 0, "description": "Average chunk length in tokens." },
+        "chunks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/chunk" }
+        },
+        "postings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "prefixItems": [
+                { "type": "integer", "minimum": 0, "description": "Chunk index into `chunks`." },
+                { "type": "integer", "minimum": 1, "description": "Term frequency in that chunk." }
+              ]
+            }
+          },
+          "description": "Inverted index: term -> array of [chunkIndex, termFrequency]."
+        },
+        "df": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 1 },
+          "description": "Document frequency per term (number of chunks containing it)."
+        }
+      }
+    }
+  }
+}

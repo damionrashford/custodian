@@ -1,0 +1,20 @@
+{
+  "name": "prod-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "PLAYWRIGHT_HTML_OPEN=never playwright test",
+    "test:headed": "PLAYWRIGHT_HTML_OPEN=never playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:cli-debug": "PLAYWRIGHT_HTML_OPEN=never playwright test --debug=cli",
+    "codegen": "playwright codegen",
+    "report": "playwright show-report",
+    "cli": "playwright cli"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.0"
+  }
+}

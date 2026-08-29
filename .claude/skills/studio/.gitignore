@@ -1,0 +1,13 @@
+scripts/node_modules/
+scripts/*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+dist/
+build/
+.cache/
+*.log
+.studio/
+# studio runtime output must never live inside the skill repo
+/design/
+.work/

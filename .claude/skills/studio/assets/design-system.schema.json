@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/damionrashford/design-system/schema/0.2.0",
+  "title": "Studio Design System",
+  "description": "Output lock format for a fully-emitted Studio design system. Validated by STEP 9 emit; consumed by export scripts and design.md.",
+  "type": "object",
+  "required": ["schema_version", "tokens"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "type": "string", "const": "0.2.0" },
+    "name": { "type": ["string", "null"] },
+    "created_at": { "type": ["string", "null"], "format": "date-time" },
+    "updated_at": { "type": ["string", "null"], "format": "date-time" },
+
+    "genre": {
+      "type": ["string", "null"],
+      "enum": ["editorial", "modern-minimal", "atmospheric", "playful", null],
+      "description": "One of 4 Studio genres selected at STEP 2."
+    },
+    "macrostructure": {
+      "type": ["string", "null"],
+      "enum": [
+        "Bento Grid", "Long Document", "Marquee Hero", "Stat-Led", "Workbench",
+        "Conversational FAQ", "Manifesto", "Photographic", "Quote-Led", "Specimen",
+        "Catalogue", "Letter", "Index-First", "Narrative Workflow", "Split Studio",
+        "Feature Stack", "Type Specimen", "Portfolio Grid", "Map/Diagram",
+        "Ecosystem Index", "Component Playground", null
+      ],
+      "description": "One of 21 macrostructures. Specimen is not the default."
+    },
+    "theme": {
+      "type": ["string", "null"],
+      "description": "One of 22 named catalog themes or 'custom' for a bespoke OKLCH palette.",
+      "enum": [
+        "Specimen", "Atelier", "Brutal", "Salon", "Newsprint", "Linen", "Studio",
+        "Manifesto", "Terminal", "Midnight", "Almanac", "Garden", "Quiet", "Riso",
+        "Sport", "Bloom", "Coral", "Violet", "Aurora", "Halo", "Plume", "Editorial",
+        "custom", null
+      ]
+    },
+
+    "tokens": {
+      "type": "object",
+      "required": ["color", "typography", "spacing", "text_scale", "motion", "depth"],
+      "additionalProperties": false,
+      "description": "Token collections. Each is an array of token records produced by extract → merge → derive-states. Empty arrays are valid for freshly-initialized stores; populated arrays carry runtime-validated role coverage (paper/ink/accent for color; display/body for typography; etc.).",
+      "properties": {
+        "color":      { "$ref": "#/definitions/tokenArray", "description": "Flat named color tokens. Values must be oklch(...) strings. Role coverage at minimum: paper, ink, accent." },
+        "typography": { "$ref": "#/definitions/tokenArray", "description": "2+1 font rule. Required roles: display, body. Optional: outlier (max 2 slots)." },
+        "spacing":    { "$ref": "#/definitions/tokenArray", "description": "10-step scale with 4pt base. Roles: 3xs, 2xs, xs, sm, md, lg, xl, 2xl, 3xl, 4xl." },
+        "text_scale": { "$ref": "#/definitions/tokenArray", "description": "7-stop type scale. Roles: xs, sm, md, lg, xl, 2xl, display." },
+        "motion":     { "$ref": "#/definitions/tokenArray", "description": "Easings + durations. Roles: ease_out, ease_in, ease_in_out, dur_micro (120ms), dur_short (220ms), dur_long (420ms)." },
+        "depth":      { "$ref": "#/definitions/tokenArray", "description": "Radii + shadows + z-scale. One depth language per page (flat | elevated | glass)." }
+      }
+    },
+
+    "diversification": {
+      "type": "object",
+      "description": "3 axes that prevent identical consecutive outputs.",
+      "properties": {
+        "paper_band": {
+          "type": ["string", "null"],
+          "enum": ["dark", "mid", "light", null],
+          "description": "Overall lightness character of the paper token."
+        },
+        "display_style": {
+          "type": ["string", "null"],
+          "enum": [
+            "italic-serif", "roman-serif", "geometric-sans",
+            "grotesque-sans", "mono", "display-script", "variable", null
+          ],
+          "description": "Classification of the display font."
+        },
+        "accent_hue": {
+          "type": ["string", "null"],
+          "enum": ["warm", "cool", "neutral", "chromatic-other", null],
+          "description": "Hue family of the accent token."
+        }
+      }
+    },
+
+    "quality": {
+      "type": "object",
+      "properties": {
+        "slop_test": {
+          "type": "object",
+          "properties": {
+            "gates_passed": { "type": "integer", "minimum": 0, "maximum": 71 },
+            "gates_total":  { "type": "integer", "const": 71 },
+            "pass":         { "type": "boolean" },
+            "failed_gates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "reason"],
+                "properties": {
+                  "id":     { "type": "integer" },
+                  "reason": { "type": "string" },
+                  "waiver": { "type": ["string", "null"] }
+                }
+              }
+            }
+          }
+        },
+        "contrast": {
+          "type": "array",
+          "description": "WCAG contrast pairs checked at emit time.",
+          "items": {
+            "type": "object",
+            "required": ["fg", "bg", "ratio", "wcag"],
+            "properties": {
+              "fg":    { "type": "string" },
+              "bg":    { "type": "string" },
+              "ratio": { "type": "number", "minimum": 1, "maximum": 21 },
+              "wcag":  { "type": "string", "enum": ["AA", "AAA", "AA-large", "fail"] }
+            }
+          }
+        },
+        "hero_enrichment_tier": {
+          "type": ["string", "null"],
+          "enum": ["0", "A", "B", "C", "D", "E", null],
+          "description": "0=type-only, A=CSS-art, B=hand-SVG, C=generated, D=library, E=Lottie (last resort)."
+        }
+      }
+    },
+
+    "study": {
+      "type": "object",
+      "description": "Populated when the design system was seeded from a study pass (URL or screenshot).",
+      "properties": {
+        "type":       { "type": "string", "enum": ["url", "screenshot", "moodboard", "idea", "manual"] },
+        "ref":        { "type": ["string", "null"], "description": "Source URL or file path." },
+        "at":         { "type": "string", "format": "date-time" },
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "derived": {
+      "type": "object",
+      "description": "Machine-derived state: per-role interaction-state values (derive-states.ts) and contrast results (contrast-check.ts --write-back).",
+      "properties": {
+        "states":   { "type": "object" },
+        "contrast": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["fg", "bg", "ratio", "wcag"],
+            "properties": {
+              "fg":    { "type": "string" },
+              "bg":    { "type": "string" },
+              "ratio": { "type": "number", "minimum": 1, "maximum": 21 },
+              "wcag":  { "type": "string", "enum": ["AA", "AAA", "AA-large", "fail"] }
+            }
+          }
+        }
+      }
+    },
+
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "op", "summary"],
+        "properties": {
+          "at":      { "type": "string", "format": "date-time" },
+          "op":      { "type": "string", "enum": ["init", "study", "design", "edit", "export", "drift", "merge", "extract"] },
+          "summary": { "type": "string" }
+        }
+      }
+    }
+  },
+
+  "definitions": {
+    "tokenArray": {
+      "type": "array",
+      "description": "Collection of token records. Emitted by merge.ts; consumed by derive-states.ts, contrast-check.ts, export.ts. Each item carries role + value + provenance + confidence.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value", "category", "role"],
+        "properties": {
+          "name":       { "type": "string" },
+          "value":      { "type": "string" },
+          "category":   { "type": "string" },
+          "role":       { "type": "string" },
+          "provenance": { "type": ["object", "null"] },
+          "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+        },
+        "additionalProperties": true
+      }
+    },
+    "oklchValue": {
+      "type": "string",
+      "pattern": "^oklch\\([^)]+\\)$",
+      "description": "OKLCH color value. No pure black (oklch(0%...)) or pure white (oklch(100%...))."
+    },
+    "spacingValue": {
+      "type": "string",
+      "pattern": "^[0-9]+(\\.[0-9]+)?(px|rem)$"
+    },
+    "radiusValue": {
+      "type": "string",
+      "pattern": "^([0-9]+(\\.[0-9]+)?(px|rem|%)|9999px|50%)$"
+    }
+  }
+}

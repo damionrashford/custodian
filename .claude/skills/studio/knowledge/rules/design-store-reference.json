@@ -1,0 +1,48 @@
+{
+  "id": "design-store-reference",
+  "title": "Design store reference — token persistence & extraction",
+  "author": "studio",
+  "domain": "rules",
+  "pages": [
+    {
+      "page": 1,
+      "text": "# Design store reference — token persistence & extraction\n\nLoad when: the user asks to extract tokens from a URL / screenshot / mood board, seed a design from an existing `design.json`, merge drafts, edit a token, export, or run a drift check. This is the full procedure; SKILL.md keeps only a pointer.\n\nAll paths assume `${CLAUDE_SKILL_DIR}` is the studio skill root. The **cascade** (derive-states → contrast-check → validate) is MANDATORY after every merge or edit — see bottom."
+    },
+    {
+      "page": 2,
+      "text": "# Design store reference — token persistence & extraction\n\n## Init\n\n```bash\nbun ${CLAUDE_SKILL_DIR}/scripts/design/init.ts --dir design\n```\nCreates `design/design.json`, `design/DESIGN.md`, `design/drafts/`, `design/reports/`. Write `state.design_dir`."
+    },
+    {
+      "page": 3,
+      "text": "# Design store reference — token persistence & extraction\n\n## Extract from URL\n\n```bash\nbun ${CLAUDE_SKILL_DIR}/scripts/design/extract-url.ts <URL> \\\n  --output design/drafts/from-url-<host>-<ISO>.json \\\n  --max-stylesheets 5 --max-stylesheet-bytes 204800\n```\nIf `coverage_flags.js_rendered: true` OR `confidence_global < 0.5`: tell the user \"CSS extraction was thin. Want me to re-run with `--rendered`?\" Stop. Never auto-install Chromium.\n\nRendered (opt-in only):\n```bash\ntest -d ~/.cache/ms-playwright/chromium-* || bun ${CLAUDE_SKILL_DIR}/lib/install-chromium.ts\nbun ${CLAUDE_SKILL_DIR}/scripts/design/extract-url.ts <URL> --rendered \\\n  --output design/drafts/from-url-rendered-<host>-<ISO>.json\n```"
+    },
+    {
+      "page": 4,
+      "text": "# Design store reference — token persistence & extraction\n\n## Extract from screenshot\n\nVision pass first: top 6 hex, accent, bg/fg, type categories (serif/sans/display/mono) + weight range, spacing, radius, shadow, mood (3-5 words).\n```bash\nbun ${CLAUDE_SKILL_DIR}/scripts/design/extract-image.ts <image> \\\n  --output design/drafts/from-screenshot-<ISO>.json \\\n  --vision-json <(echo '<vision JSON>')\n```"
+    },
+    {
+      "page": 5,
+      "text": "# Design store reference — token persistence & extraction\n\n## Extract from mood board\n\n```bash\necho '<aggregated hex array>' | bun ${CLAUDE_SKILL_DIR}/lib/oklch.ts cluster \\\n  --k auto --output design/drafts/from-moodboard-<ISO>.json --provenance \"moodboard:$folder\"\n```"
+    },
+    {
+      "page": 6,
+      "text": "# Design store reference — token persistence & extraction\n\n## Merge\n\n```bash\nbun ${CLAUDE_SKILL_DIR}/scripts/design/merge.ts \\\n  --drafts <a>.json,<b>.json --output design/design.json \\\n  --strategy confidence-weighted --lockfile design/.merge.lock\n```\nPill radius (`9999px`) preserved categorically — never averaged. Categorical conflicts surface on stderr → present to user, re-run with `--resolve key=value`."
+    },
+    {
+      "page": 7,
+      "text": "# Design store reference — token persistence & extraction\n\n## Cascade (MANDATORY after every merge or edit)\n\n```bash\nbun ${CLAUDE_SKILL_DIR}/scripts/design/derive-states.ts --brand design/design.json --in-place\nbun ${CLAUDE_SKILL_DIR}/scripts/design/contrast-check.ts --brand design/design.json --level AA\nbun ${CLAUDE_SKILL_DIR}/scripts/design/validate.ts --brand design/design.json\n```"
+    },
+    {
+      "page": 8,
+      "text": "# Design store reference — token persistence & extraction\n\n## Edit token\n\nEdit `design/design.json` via the Edit tool. Stamp `provenance.source_type=\"manual\"`, `confidence=1.0`, `edited_at=<ISO>`. Run cascade. If contrast fails: stop, report pair + ratio + minimum. Never auto-correct."
+    },
+    {
+      "page": 9,
+      "text": "# Design store reference — token persistence & extraction\n\n## Export\n\n```bash\nbun ${CLAUDE_SKILL_DIR}/scripts/design/export.ts \\\n  --brand design/design.json \\\n  --format <css-vars|scss|w3c|json|tailwind-v4> \\\n  --output <path outside design dir>\n```"
+    },
+    {
+      "page": 10,
+      "text": "# Design store reference — token persistence & extraction\n\n## Drift check\n\n```bash\nMODE=$(jq -r '.tokens.color[0].provenance.extraction_mode // \"fast\"' design/design.json)\nRENDERED=\"\"; [ \"$MODE\" = \"rendered\" ] && RENDERED=\"--rendered\"\nbun ${CLAUDE_SKILL_DIR}/scripts/design/extract-url.ts <url> $RENDERED \\\n  --output design/drafts/drift-<ISO>.json\nbun ${CLAUDE_SKILL_DIR}/scripts/design/drift-diff.ts \\\n  --baseline design/design.json --current design/drafts/drift-<ISO>.json \\\n  --output design/reports/drift-<ISO>.md\n```"
+    }
+  ]
+}

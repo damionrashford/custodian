@@ -1,0 +1,305 @@
+
+ENGINEERING STANDARDS
+
+Code Quality & Architecture Conventions
+
+Companion to the Autonomous AI Agent Implementation Plan v2
+
+Document Owner
+[Name / Team]
+Version
+1.0
+Status
+Draft — for review
+Date
+August 29, 2026
+Applies to
+All first-party platform source
+
+Section 7 (Barrel Files) and Section 9 record deliberate departures from the original brief, with reasoning.
+
+
+1. Purpose and Enforcement
+This document defines the engineering standards for the autonomous agent platform. It is a companion to the Implementation Plan and applies to every component in it.
+One governing principle: a rule without an automated check is a suggestion. Every standard below is stated with the mechanism that enforces it. Rules that cannot be enforced by the compiler, a linter, or CI are marked as review-time judgement and are deliberately few. Style debates are settled by the formatter, not in pull requests.
+Standards apply to first-party source. Generated code, vendored dependencies, and migration scripts are exempt via explicit ignore paths, not by informal agreement.
+2. TypeScript Configuration
+Type safety is a build-gate, not an aspiration. A codebase where strict mode is technically enabled but routinely bypassed signals that type safety is aspirational rather than operational.
+Baseline tsconfig.json — this is the floor, not a starting point for negotiation:
+
+{
+  "compilerOptions": {
+    // Core strict family
+    "strict": true,
+
+    // Beyond-strict type safety
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+
+    // Module safety
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "forceConsistentCasingInFileNames": true,
+    "erasableSyntaxOnly": true,
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": true
+  }
+}
+
+Why these specific extras. noUncheckedIndexedAccess types an array index access as T | undefined, which catches off-by-one and empty-collection bugs that plain strict mode misses. exactOptionalPropertyTypes distinguishes a property being absent from a property explicitly set to undefined — the two are not equivalent and conflating them defeats runtime existence checks. erasableSyntaxOnly keeps the source compatible with native type-stripping runtimes.
+
+Non-negotiable
+Do not disable an individual strict flag to avoid fixing type errors — fix the errors.  Loosening the config to make a build pass is a rollback of the standard and requires the same review weight as a production change.
+2.1 Banned constructs
+Each of the following fails CI. There is no warning tier — a warning nobody actions is noise.
+
+Construct
+Rule
+Enforcement
+any
+Banned in first-party code. Use unknown at boundaries and narrow.
+@typescript-eslint/no-explicit-any: error
+@ts-ignore
+Banned outright.
+@typescript-eslint/ban-ts-comment
+@ts-expect-error
+Permitted only with a description and a linked issue.
+ban-ts-comment with minimumDescriptionLength
+Type assertions (as)
+Banned except in parsers and test fixtures. Prove the type, don't assert it.
+consistent-type-assertions: never
+Non-null assertion (!)
+Banned. Narrow explicitly or return early.
+no-non-null-assertion: error
+Enum
+Banned — not erasable, and const unions are safer.
+erasableSyntaxOnly + no-restricted-syntax
+Default exports
+Banned outside framework-mandated entry points.
+import/no-default-export
+Implicit return types
+Exported functions declare return types explicitly.
+explicit-module-boundary-types
+3. Type Discipline
+Parse, do not validate. Untrusted input crosses the boundary once, through a schema parser, and everything downstream receives a fully-typed domain object. No function deeper than the boundary accepts a raw payload shape. This is the single highest-leverage rule in the document: it converts an entire class of runtime failure into a compile-time or boundary-time failure.
+Make illegal states unrepresentable. Model state as a discriminated union rather than a bag of optional fields. A record with status plus four nullable columns admits combinations that cannot occur; a union does not.
+
+// Rejected — admits { status: 'pending', result: 'x', error: 'y' }
+interface Job { status: string; result?: string; error?: string; }
+
+// Required — the compiler rejects impossible combinations
+type Job =
+  | { status: 'pending' }
+  | { status: 'succeeded'; result: JobResult }
+  | { status: 'failed'; error: JobError };
+
+	•	Branded primitives at boundaries. TenantId, RequestHash, and PromptVersion are branded types, not bare strings. Cross-tenant leakage is the failure mode this prevents, and the plan's isolation guarantees depend on it.
+	•	Exhaustiveness is checked, not assumed. Every switch over a union ends in a never default. Adding a variant must break the build in every place that handles it.
+	•	Errors are typed and returned, not thrown, across module boundaries. Throwing is reserved for programmer error and truly unrecoverable conditions. Expected failures — provider timeout, guardrail rejection, budget exceeded — are values in the return type.
+	•	No structural typing across trust boundaries. A type that happens to match is not the same as a type that was validated.
+4. Separation of Powers
+Four layers. Dependencies point inward only, and the rule is enforced by the linter rather than by convention.
+
+Layer
+Contains
+May import
+domain
+Entities, value objects, business rules, port interfaces. Zero I/O.
+Nothing. No framework, no SDK, no Node built-ins.
+application
+Use cases, orchestration, transaction boundaries.
+domain only.
+infrastructure
+Adapters: provider SDKs, vector store, queue, Stripe, telemetry.
+domain, application.
+interface
+HTTP handlers, workers, CLI, webhook receivers.
+application, domain. Never infrastructure directly.
+
+The load-bearing consequence: the domain layer must be testable with no network, no clock, and no environment variables. If a domain test needs a mock HTTP client, the dependency arrow is pointing the wrong way and the design is wrong — not the test.
+Enforcement is eslint-plugin-boundaries (or import/no-restricted-paths) with the layer graph declared in config, plus dependency-cruiser in CI to fail on any cycle at any depth.
+
+Applying this to the platform components
+The Guardrails, Routing, and Context Assembly components each define a port in domain and an adapter in infrastructure. This is what makes the provider-swap and model-fallback requirements tractable: swapping a provider is a new adapter, not a change to business logic. It is also what makes the eval pipeline possible, because use cases can be exercised without a live provider.
+5. Naming Conventions
+
+Subject
+Convention
+Example
+Folders
+kebab-case, plural for collections, singular for a single concept
+context-assembly/, guardrails/
+Source files
+kebab-case, named for the exported concept
+token-meter.ts, tenant-id.ts
+Test files
+Sibling to source, .test.ts suffix
+token-meter.test.ts
+Types & classes
+PascalCase, no I or T prefix
+TokenMeter, JobResult
+Functions & vars
+camelCase, verb-first for functions
+assembleContext(), retryBudget
+Constants
+SCREAMING_SNAKE_CASE, module-scoped only
+MAX_CONTEXT_TOKENS
+Booleans
+is / has / should / can prefix
+isIdempotent, hasBudgetRemaining
+Ports (interfaces)
+Noun describing capability
+VectorStore, ModelProvider
+Adapters
+Implementation prefix + port name
+PineconeVectorStore
+Env vars
+SCREAMING_SNAKE, read once into a parsed config object
+STRIPE_METER_ID
+
+Prohibited names. utils, helpers, common, shared, misc, manager, data. These are not categories; they are the absence of one, and they become dumping grounds that accumulate unrelated code and generate import cycles. If code does not have a home, the module boundaries are wrong.
+One exported concept per file. A file exports one primary symbol plus its directly-associated types. Filename and primary export must correspond, which makes the file findable by name and keeps IDE navigation honest.
+6. Size Budgets
+These are review triggers, not compiler limits. Exceeding one is not a defect; it is a prompt to justify the size in the pull request or split the unit. They are set from team convention rather than empirical research, and should be tuned once real code exists.
+
+Unit
+Budget
+Hard stop
+Signal when exceeded
+Function
+40 lines
+80
+Doing more than one thing; extract.
+File
+300 lines
+500
+More than one responsibility, or a missing sub-module.
+Parameters
+3
+5
+Introduce a named options object or a value object.
+Cyclomatic complexity
+10
+15
+Branching logic belongs in a strategy or lookup table.
+Nesting depth
+3
+4
+Invert conditions and return early.
+Files per folder
+10
+15
+The folder holds more than one concept; split it.
+Folder depth
+4 from src/
+5
+Structure is mirroring org chart or framework, not domain.
+Public exports per module
+7
+12
+The module's surface is too wide to reason about.
+
+Enforced by ESLint (max-lines, max-lines-per-function, complexity, max-depth, max-params) at warning level locally and error level in CI. Folder-count budgets are checked by a repository script, since no standard linter covers them.
+7. Barrel Files — Restricted, Not Adopted
+This section departs from the request, and the reasoning matters. Barrel files were treated as a best practice for years and have since been reassessed. The measured costs are concrete rather than stylistic.
+Bundle and build cost. A library maintainer documented a Next.js dev page importing a single hook pulling a 552 kB client chunk that dropped to 64 kB once the barrel was removed — because dev mode does not tree-shake and the barrel entry compiled all 120+ modules including heavyweight transitive dependencies the page never referenced.
+Correctness cost. Barrels are hotspots for circular dependencies, particularly when internal modules import through their own directory's barrel, producing runtime failures such as Cannot access 'X' before initialization that surface far from their cause. For a system with strict tenant isolation and durable workflow replay, non-deterministic module initialisation order is an unacceptable class of bug.
+Developer-experience cost. Go-to-definition lands on the barrel rather than the source, identical index.ts tabs become indistinguishable, and the file itself becomes a recurring merge-conflict site.
+
+Policy
+One barrel per published module boundary. Zero barrels inside a module. Barrels belong at the edge of a unit that external code consumes, not scattered through internal folders.  If the project does not have the problem a barrel solves, do not add the pattern. 
+
+	•	A barrel may exist only at a package root in the monorepo — the public API of @platform/guardrails, not of guardrails/internal/.
+	•	Barrels must never re-export from another barrel. Nested chains are the direct cause of cycles.
+	•	Barrels list explicit named exports. export * is banned — it makes the public surface unreviewable and unbounded.
+	•	Type-only re-exports use export type so the barrel carries no runtime footprint.
+	•	Internal code imports by direct path, always. Importing through your own module's barrel is the specific mistake that creates cycles.
+Enforced by no-restricted-imports patterns plus a dependency-cruiser rule failing the build on any cycle.
+8. Comments
+Comments explain decisions the code cannot express. They do not narrate control flow, and they are not a changelog.
+
+Permitted
+Purpose
+Why-comments
+The non-obvious reason a decision was made, especially where the obvious alternative was rejected.
+Invariant statements
+A precondition or guarantee the type system cannot encode.
+Reference links
+Spec section, RFC, provider documentation, or incident that motivated the code.
+TSDoc on public API
+Contract documentation on exported symbols: parameters, return, thrown conditions.
+Safety annotations
+Why a guardrail, pin, or ordering constraint exists and what breaks without it.
+
+Prohibited
+Reason
+Narration
+"// loop through the items" restates the code and rots independently of it.
+Commented-out code
+Version control already holds it. Delete it.
+Changelog comments
+"// updated 2026-05 by X" duplicates git blame and is never maintained.
+Section banners
+"// ===== HELPERS =====" inside a file is a signal the file should be split.
+TODO without an issue
+An untracked TODO is a wish. Link an issue ID or delete it.
+Apologies or asides
+"// hacky but works" — either fix it or record the constraint properly.
+
+Test on every comment: if the comment could be deleted with no loss of information not recoverable from the code, delete it. If the code needs a comment to be followed at all, the code is the problem.
+9. Dead Code, Deprecation, and Compatibility
+Internal code: no deprecation tier. Within the repository there is exactly one way to do anything. When a better implementation lands, callers migrate in the same change and the old path is deleted — not marked deprecated, not left behind a flag. Two coexisting implementations mean the migration will not finish, and the second one becomes the one nobody tests.
+	•	No commented-out code, no unreferenced exports, no orphan files. Enforced by knip or ts-prune failing CI on unused exports and files.
+	•	No compatibility shims, adapter wrappers, or v2 suffixes for internal modules. Rename in place and fix the call sites.
+	•	Feature flags carry a removal date and an owner at creation, and CI fails on flags past expiry.
+
+Where "no backwards compatibility" must not apply
+This rule stops at published boundaries. The platform emits webhooks to customer systems, exposes a tenant-facing API, and persists durable workflow state that outlives deployments. At those three boundaries, breaking a consumer is a production incident rather than a cleanup. The plan's own durable-execution requirement makes this concrete: a long-running workflow may replay under code deployed after it started, so old state must remain readable. The correct discipline is not backwards-compatible code but versioned contracts — version the webhook payload, version the API route, version the workflow definition, and retire old versions on a published schedule with consumer notice. Internal ruthlessness, external stability.
+10. Pull Request Gates
+A change merges when every item passes. Reviewers assess design; machines assess everything mechanical.
+
+Gate
+Check
+Blocking
+Types
+tsc --noEmit under the strictest config, zero errors
+Yes
+Lint
+ESLint zero errors, banned constructs clean
+Yes
+Layering
+dependency-cruiser: no inward violations, no cycles
+Yes
+Dead code
+knip: no unused exports, files, or dependencies
+Yes
+Format
+Formatter check — never discussed in review
+Yes
+Tests
+Domain layer covered without network or clock
+Yes
+Eval gate
+Fast heuristic eval under 60s (see plan, Component 14)
+Yes
+Size budgets
+Warnings surfaced in the PR for reviewer judgement
+No
+Design review
+Layer placement, naming, illegal-state modelling
+Reviewer
+
+Reviewer's four questions. Everything else is automated, so review attention belongs on the questions a tool cannot answer: Is this in the right layer? Can an illegal state be constructed? What happens on the second delivery of this request? And if this is deleted in a year, what breaks?

@@ -1,0 +1,287 @@
+
+IMPLEMENTATION PLAN — VERSION 2
+
+Enterprise-Grade Autonomous AI Agent
+
+Production Readiness Roadmap — Revised Against Current Research
+
+Document Owner
+[Name / Team]
+Version
+2.0 — supersedes v1.0
+Status
+Draft — for review
+Date
+August 29, 2026
+Distribution
+Engineering, Product, Security, Legal
+
+Sources are footnoted throughout. Figures are current as of August 2026 and should be re-verified before procurement decisions.
+
+
+1. What Changed in Version 2
+Version 1 sequenced seventeen components across five phases. Version 2 keeps that spine but revises ten components, demotes one, adds a compliance workstream, and replaces one primitive outright. Every change below is driven by a specific finding, not a preference.
+
+Change
+Rationale
+Compliance workstream added
+The EU regulatory timeline shifted in late July 2026. Logging and attribution duties are live now; conformity assessment is deferred. Both facts change sequencing.
+Job queue → durable execution
+A queue leaves state coordination as an unowned infrastructure project. Teams end up rebuilding half a durable execution engine.
+Semantic cache demoted
+At the thresholds required for a useful hit rate, a measurable share of hits return wrong answers. Prompt caching delivers most of the savings at zero correctness risk.
+Metadata filter → namespaces
+Namespace-per-tenant is cheaper to query, instant to offboard, and avoids hidden coupling in shared ANN indexes.
+Containers → microVMs
+Shared-kernel isolation is no longer defensible for untrusted agent code, and there are 2026 CVEs demonstrating host-level RCE.
+Streaming spec disambiguated
+V1 said "SSE/WebSocket with backpressure". SSE has no client-signalled backpressure; the two are not interchangeable.
+Chunking elevated
+Chunking configuration influences retrieval quality as much as embedding-model choice. V1 treated it as one arrow in a diagram.
+Context assembly reframed
+The binding constraint is quality degradation with length, not window capacity. Compaction can also silently delete safety constraints.
+2. Regulatory Position
+The compliance ground moved three weeks before this document was written, and the change cuts both ways.
+Regulation (EU) 2026/1744, the Digital Omnibus on AI, was published in the Official Journal on 24 July 2026 and entered into force on 27 July 2026 — six days before the EU AI Act's original high-risk deadline. It defers compliance for standalone high-risk systems (Annex III) from 2 August 2026 to 2 December 2027, and for AI embedded in products already covered by EU product-safety law (Annex I) to 2 August 2028.
+This is not a general reprieve. Article 50 transparency and AI-content-labelling duties remained on the original 2 August 2026 schedule, as did the GPAI provider obligations in force since August 2025 and the Article 5 prohibited-practices regime in force since February 2025. Those transparency obligations are live and enforceable today.
+Separately, deployers of high-risk systems must retain automatically generated logs. That makes the observability layer (Component 15) a compliance artefact, not merely an operational tool, and its retention policy a legal decision rather than a storage-cost decision.
+
+Sequencing consequence
+Conformity assessment can be deferred to the 2027 timeline. Logging, per-agent attribution, and human-oversight interfaces cannot — they are structural and must land in Phase 1. Projects that treat security as a parallel workstream rather than a final gate are roughly four times more likely to clear enterprise security review without timeline slippage; the upfront cost is typically 15–20% of development, while retrofitting frequently exceeds 60% of the original budget.
+3. Foundations (Before Any Component)
+Three decisions precede everything else because retrofitting them touches every service.
+#
+Component
+Build / Why
+Owner / Target
+Change
+F1
+Identity & Agent Auth
+mTLS + signed A2A Agent Cards; per-tenant API keys; OAuth 2.0 client credentials for M2M. Own output sanitization yourself — reference SDKs do not implement it.
+Security — Wk 1
+REVISED
+F2
+Request Idempotency
+Request-hash idempotency key persisted before any provider call. Dedupe before failover fires. Prevents double-charge on retry.
+Platform — Wk 1
+—
+F3
+Audit Logging & Attribution
+Per-user/per-agent attribution on every tool call and model call, with configurable retention. Required by EU AI Act deployer duties; cannot be retrofitted.
+Platform — Wk 1–2
+NEW
+
+3.1 Agent-to-agent authentication
+A2A matured faster than v1 assumed. The protocol reached v1.0.0 in January 2026, introducing signed Agent Cards for cryptographic verification, and in December 2025 the Linux Foundation launched the Agentic AI Foundation to host MCP, A2A and related infrastructure; v1.0.1 followed in May 2026 with an extension mechanism.
+Adopt it, but understand its limits. A2A was designed with communication rather than security as the primary concern: it aligns with existing OpenAPI authentication schemes and lets agents declare support in their Agent Card, which means the security of any deployment depends entirely on what implementers put in place. It does not mandate how cards are verified for authenticity, leaving agent impersonation, card tampering and replay as real risks without additional controls.
+On the tool side, a conformance study found that although the MCP specification states servers must sanitize tool outputs and clients should validate results, the reference SDK implements neither; MCP also lacks credential revocation on session close, consent gates for sensitive tools, and mandatory audit trails. Treat sanitization and revocation as your responsibility, not the protocol's.
+4. Phase 1 — Serving Core (Weeks 1–4)
+#
+Component
+Build / Why
+Owner / Target
+Change
+1
+LLM Gateway / Proxy
+Unified proxy: retries, fallbacks, rate limits, per-key budgets. Pin the Rust path if self-hosting; verify build provenance.
+Platform — Wk 1–2
+REVISED
+2
+Model Fallback & Routing
+Complexity-based routing, health checks, failover. Make model selection explicit — it is the dominant cost lever, not the router.
+Platform — Wk 2–3
+REVISED
+3
+Streaming Infrastructure
+SSE for single-turn chat; WebSocket only where mid-stream interruption or voice is required. Server-side delivery-offset log for resume.
+Backend — Wk 2–3
+REVISED
+4
+Token Metering & Billing
+Deterministic per-request pricing function + daily reconciliation against provider invoices and billing ledger. Async write path.
+Backend — Wk 3–4
+REVISED
+
+4.1 Gateway and routing
+The build-versus-buy gap has narrowed to a latency and operations question. A July 2026 benchmark reports added p99 latency of roughly 0.7 ms for the LiteLLM Rust gateway, 2.3 ms for Portkey and 4.5 ms for Bifrost, against 257.7 ms for the legacy LiteLLM Python path. That last figure is the one to design around: independent benchmarks show the Python proxy beginning to struggle above 500 RPS on a single instance, with p99 climbing sharply. If self-hosting, pin the Rust path and load-test at your projected peak.
+Keep the cost conversation attached to model selection rather than to the router. A router that sends every request to a frontier model where a small one would suffice costs roughly thirty times more, and the hidden cost in LLM routing is poor model selection, not routing overhead.
+
+Supply-chain caution
+Backdoored LiteLLM builds were downloaded approximately 47,000 times during the three hours they were available on PyPI.  Whichever gateway is selected, pin versions and verify build provenance as a release-gate control.
+
+4.2 Streaming transport
+Version 1 specified "SSE/WebSocket streaming with backpressure". That specification is internally inconsistent. SSE has no backpressure mechanism — the server sends, the client receives, and there is no way for the client to signal that it needs to slow down. WebSocket enables backpressure through TCP flow control: when the client stops reading, the receive window fills and the server slows naturally. In practice SSE does obtain partial backpressure at the socket layer, because the send buffer fills and the framework's write blocks, which pauses the producer — but this must be honoured explicitly in code rather than assumed.
+Resumption is the more expensive trap. SSE appears to solve it and does not: EventSource reconnects automatically using the Last-Event-ID header, but the generation state on the server is typically gone, so a five-minute agent task that drops at minute four restarts from scratch and pays for the compute twice. Resume works only where the server retains state, usually in Redis or a durable log.
+Decision: SSE for single-turn chat; WebSocket only where mid-stream interruption, user input, or voice is required. Budget a server-side delivery-offset log as a named deliverable either way.
+Two operational notes for the runbook. Size the tier in concurrent active connections rather than requests per second — a thirty-second average generation at 100 RPS needs headroom for roughly 3,000 simultaneous connections. And CDNs buffer responses, which silently breaks streaming; set Cache-Control: no-store and X-Accel-Buffering: no on streaming routes.
+
+4.3 Metering and billing
+Version 1 treated reconciliation as a closing step. It is the load-bearing component. Every credible pipeline runs a reconciliation job, daily or hourly, comparing provider invoices, events ingested into the billing system, and the local database copy. Documented causes of divergence include events lost to network partitions, events double-counted from a retry without idempotency, provider changes to token-counting rules, and timezone mismatches at date boundaries — the reconciliation job is the difference between a pipeline that is correct and one that merely believes it is.
+Two implementation facts invalidate older guidance. Since API version 2025-03-31.basil the legacy Stripe usage-records API has been removed and every metered price requires a backing Meter object, so pre-2025 tutorials are actively misleading. Stripe now recommends Metronome for new usage-based billing integrations, and operates a private-preview token-billing product that syncs model prices across providers and records usage automatically while the merchant sets the margin. Evaluate both before building a pricing engine in-house.
+Design the meter so that cost is a pure function of input tokens, output tokens, model ID and price table, with no hidden variables or post-hoc adjustments; this allows billing to be recomputed offline from raw usage logs without ambiguity. Keep the billing write off the response path — an LLM response may generate thousands of tokens and a synchronous billing call should not block the stream.
+5. Phase 2 — Knowledge & Context (Weeks 4–7)
+#
+Component
+Build / Why
+Owner / Target
+Change
+5
+RAG Serving Pipeline
+Ingestion → chunking → embedding → indexing. Chunking gets its own eval sweep. Target: contextual retrieval + BM25 + rerank.
+AI/ML — Wk 4–6
+REVISED
+6
+Multi-Tenant Knowledge Base
+One namespace per tenant (dedicated index for high-compliance tenants). Isolation enforced by signed JWT tenant claim, never by prompt.
+AI/ML — Wk 5–6
+REVISED
+7
+Semantic Cache Layer
+CONDITIONAL. Ship exact-match + provider prompt caching first. Add semantic cache only behind an eval gate with a measured FP rate.
+Backend — deferred
+DEMOTED
+8
+Context Assembly Service
+Active context management, not just budgeting. Constraint pinning so safety policy survives compaction. Cap tool outputs before they enter history.
+AI/ML — Wk 6–7
+REVISED
+
+5.1 Chunking is the dominant retrieval variable
+A study presented at NAACL 2025 tested 25 chunking configurations against 48 embedding models and found that chunking configuration had as much or more influence on retrieval quality as the choice of embedding model; a separate evaluation found the gap between the best and worst chunking strategy on the same corpus reached 9% in recall. Most teams tune embeddings and ignore splitting, which is the wrong order of operations.
+Starting defaults: recursive character splitting at 512 tokens with 50–100 tokens of overlap is the benchmark-validated baseline and requires no model calls; the practical range is 256–512 tokens with 10–25% overlap, measured in model tokens rather than characters.
+Target architecture: contextual retrieval reports reducing top-20 retrieval failures by about 35% on its own, about 49% combined with BM25, and about 67% with reranking added, at a one-time preprocessing cost of roughly $1.02 per million document tokens using prompt caching. Late chunking addresses the same context-loss problem using the embedding model alone, avoiding the LLM cost.
+Counter-evidence worth respecting: a SemEval-2026 team evaluated semantic re-chunking, document-level chunking and passage packing against fixed-window passages and found none consistently outperformed, attributing the degradation to over-fragmentation, evidence split across units, and redundancy introduced by overlap. The same work found that hybrid retrieval with reciprocal rank fusion improves recall but does not always improve top-rank precision. Run the sweep on your own corpus rather than importing someone else's conclusion.
+
+5.2 Tenant isolation
+Version 1 specified row-level metadata filtering. Revise to namespace-per-tenant. Query cost is often a function of namespace size, making one namespace per tenant substantially cheaper than scanning a large shared namespace with filters, and offboarding becomes a single delete operation; metadata filtering is then reserved for sub-tenant concerns such as document-level RBAC. Isolation must be enforced at the query layer using a signed JWT claim carrying the tenant ID — never by instructing the model.
+Verify ceilings before committing: namespace and index limits vary sharply by vendor and plan, and some platforms cap indexes at low double digits while permitting very large namespace counts. There is also a subtler failure mode in shared indexes — approximate-nearest-neighbour structures are built from the entire dataset rather than per tenant, so query-time filtering leaves hidden coupling between tenants.
+
+5.3 Semantic cache — demoted to conditional
+The production threshold range is roughly 0.92–0.97: below 0.90 false positives degrade quality, above 0.98 the cache rarely hits. The uncomfortable arithmetic is that exceeding a 30% hit rate generally requires operating around 0.93–0.95, where a measurable share of cache hits — reported at 3–7% — return the wrong answer. In a support workload handling 10,000 queries per day at a 30% hit rate, that is on the order of 90–200 users per day receiving confidently wrong answers the system believes are correct.
+The asymmetry matters: a false negative costs money, a false positive costs trust, so utility functions for customer-facing systems should penalise false positives far more heavily. There is also an integrity dimension — recent work formalises cache-collision response hijacking as a security risk specific to shared caches in multi-tenant infrastructure.
+Recommendation: ship exact-match caching first (zero correctness risk), then provider prompt caching, and add semantic caching only once an eval loop exists to monitor the false-positive rate. Prompt caching captures most of the available savings without the correctness exposure — current-generation models from both major providers offer roughly 90% off cached input reads.
+
+5.4 Context assembly
+Version 1 framed this as a budgeted window, implying the constraint is capacity. It is not. Model accuracy drops as context length grows even when all relevant information remains present — the phenomenon now called context rot — with reported degradations spanning 13.9–85%, which means long-horizon agents require active context management well before the nominal window is exhausted.
+The standard remedy is compaction: summarising a conversation approaching the limit and reinitiating a new window from the summary, preserving architectural decisions, unresolved bugs and implementation details while discarding redundant tool output.
+There is, however, a strong economic counter-argument that should set the default. Under modern prompt caching, keeping the full history beat every summarisation strategy tested on cost, latency and memory recall simultaneously, because summarising rewrites the cached prefix and forfeits the discount on everything it was meant to save. Compaction should therefore be a deliberate response to a named constraint. The cheap variant that does pay for itself is capping each tool output at a fixed size before it enters history, which cut cost per turn by 38% in a paired comparison.
+
+Safety finding — constraint pinning is mandatory
+Research on long-horizon agents finds that context-compaction systems optimise for task accuracy or throughput, and none measure whether governance constraints survive the rewrite or whether their deletion causes unsafe tool calls.  Safety and policy text must be exempted from the compactor and pinned. Add this to the acceptance criteria for Component 8 — it is a silent failure that no functional test will catch.
+6. Phase 3 — Agent Execution (Weeks 7–9)
+#
+Component
+Build / Why
+Owner / Target
+Change
+9
+Durable Execution Engine
+Replaces the plain job queue. Event-history replay or step journaling with checkpoints and DLQ. Test version-skew replay explicitly.
+Backend — Wk 7–8
+REVISED
+10
+Tool Execution Sandbox
+MicroVM isolation (Firecracker / Kata). Shared-kernel containers are not defensible for untrusted agent code under SOC 2 or HIPAA.
+Security — Wk 8–9
+REVISED
+11
+Webhook & Event Fan-out
+At-least-once with stable event IDs, HMAC-SHA256 + timestamp, jittered backoff, DLQ as replay buffer with operator redrive UI.
+Backend — Wk 9
+REVISED
+
+6.1 Durable execution replaces the job queue
+Queue-based architectures decompose a workflow into separate jobs, but coordinating state across those jobs becomes its own infrastructure project — the common outcome is that teams build half a durable execution engine themselves. Agent workflows are long-running by nature, must survive infrastructure failures and deployment restarts, and need exactly-once semantics for operations that cost money or have side effects.
+The available engines differ in mechanism: event-history deterministic replay, step journaling, managed state machines, and agent-graph checkpointing at super-step boundaries. One procurement criterion is routinely missed and belongs in the evaluation: long-running executions may outlive several deployments, so test whether changed workflow code can replay or resume old state safely.
+
+6.2 Sandbox isolation
+The 2026 consensus is that shared-kernel container isolation is insufficient for executing untrusted agent code, and that LLM-generated or user-supplied code should be treated as hostile because a shared kernel expands the blast radius. MicroVM isolation is the requirement for untrusted code in production, particularly where SOC 2 or HIPAA are in scope; Firecracker boots in roughly 125 ms with under 5 MiB of overhead per VM, so the performance objection is largely obsolete.
+This is not a theoretical control. Microsoft disclosed CVEs in May 2026 showing prompt injection in an agent framework achieving host-level remote code execution. Schedule a dedicated sandbox-escape review as a Phase 3 exit gate rather than deferring it to Phase 4.
+
+6.3 Webhook delivery
+Every major provider delivers at least once and none delivers exactly once, which makes idempotency the consumer's responsibility rather than something any vendor can ship. The published contract must therefore carry a stable event ID and document the deduplication expectation.
+Sign with HMAC-SHA256 over timestamp and raw body, and reject requests whose timestamp is older than a short window — five minutes is the common default — to defeat replay. Apply jitter to exponential backoff: if ten thousand deliveries fail during a brief consumer outage, unjittered retries all fire at the same interval and create a thundering herd.
+Reframe the dead-letter queue as a replay buffer rather than a graveyard, paired with tooling that lets an operator inspect a dead-lettered event, fix the handler defect and redrive it; because events are keyed on an idempotent ID, replaying one that was already processed is safe. Manual replay is reported as the single most requested webhook feature by consuming developers, so scope it into v1.
+7. Phase 4 — Safety & Governance (Weeks 9–11)
+#
+Component
+Build / Why
+Owner / Target
+Change
+12
+Guardrails Middleware
+Layered: fast injection classifier ahead of hazard classifier. Retrieval rails required — input-only classifiers miss indirect injection.
+Security — Wk 9–10
+REVISED
+13
+Prompt & Config Versioning
+Registry with immutable versions + mutable deployment labels. Rollback-time SLO under 60s. Traffic splitting is application-side.
+Platform — Wk 10
+REVISED
+14
+Eval Pipeline Backend
+Golden dataset from real production failures. Fast heuristic eval per PR (<60s); full judge run nightly. Judge calibrated against human gold set.
+AI/ML — Wk 10–11
+REVISED
+
+7.1 Guardrails
+One vendor caveat to note before selection: NVIDIA states explicitly that NeMo Guardrails is not recommended for production as-is in its current beta state. The workable production pattern is layered — a fast first-pass injection classifier, operating in tens of milliseconds, in front of a heavier hazard classifier.
+The RAG-specific gap: indirect injection arrives through content the model reads — a retrieved document, a fetched page, a tool result — and input-only classifiers do not catch it. A retrieval rail that filters or truncates context chunks before they enter the prompt is required, not optional.
+
+7.2 Prompt versioning
+Make rollback time the service-level objective. One documented migration moved a prompt out of the container image and into a registry alias, taking rollback from 14 minutes to 8 seconds; alias-based prompt caches default to a 60-second TTL in the major registries, which bounds propagation.
+Two disciplines prevent the common failures. A version is a snapshot in history and a deployment is a label declaring what production runs — conflating the two is the most frequent mistake. And a complete version captures text, model, parameters, change source, rationale and eval result; omitting any of these means rolling back blindly.
+Build-versus-buy note: the registry is buy, but the A/B routing is build. Leading registries do not route or split traffic — the rollout percentage lives in application code while the platform tracks quality, cost and latency per version. Vendor stability also warrants diligence: the prompt-management market consolidated in 2026, with one major tool acquired and placed in maintenance mode, another vendor pivoting away from the category, and at least one option remaining a two-person unfunded product.
+
+7.3 Evaluation
+Build the golden dataset from real production failures rather than synthetic examples, and calibrate the judge against a human-annotated reference set. Target a correlation above roughly 0.7 between judge scores and expert verdicts. Guard against the metric that flatters: agreement rate misleads on imbalanced datasets, because a judge that passes everything scores 90% agreement on a set where 10% of outputs should fail.
+Structure the pipeline so developers do not route around it — a fast heuristic eval on every pull request kept under sixty seconds, with the full judge run against the complete dataset nightly, and results stored over time so slow quality drift is visible as a trend rather than invisible in any single run.
+8. Phase 5 — Operate at Scale (Weeks 11–12)
+#
+Component
+Build / Why
+Owner / Target
+Change
+15
+Observability (LLM Traffic)
+OTel gen_ai.* conventions, version-pinned. Covers tokens/latency/cost — not output quality. Doubles as the compliance log store.
+Platform — Wk 11–12
+REVISED
+16
+Agent Autoscaling
+KEDA on queue depth, not CPU/memory. Warm minimum replica to absorb bursts and mask cold starts.
+Platform — Wk 12
+REVISED
+17
+Cost/Billing Reconciliation
+Automated daily reconciliation across provider invoice, meter events, and internal ledger. Discrepancies alert, not just log.
+Backend — Wk 12
+—
+
+8.1 Observability
+Adopt the OpenTelemetry GenAI conventions, but pin the version. The conventions remain pre-stable with no 1.0 release and attribute names can still change between versions, so the defensible posture is to adopt now — the shape is good and widely emitted — while pinning the convention version and expecting churn. OpenTelemetry itself graduated from the CNCF in May 2026, and the GenAI conventions standardise model attributes, token usage and latency but explicitly do not cover output evaluation, safety scoring or content quality.
+Architectural consequence: Components 14 and 15 stay separate systems. Telemetry is the data plane; evaluation is a distinct layer that scores outputs. Do not expect one vendor's dashboard to satisfy both.
+
+8.2 Autoscaling
+Default Kubernetes autoscaling uses the wrong signal for this workload. CPU and memory do not reflect queue depth or request latency for LLM serving — a pod handling fifty concurrent requests can run at 5–8% CPU while the GPU sits at 95%, so the autoscaler sees an idle pod. By the time stress is detected, a new pod needs three to ten minutes to pull images, load weights, capture CUDA graphs and warm its cache, all while the existing pod is saturated.
+Scale on queue depth via event-driven autoscaling, and keep a warm minimum replica to absorb sudden bursts rather than scaling from zero into a cold start.
+9. Risks & Open Questions
+
+The number that should frame expectations
+AI agents fail between 70% and 95% of the time in production depending on task complexity and measurement. On the WebArena benchmark the best GPT-4-based agent achieved 14.41% end-to-end task success against 78.24% for humans, and researchers found agents fail at common office tasks roughly 70% of the time.  The lesson practitioners draw is architectural rather than prompt-level: reliability comes from modular design, rigorous state management and deterministic guardrails, not from better prompts — and teams that build one agent to handle all tasks find debugging becomes exponentially harder as scope grows.  Scope the first release narrowly and decompose early.
+
+	•	Security incident base rate. A 2026 enterprise survey reported that 88% of organisations experienced a confirmed or suspected AI agent security incident in the prior year; documented cases include an RCE in widely used MCP infrastructure, a hooks-injection flaw in a coding agent, and a package that shipped fifteen clean releases before adding exfiltration code. Plan incident response before launch, not after.
+	•	Governance-driven decommissioning. Industry analysts project that a substantial share of enterprises will demote or decommission autonomous agents by 2027 because of governance gaps identified after production incidents. Attribution and audit trails are retention risk mitigation, not overhead.
+	•	Cost versus quality ownership. The recurring practitioner tension is not routing correctness but whether to optimise next for cost control or output quality; the two pull in opposite directions under load. Name an owner and a decision cadence before Phase 5.
+	•	Open: model deprecation policy. Provider model lifecycles and retirement notices will outrun some long-running workflows. Confirm how pinned model versions in the prompt registry interact with provider deprecation windows.
+	•	Open: cache scope after workspace isolation changes. Provider-side changes to prompt-cache scoping can reduce hit rates for organisations running split staging and production workspaces. Audit hit rates after any workspace restructuring.
+10. Definition of Done
+	•	All seventeen components deployed and passing their eval gate in production, with judge-to-human correlation documented.
+	•	Idempotency and auth verified end-to-end under chaos testing: forced retries, forced provider failover, and forced worker restart mid-workflow.
+	•	Workflow replay verified across a deployment boundary — old state resumed safely under new workflow code.
+	•	Cost dashboard reconciles against the provider invoice and billing ledger with zero unexplained variance for two consecutive billing cycles.
+	•	Sandbox escape review completed and signed off by Security; microVM isolation confirmed for all untrusted execution paths.
+	•	Constraint pinning verified: safety and policy text demonstrably survives a full compaction cycle.
+	•	Guardrails false-positive and false-negative rates measured against the eval dataset and accepted by Security.
+	•	Rollback rehearsed: prompt rollback under 60 seconds, measured, with the audit trail intact.
+	•	Article 50 transparency and logging-retention obligations reviewed and signed off by Legal.

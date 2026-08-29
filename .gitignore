@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Playwright
+/tests/results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# playwright-cli scratch output (snapshots, screenshots, traces) — but keep specs/, which is checked in
+/.playwright/output/
+!/.playwright/specs/
+
+# graphify's own output (cache, graph.json, embeddings) — regenerated, not source
+/.graphify/

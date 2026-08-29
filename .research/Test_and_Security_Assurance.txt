@@ -1,0 +1,127 @@
+
+TEST & SECURITY ASSURANCE
+
+Evaluation, Red-Teaming and Release Gates
+
+Closes gaps G3, G10 and G18 · Required before Phase 3
+
+Document Owner
+[Name / Team]
+Version
+1.0
+Status
+Draft — for review
+Date
+August 29, 2026
+Distribution
+Engineering, Security, QA, Product
+
+Section 2 explains why a single passing run is weak evidence of anything.
+
+
+1. Framing
+Conventional testing treats flakiness as a defect to eliminate. For agents, non-determinism is a property of the system under test and the framework must accommodate it as a first-class concern rather than suppress it. Flaky agent tests usually indicate real non-determinism, prompt sensitivity or model drift rather than broken test infrastructure.
+The practical consequence: a test that fails intermittently is signal, not noise, and the correct response is to measure the distribution rather than to retry until green.
+2. Why Single-Run Testing Misleads
+
+The pass^k collapse
+Under the τ-bench unbiased pass^k estimator, one evaluated agent fell from pass₁ = 29.6% to pass₅ = 8.0% — only 8% of tasks succeeded on all five trials. The failures were also silent: no tool error marked a violating run. Resampling is not a fix, because in deployment the agent runs once. A single passing run is therefore weak evidence that the agent complies with policy.
+
+Report pass^k, not pass@k. pass@k asks whether any of k attempts succeeded — a generous metric that flatters. pass^k asks whether all k succeeded, which is the question production actually poses. Publish both if useful, but gate on pass^k.
+3. The Four Tiers
+
+Tier
+Content
+Runtime
+Gate
+Deterministic
+Schema, regex, JSON validity, tool-call shape
+Milliseconds
+Blocking, every PR
+Component
+Retrieval, prompt units, parsers against a golden set
+Seconds
+Blocking, every PR
+Behavioural
+pass^k over repeated runs; consistency measured
+Minutes
+Blocking, nightly
+Adversarial
+OWASP categories, injection, excessive agency
+Longer
+Pre-release
+
+Order matters for cost. Deterministic checks run first so a five-millisecond assertion filters what would otherwise reach an expensive judge. Teams that start at judge-based evals pay for work a cheap check could have caught.
+CI timing discipline: keep the fast eval under 60 seconds on every pull request and run the full judge suite nightly, or developers route around it. Store results over time so a slow drift from 95% to 87% is visible as a trend rather than invisible in any single run.
+4. Golden Dataset
+	•	50–200 examples mined from real production traces, support tickets and expert-designed edge cases — not synthetic examples.
+	•	Every incident contributes a case. This is the loop that makes the suite compound in value; without it the dataset ages into irrelevance.
+	•	Every correction and override contributes a candidate. The correction affordance in the product UI is the collection mechanism, which is why it is a product requirement and not only a courtesy.
+	•	Version the dataset and record which version each score was produced against, or historical comparisons are meaningless.
+5. Judge Calibration
+An uncalibrated judge produces numbers that feel like measurement. Target a Pearson correlation above 0.7 between judge scores and domain-expert verdicts.
+
+Agreement rate is a trap on imbalanced data
+A judge that stamps every output "pass" achieves 90% agreement on a dataset where 10% of outputs should fail. That judge is useless and will report itself as 90% accurate. Report correlation against expert labels, and check the failure class specifically.
+
+	•	Re-calibrate on every model change of the judge itself — the judge is a production dependency with its own deprecation risk.
+	•	Keep a human-labelled hold-out set that the judge never sees.
+6. Red-Team Programme
+Cadence is the whole finding. Adversarial testing must be continuous and automatable, because a new model version, a changed system prompt or an added tool can reopen a previously closed vulnerability. Quarterly is the floor for a serious programme, not the design point.
+
+Standard
+Use
+OWASP Agentic Top 10 (ASI01–ASI10)
+Primary mapping for agent-layer findings
+OWASP LLM Top 10
+Model-layer findings; the enterprise procurement standard
+MITRE ATLAS
+Adversary tactics; aligns with runtime detection
+NIST AI RMF
+Governance scaffolding; ties findings to enterprise risk
+
+Map every finding to all four so results are portable into audit and sales. Documented OWASP coverage is increasingly a requirement in enterprise sales cycles.
+
+Calibrate expectations before setting a target
+Prompt injection maps to six of ten agentic categories, so treating it as one checklist item underweights it. In a March 2026 exercise run by NIST's AI safety centre with Gray Swan and the UK AI Security Institute, over 250,000 attempts from 400+ participants found at least one successful attack against all 13 target frontier models in agentic scenarios. The programme's goal is bounded blast radius and fast detection, not a clean scorecard. A red-team report with zero findings means the test was too weak.
+
+	•	Findings become runtime policy, not report entries. A surfaced jailbreak is only resolved when it is an enforced guardrail and a re-test confirms the fix.
+	•	Test the four layers, not just the model: model, system prompt, retrieval pipeline, and tools. Real damage comes from the connective tissue — tool integrations, RAG stores and agent memory.
+	•	Memory poisoning gets dedicated scenarios because it decouples injection from damage across sessions and single-session tests will not find it.
+7. Sandbox Assurance
+MicroVM isolation is required for untrusted code in production, particularly under SOC 2 or HIPAA; Firecracker boots in roughly 125ms with under 5 MiB overhead per VM, so the performance objection is largely obsolete.
+	•	Dedicated escape review as a Phase 3 exit gate, not deferred to Phase 4.
+	•	Supply-chain verification on every dependency in the sandbox image — production incidents include an RCE in widely used MCP infrastructure and a package that shipped fifteen clean releases before adding exfiltration code.
+	•	Network egress from the sandbox is deny-by-default with an allowlist, tested adversarially.
+8. Release Gates
+Four stages, each answering a different question. Skipping one ships an incident.
+
+Stage
+Question
+Exit criteria
+Shadow
+Does it behave?
+Scored against production traffic with no user effect
+Canary
+Does it behave on real traffic?
+5% for 7–14 days, all SLIs within budget
+Percentage
+Does it behave at volume?
+15% → 40% → 80%, holding at each stage
+Full
+Is it stable?
+100% with shadow retained at a small percentage for drift
+
+	•	Every shadow trace needs an evaluator subscribed on ingest. Otherwise you accumulate storage cost and learn nothing — if the scoring is not wired, do not store the shadow.
+	•	Rollback conditions are written rules on a rolling window, wired into config before traffic flips. "Looks fine on the dashboard" is not a gate.
+	•	Hash on user or session ID so a user mid-conversation does not hit different versions across turns.
+	•	Expand 5% → 15% → 40% → 80% → 100% with 7–14 days of stable data at each stage; 6–12 weeks end-to-end is typical for a moderately complex agent.
+	•	Rollback includes cache and routing-memory invalidation. A cache that outlives a rollback extends the incident.
+9. Definition of Done
+	•	Four tiers implemented with the stated gates; fast eval under 60 seconds.
+	•	Golden dataset built from production traces, versioned, with an incident-feedback loop.
+	•	Judge calibrated above 0.7 correlation against a human hold-out set.
+	•	Red-team automation running per deploy, mapped to all four standards.
+	•	Sandbox escape review signed off by Security.
+	•	Four-stage rollout wired with automated rollback rules and session-stable hashing.
+	•	pass^k reported and gated on, not pass@k.

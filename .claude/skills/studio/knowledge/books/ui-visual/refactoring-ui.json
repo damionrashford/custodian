@@ -1,0 +1,1016 @@
+{
+  "id": "refactoring-ui",
+  "title": "Refactoring UI",
+  "author": "Adam Wathan & Steve Schoger",
+  "pdf": "/Users/damionrashford/Downloads/8724ae996f4390f885086d121a70e40a.pdf",
+  "pages": [
+    {
+      "page": 1,
+      "text": ""
+    },
+    {
+      "page": 2,
+      "text": ""
+    },
+    {
+      "page": 3,
+      "text": "Contents\nStarting from Scratch 7\nStart with a feature, not a layout. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 8\nDetail comes later . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12\nDon’t design too much . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16\nChoose a personality . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20\nLimit your choices . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28\nHierarchy is Everything 35\nNot all elements are equal. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 36\nSize isn’t everything . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 38\nDon’t use grey text on colored backgrounds . . . . . . . . . . . . . . . . . . . . . 42\nEmphasize by de-emphasizing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 46\nLabels are a last resort . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 48\nSeparate visual hierarchy from document hierarchy . . . . . . . . . . . . . . . 54\nBalance weight and contrast. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 56"
+    },
+    {
+      "page": 4,
+      "text": "Semantics are secondary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 60\nLayout and Spacing 65\nStart with too much white space . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 66\nEstablish a spacing and sizing system . . . . . . . . . . . . . . . . . . . . . . . . . . . 70\nYou don’t have to fill the whole screen . . . . . . . . . . . . . . . . . . . . . . . . . . 76\nGrids are overrated . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 84\nRelative sizing doesn’t scale . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 92\nAvoid ambiguous spacing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 96\nDesigning Text 101\nEstablish a type scale. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 102\nUse good fonts . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 108\nKeep your line length in check . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 114\nBaseline, not center . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 118\nLine-height is proportional . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 122\nNot every link needs a color . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 126\nAlign with readability in mind . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 128\nUse letter-spacing effectively . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 132\nWorking with Color 137\nDitch hex for HSL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 138\nYou need more colors than you think. . . . . . . . . . . . . . . . . . . . . . . . . . . 142\nDefine your shades up front . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 148\nDon’t let lightness kill your saturation . . . . . . . . . . . . . . . . . . . . . . . . . . 152\nGreys don’t have to be grey . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 158\nAccessible doesn’t have to mean ugly. . . . . . . . . . . . . . . . . . . . . . . . . . 162\nDon’t rely on color alone . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 166"
+    },
+    {
+      "page": 5,
+      "text": "Creating Depth 171\nEmulate a light source . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 172\nUse shadows to convey elevation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 180\nShadows can have two parts . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 186\nEven flat designs can have depth . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 190\nOverlap elements to create layers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 194\nWorking with Images 199\nUse good photos . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 200\nText needs consistent contrast . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 202\nEverything has an intended size . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 208\nBeware user-uploaded content. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 214\nFinishing Touches 219\nSupercharge the defaults . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 220\nAdd color with accent borders . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 224\nDecorate your backgrounds . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 228\nDon’t overlook empty states . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 234\nUse fewer borders . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 238\nThink outside the box . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 242\nLeveling Up 249"
+    },
+    {
+      "page": 6,
+      "text": ""
+    },
+    {
+      "page": 7,
+      "text": "Starting from Scratch"
+    },
+    {
+      "page": 8,
+      "text": "Start with a feature, not a layout\nWhen you start the design for a new app idea, what do you design first? If it’s\nthe navigation bar at the top of the page, you’re making a mistake.\nThe easiest way to find yourself frustrated and stuck when working on a new\ndesign is to start by trying to “design the app.” When most people think\nabout “designing the app”, they’re thinking about the shell.\nShould it have a top nav, or a sidebar?\nShould the navigation items be on the left, or on the right?\nShould the page content be in a container, or should it be full-width?\nWhere should the logo go?\nThe thing is, an “app” is actually a collection of features. Before you’ve\ndesigned a few features, you don’t even have the information you need to\nmake a decision about how the navigation should work. No wonder it’s\nfrustrating!"
+    },
+    {
+      "page": 9,
+      "text": "Instead of starting with the shell, start with a piece of actual functionality.\nFor example, say you’re building a flight booking service. You could start\nwith a feature like “searching for a flight”.\nYour interface will need:\n• A field for the departure city\n• A field for the destination city\n• A field for the departure date\n• A field for the return date\n• A button to perform the search\nStart with that.\n9 Start with a feature, not a layout"
+    },
+    {
+      "page": 10,
+      "text": "Hell, you might not even need that other stuff anyways — it worked for\nGoogle.\nStart with a feature, not a layout 10"
+    },
+    {
+      "page": 11,
+      "text": "11 Start with a feature, not a layout"
+    },
+    {
+      "page": 12,
+      "text": "Detail comes later\nIn the earliest stages of designing a new feature, it’s important that you don’t\nget hung up making low-level decisions about things like typefaces,\nshadows, icons, etc.\nThat stuff will all matter eventually, but it doesn’t matter right now.\nIf you have trouble ignoring the details when working in a high fidelity\nenvironment like the browser or your favorite design tool, one trick Jason\nFried of Basecamp likes to use is to design on paper using a thick Sharpie.\nObsessing over little details just isn’t possible with a Sharpie, so it can be a\ngreat way to quickly explore a bunch of different layout ideas.\nHold the color\nEven when you’re ready to refine an idea in higher fidelity, resist the\ntemptation to introduce color right away."
+    },
+    {
+      "page": 13,
+      "text": "By designing in grayscale, you’re forced to use spacing, contrast, and size to\ndo all of the heavy lifting.\nIt’s a little more challenging, but you’ll end up with a clearer interface with a\nstrong hierarchy that’s easy to enhance with color later.\n13 Detail comes later"
+    },
+    {
+      "page": 14,
+      "text": "Don’t over-invest\nThe whole point of designing in low-fidelity is to be able to move fast, so you\ncan start building the real thing as soon as possible.\nSketches and wireframes are disposable — users can’t do anything with\nstatic mockups. Use them to explore your ideas, and leave them behind\nwhen you’ve made a decision.\nDetail comes later 14"
+    },
+    {
+      "page": 15,
+      "text": "15 Detail comes later"
+    },
+    {
+      "page": 16,
+      "text": "Don’t design too much\nYou don’t need to design every single feature in an app before you move on\nto implementation; in fact, it’s better if you don’t.\nFiguring out how every feature in a product should interact and how every\nedge case should look is really hard, especially in the abstract.\nHow should this screen look if the user has 2000 contacts?\nWhere should the error message go in this form?\nHow should this calendar look when there are two events scheduled at the\nsame time?"
+    },
+    {
+      "page": 17,
+      "text": "You’re setting yourself up for frustration by trying to figure this stuff out\nusing only a design tool and your imagination.\nWork in cycles\nInstead of designing everything up front, work in short cycles. Start by\ndesigning a simple version of the next feature you want to build.\nOnce you’re happy with the basic design, make it real.\nYou’ll probably run into some unexpected complexity along the way, but\nthat’s the point — it’s a lot easier to fix design problems in an interface you\ncan actually use than it is to imagine every edge case in advance.\nIterate on the working design until there are no more problems left to solve,\n17 Don’t design too much"
+    },
+    {
+      "page": 18,
+      "text": "then jump back into design mode and start working on the next feature.\nDon’t get overwhelmed working in the abstract. Build the real thing as early\nas possible so your imagination doesn’t have to do all the heavy lifting.\nBe a pessimist\nDon’t imply functionality in your designs that you aren’t ready to build.\nFor example, say you’re working on a comment system for a project\nmanagement tool. You know that one day, you’d like users to be able to\nattach files to their comments, so you include an attachments section in\nyour design.\nDon’t design too much 18"
+    },
+    {
+      "page": 19,
+      "text": "You get deep into implementation only to discover that supporting\nattachments is going to be a lot more work than you anticipated. There’s no\nway you have time to finish it right now, so the whole commenting system\nsits on the backburner while you take care of other priorities.\nThe thing is, a comment system with no attachments would still have been\nbetter than no comment system at all, but because you planned to include it\nfrom day one you’ve got nothing you can ship.\nWhen you’re designing a new feature, expect it to be hard to build.\nDesigning the smallest useful version you can ship reduces that risk\nconsiderably.\nIf part of a feature is a “nice-to-have”, design it later. Build the simple version\nfirst and you’ll always have something to fall back on.\n19 Don’t design too much"
+    },
+    {
+      "page": 20,
+      "text": "Choose a personality\nEvery design has some sort of personality. A banking site might try to\ncommunicate secure and professional, while a trendy new startup might\nhave a design that feels fun and playful.\nOn the surface, giving a design a particular personality might sound abstract\nand handwavy, but a lot of it is determined by a few solid, concrete factors."
+    },
+    {
+      "page": 21,
+      "text": "Font choice\nTypography plays a huge part in determining how a design feels.\nIf you want an elegant or classic look, you might want to incorporate a serif\ntypeface in your design:\nFor a playful look, you could use a rounded sans serif:\n21 Choose a personality"
+    },
+    {
+      "page": 22,
+      "text": "If you’re going for a plainer look, or want to rely on other elements to provide\nthe personality, a neutral sans serif works great:\nColor\nThere’s a lot of science out there on the psychology of color, but in practice,\nyou really just need to pay attention to how different colors feel to you.\nBlue is safe and familiar — nobody ever complains about blue:\nChoose a personality 22"
+    },
+    {
+      "page": 23,
+      "text": "Gold might say “expensive” and “sophisticated”:\nPink is a bit more fun, and not so serious:\nWhile trying to choose colors using only psychology isn’t super practical — a\nlot of it is just about what looks good to you — it can be helpful to think\nabout when you’re trying to understand why you think a color is the right fit.\n23 Choose a personality"
+    },
+    {
+      "page": 24,
+      "text": "Border radius\nAs small of a detail as it sounds, if and how much you round the corners in\nyour design can have a big impact on the overall feel.\nA small border radius is pretty neutral, and doesn’t really communicate\nmuch of a personality on its own:\nA large border radius starts to feel more playful:\nChoose a personality 24"
+    },
+    {
+      "page": 25,
+      "text": "…while no border radius at all feels a lot more serious or formal:\nWhatever you choose, it’s important to stay consistent. Mixing square\ncorners with rounded corners in the same interface almost always looks\nworse than sticking with one or the other.\nLanguage\nWhile not a visual design technique per se, the words you use in an interface\nhave a massive influence on the overall personality.\nUsing a less personal tone might feel more official or professional:\n25 Choose a personality"
+    },
+    {
+      "page": 26,
+      "text": "…while using friendlier, more casual language makes a site feel, well,\nfriendlier:\nWords are everywhere in a user interface, and choosing the right ones is just\nas (if not more) important than choosing the right color or typeface.\nDeciding what you actually want\nA lot of the time you’ll probably just have a gut feeling for the personality\nyou’re going for. But if you don’t, a great way to simplify the decision is to\ntake a look at other sites used by the people who want to reach.\nIf they are mostly pretty “serious business”, maybe that’s how your site\nshould look too. If they are more playful with a bit of humor, maybe that’s a\nbetter direction to take.\nJust try not to borrow too much from direct competitors, you don’t want to\nlook like a second-rate version of something else.\nChoose a personality 26"
+    },
+    {
+      "page": 27,
+      "text": "27 Choose a personality"
+    },
+    {
+      "page": 28,
+      "text": "Limit your choices\nHaving millions of colors and thousands of fonts to choose from might\nsound nice in theory, but in practice it’s usually a paralyzing curse.\nAnd it’s not just fonts and colors, either — you can easily waste time\nagonizing over almost any minor design decision.\nShould this text be 12px or 13px?\nShould this box shadow have a 10% opacity or a 15% opacity?\nShould this avatar be 24px or 25px tall?\nShould I use a medium font weight for this button or semibold?\nShould this headline have a bottom margin of 18px or 20px?\nWhen you’re designing without constraints, decision-making is torture\nbecause there’s always going to be more than one right choice.\nFor example, these buttons all have different background colors, but it’s\nalmost impossible to tell the difference between them by just looking at\nthem.\nHow are you supposed to make a confident decision if none of these would\nreally be bad choices?"
+    },
+    {
+      "page": 29,
+      "text": "Define systems in advance\nInstead of hand-picking values from a limitless pool any time you need to\nmake a decision, start with a smaller set of options.\nDon’t reach for the color picker every time you need to pick a new shade of\nblue — choose from a set of 8-10 shades picked out ahead of time.\nSimilarly, don’t tweak a font size one pixel at a time until it looks perfect.\nDefine a restrictive type scale in advance and use that to make any future\nfont size decisions.\n29 Limit your choices"
+    },
+    {
+      "page": 30,
+      "text": "When you build systems like this, you only have to do the hard work of\npicking the initial values once instead of every time you’re designing a new\npiece of UI. It’s a bit more work up front, but it’s worth it — it’ll save you a ton\nof decision fatigue down the road.\nDesigning by process of elimination\nWhen you’re designing using a constrained set of values, decision-making is\na lot easier because there are a lot fewer “right” choices.\nFor example, say you’re trying to choose a size for an icon. You’ve defined a\nsizing scale in advance where your only small-to-medium sized options are\n12px, 16px, 24px, and 32px.\nTo pick the best option, start by taking a guess at which one will look best,\nmaybe 16px. Then try the values on either side (12px and 24px) for\ncomparison.\nChances are, two of those options will seem like obviously bad choices. If it’s\nthe options on the outside, you’re done — the middle option is the only good\nchoice.\nLimit your choices 30"
+    },
+    {
+      "page": 31,
+      "text": "If one of the outer options looks best, do another comparison using that\noption as the “middle” value and make sure there’s not a better choice.\nThis approach works for anything where you’ve defined a system. When\nyou’re limited to a set of options that all look noticeably different, picking the\nbest one is a piece of cake.\nSystematize everything\nThe more systems you have in place, the faster you’ll be able to work and the\nless you’ll second guess your own decisions.\nYou’ll want systems for things like:\n• Font size\n• Font weight\n• Line height\n• Color\n• Margin\n• Padding\n• Width\n• Height\n• Box shadows\n31 Limit your choices"
+    },
+    {
+      "page": 32,
+      "text": "• Border radius\n• Border width\n• Opacity\n…and anything else you run into where it feels like you’re laboring over a low-\nlevel design decision.\nYou don’t have to define all of this stuff ahead of time, just make sure you’re\napproaching design with a system-focused mindset. Look for opportunities\nto introduce new systems as you make new decisions, and try to avoid\nhaving to make the same minor decision twice.\nDesigning with systems is going to be a recurring theme throughout this\nbook, and in later chapters we’ll talk about building a lot of these systems in\nfiner detail.\nLimit your choices 32"
+    },
+    {
+      "page": 33,
+      "text": ""
+    },
+    {
+      "page": 34,
+      "text": ""
+    },
+    {
+      "page": 35,
+      "text": "Hierarchy is Everything"
+    },
+    {
+      "page": 36,
+      "text": "Not all elements are equal\nWhen you think of visual design as “styling things so they look good”, it’s\neasy to see why it might feel hard to achieve without innate artistic talent.\nBut it turns out that one of the biggest factors in making something “look\ngood” has nothing to do with superficial styling at all.\nVisual hierarchy refers to how important the elements in an interface appear\nin relation to one another, and it’s the most effective tool you have for\nmaking something feel “designed”.\nWhen everything in an interface is competing for attention, it feels noisy and\nchaotic, like one big wall of content where it’s not clear what actually\nmatters:"
+    },
+    {
+      "page": 37,
+      "text": "When you deliberately de-emphasize secondary and tertiary information,\nand make an effort to highlight the elements that are most important, the\nresult is immediately more pleasing, even though the color scheme, font\nchoice, and layout haven’t changed:\nSo how do you actually make this happen? In the following chapters, we’ll\ncover a number of specific strategies you can use to introduce hierarchy into\nyour designs.\n37 Not all elements are equal"
+    },
+    {
+      "page": 38,
+      "text": "Size isn’t everything\nRelying too much on font size to control your hierarchy is a mistake — it\noften leads to primary content that’s too large, and secondary content that’s\ntoo small.\nInstead of leaving all of the heavy lifting to font size alone, try using font\nweight or color to do the same job.\nFor example, making a primary element bolder lets you use a more"
+    },
+    {
+      "page": 39,
+      "text": "reasonable font size, and often does a better job at communicating its\nimportance anyways:\nSimilarly, using a softer color for supporting text instead of a tiny font size\nmakes it clear that the text is secondary while sacrificing less on readability:\n39 Size isn’t everything"
+    },
+    {
+      "page": 40,
+      "text": "Try and stick to two or three colors:\n• A dark color for primary content (like the headline of an article)\n• A grey for secondary content (like the date an article was published)\n• A lighter grey for tertiary content (maybe the copyright notice in a\nfooter)\nSimilarly, two font weights are usually enough for UI work:\n• A normal font weight (400 or 500 depending on the font) for most text\n• A heavier font weight (600 or 700) for text you want to emphasize\nStay away from font weights under 400 for UI work — they can work for\nlarge headings but are too hard to read at smaller sizes. If you’re considering\nSize isn’t everything 40"
+    },
+    {
+      "page": 41,
+      "text": "using a lighter weight to de-emphasize some text, use a lighter color or\nsmaller font size instead.\n41 Size isn’t everything"
+    },
+    {
+      "page": 42,
+      "text": "Don’t use grey text on colored\nbackgrounds\nMaking text a lighter grey is a great way to de-emphasize it on white\nbackgrounds, but it doesn’t look so great on colored backgrounds.\nThat’s because the effect we’re actually seeing with grey on white is reduced\ncontrast."
+    },
+    {
+      "page": 43,
+      "text": "Making the text closer to the background color is what actually helps create\nhierarchy, not making it light grey.\nYou might think that the easiest way to achieve this is to use white text and\nreduce the opacity:\nWhile this does reduce the contrast, it often results in text that looks dull,\nwashed out, and sometimes even disabled.\n43 Don’t use grey text on colored backgrounds"
+    },
+    {
+      "page": 44,
+      "text": "Even worse, using this approach on top of an image or pattern means the\nbackground will show through the text:\nA better approach is to hand-pick a new color, based on the background\ncolor.\nChoose a color with the same hue, and adjust the saturation and lightness\nuntil it looks right to you:\nHand-picking a color this way makes it easy to reduce the contrast without\nthe text looking faded.\nDon’t use grey text on colored backgrounds 44"
+    },
+    {
+      "page": 45,
+      "text": "45 Don’t use grey text on colored backgrounds"
+    },
+    {
+      "page": 46,
+      "text": "Emphasize by de-emphasizing\nSometimes you’ll run into a situation where the main element of an interface\nisn’t standing out enough, but there’s nothing you can add to it to give it the\nemphasis it needs.\nFor example, despite trying to make this active nav item “pop” by giving it a\ndifferent color, it still doesn’t really stand out compared to the inactive items:\nWhen you run into situations like this, instead of trying to further emphasize\nthe element you want to draw attention to, figure out how you can de-\nemphasize the elements that are competing with it.\nIn this example, you could do that by giving the inactive items a softer color\nso they sit more in the background:\nYou can apply this thinking to bigger pieces of an interface as well. For"
+    },
+    {
+      "page": 47,
+      "text": "example, if a sidebar feels like it’s competing with your main content area,\ndon’t give it a background color — let the content sit directly on the page\nbackground instead:\n47 Emphasize by de-emphasizing"
+    },
+    {
+      "page": 48,
+      "text": "Labels are a last resort\nPut down the accessibility pitchfork — this isn’t about forms.\nWhen presenting data to the user (especially data from the database), it’s\neasy to fall into the trap of displaying it using a naive label: value format.\nThe problem with this approach is that it makes it difficult to present the\ndata with any sort of hierarchy; every piece of data is given equal emphasis.\nYou might not need a label at all\nIn a lot of situations, you can tell what a piece of data is just by looking at the\nformat.\nFor example, janedoe@example.com is an email address, (555) 765-4321 is a\nphone number and $19.99 is a price.\nWhen the format isn’t enough, the context often is. When you see the phrase\n“Customer Support” listed below someone’s name in an employee directory,"
+    },
+    {
+      "page": 49,
+      "text": "you don’t need a label to make the connection that that is the department\nthe person works in.\nWhen you’re able to present data without labels, it’s much easier to\nemphasize important or identifying information, making the interface easier\nto use while at the same time making it feel more “designed”.\nCombine labels and values\nEven when a piece of data isn’t completely clear without a label, you can\noften avoid adding a label by adding clarifying text to the value.\nFor example, if you need to display inventory in an e-commerce interface,\ninstead of “In stock: 12”, try something like “12 left in stock”.\n49 Labels are a last resort"
+    },
+    {
+      "page": 50,
+      "text": "If you’re building a real estate app, something like “Bedrooms: 3” could\nsimply become “3 bedrooms”.\nWhen you’re able to combine labels and values into a single unit, it’s much\neasier to give each piece of data meaningful styling without sacrificing on\nclarity.\nLabels are secondary\nSometimes you really do need a label; for example when you’re displaying\nmultiple pieces of similar data and they need to be easily scannable, like on\na dashboard.\nLabels are a last resort 50"
+    },
+    {
+      "page": 51,
+      "text": "In these situations, add the label, but treat it as supporting content. The data\nitself is what matters, the label is just there for clarity.\nDe-emphasize the label by making it smaller, reducing the contrast, using a\nlighter font weight, or some combination of all three.\nWhen to emphasize a label\nIf you’re designing an interface where you know the user will be looking for\nthe label, it might make sense to the emphasize the label instead of the data.\nThis is often the case on information-dense pages, like the technical\nspecifications of a product.\nIf a user is trying to find out the dimensions of a smartphone, they’re\nprobably scanning the page for words like “depth”, not “7.6mm”.\n51 Labels are a last resort"
+    },
+    {
+      "page": 52,
+      "text": "Don’t de-emphasize the data too much in these scenarios; it’s still important\ninformation. Simply using a darker color for the label and a slightly lighter\ncolor for the value is often enough.\nLabels are a last resort 52"
+    },
+    {
+      "page": 53,
+      "text": "53 Labels are a last resort"
+    },
+    {
+      "page": 54,
+      "text": "Separate visual hierarchy from\ndocument hierarchy\nIt’s important to use semantic markup when building for the web, which\nmeans you’ll often be using heading tags like h1, h2, or h3 if you decide to add\na title to part of an interface.\nBy default, web browsers assign progressively smaller font sizes to heading\nelements, so an h1 is pretty large, and an h6 is pretty small. This can be\nhelpful for document-style content like articles or documentation, but it can\nencourage some bad decisions in application UIs.\nUsing an h1 tag to add a title like Manage Account to a page makes perfect\nsense semantically, but because we’re trained to believe that h1 elements\nshould be big, it’s easy to fall into the trap of making those titles bigger than\nthey really need to be."
+    },
+    {
+      "page": 55,
+      "text": "A lot of the time, section titles act more like labels than headings — they are\nsupportive content, they shouldn’t be stealing all the attention.\nUsually the content in that section should be the focus, not the title. That\nmeans that a lot of the time, titles should actually be pretty small:\nTaken to the extreme, you might even include section titles in your markup\nfor accessibility reasons but completely hide them visually because the\ncontent speaks for itself.\nDon’t let the element you’re using influence how you choose to style it —\npick elements for semantic purposes and style them however you need to\ncreate the best visual hierarchy.\n55 Separate visual hierarchy from document hierarchy"
+    },
+    {
+      "page": 56,
+      "text": "Balance weight and contrast\nThe reason bold text feels emphasized compared to regular text is that bold\ntext covers more surface area — in the same amount of space, more pixels\nare used for text than for the background.\nSo why is this interesting? Well it turns out that the relationship between\nsurface area and hierarchy has implications on other elements in a UI as well.\nUsing contrast to compensate for weight\nOne of the places understanding this relationship becomes important is\nwhen working with icons.\nJust like bold text, icons (especially solid ones) are generally pretty “heavy”\nand cover a lot of surface area. As a result, when you put an icon next to\nsome text, the icon tends to feel emphasized."
+    },
+    {
+      "page": 57,
+      "text": "Unlike text, there’s no way to change the “weight” of an icon, so to create\nbalance it needs to be de-emphasized in some other way.\nA simple and effective way to do this is to lower the contrast of the icon by\ngiving it a softer color.\n57 Balance weight and contrast"
+    },
+    {
+      "page": 58,
+      "text": "This works anywhere you need to balance elements that have different\nweights. Reducing the contrast works like a counterbalance, making heavier\nelements feel lighter even though the weight hasn’t changed.\nUsing weight to compensate for contrast\nJust like how reducing contrast helps to de-emphasize heavy elements,\nincreasing weight is a great way to add a bit of emphasis to low contrast\nelements.\nThis is useful when things like thin 1px borders are too subtle using a soft\ncolor, but darkening the color makes the design feel harsh and noisy.\nBalance weight and contrast 58"
+    },
+    {
+      "page": 59,
+      "text": "Making the border a bit heavier by increasing the width helps to emphasize\nit without losing the softer look:\n59 Balance weight and contrast"
+    },
+    {
+      "page": 60,
+      "text": "Semantics are secondary\nWhen there are multiple actions a user can take on a page, it’s easy to fall\ninto the trap of designing those actions based purely on semantics.\nSemantics are an important part of button design, but that doesn’t mean you\ncan forget about hierarchy.\nEvery action on a page sits somewhere in a pyramid of importance. Most\npages only have one true primary action, a couple of less important\nsecondary actions, and a few seldom used tertiary actions.\nWhen designing these actions, it’s important to communicate their place in\nthe hierarchy.\n• Primary actions should be obvious. Solid, high contrast background\ncolors work great here."
+    },
+    {
+      "page": 61,
+      "text": "• Secondary actions should be clear but not prominent. Outline styles or\nlower contrast background colors are great options.\n• Tertiary actions should be discoverable but unobtrusive. Styling these\nactions like links is usually the best approach.\nWhen you take a hierarchy-first approach to designing the actions on page,\nthe result is a much less busy UI that communicates more clearly:\n61 Semantics are secondary"
+    },
+    {
+      "page": 62,
+      "text": "Destructive actions\nBeing destructive or high severity doesn’t automatically mean a button\nshould be big, red, and bold.\nIf a destructive action isn’t the primary action on the page, it might be better\nto give it a secondary or tertiary button treatment.\nCombine this with a confirmation step where the destructive action actually\nis the primary action, and apply the big, red, bold styling there.\nSemantics are secondary 62"
+    },
+    {
+      "page": 63,
+      "text": ""
+    },
+    {
+      "page": 64,
+      "text": ""
+    },
+    {
+      "page": 65,
+      "text": "Layout and Spacing"
+    },
+    {
+      "page": 66,
+      "text": "Start with too much white space\nOne of the easiest ways to clean up a design is to simply give every element\na little more room to breathe.\nSounds simple enough, right? So how come we don’t usually do it?"
+    },
+    {
+      "page": 67,
+      "text": "White space should be removed, not added\nWhen designing for the web, white space is almost always added to a design\n— if something looks little too cramped, you add a bit of margin or padding\nuntil things look better.\nThe problem with this approach is that elements are only given the minimum\namount of breathing room necessary to not look actively bad. To make\nsomething actually look great, you usually need more white space.\n67 Start with too much white space"
+    },
+    {
+      "page": 68,
+      "text": "A better approach is to start by giving something way too much space, then\nremove it until it you’re happy with the result.\nStart with too much white space 68"
+    },
+    {
+      "page": 69,
+      "text": "You might think you’d end up with too much white space this way, but in\npractice, what might seem like “a little too much” when focused on an\nindividual element ends up being closer to “just enough” in the context of a\ncomplete UI.\nDense UIs have their place\nWhile interfaces with a lot of breathing room almost always feel cleaner and\nsimpler, there are certainly situations where it makes sense for a design to be\nmuch more compact.\nFor example, if you’re designing some sort of dashboard where a lot of\ninformation needs to be visible at once, packing that information together so\nit all fits on one screen might be worth making the design feel more busy.\nThe important thing is to make this a deliberate decision instead of just\nbeing the default. It’s a lot more obvious when you need to remove white\nspace than it is when you need to add it.\n69 Start with too much white space"
+    },
+    {
+      "page": 70,
+      "text": "Establish a spacing and sizing\nsystem\nYou shouldn’t be nitpicking between 120px and 125px when trying to decide\non the perfect size for an element in your UI.\nPainfully trialing arbitrary values one pixel at a time will drastically slow you\ndown at best, and create ugly, inconsistent designs at worst.\nInstead, limit yourself to a constrained set of values, defined in advance."
+    },
+    {
+      "page": 71,
+      "text": "A linear scale won’t work\nCreating a spacing and sizing system isn’t quite as simple as something like\n“make sure everything is a multiple of 4px” — a naive approach like that\ndoesn’t make it any easier to choose between 120px and 125px.\nFor a system to be truly useful, it needs to take into consideration the relative\ndifference between adjacent values.\nAt the small end of the scale (like the size of an icon, or the padding inside a\nbutton), a couple of pixels can make a big difference. Jumping from 12px to\n16px is an increase of 33%!\nBut at the large end (the width of a card, or the vertical spacing in a landing\npage hero), a couple of pixels is basically imperceivable. Even increasing the\nwidth of a card from 500px to 520px is only a difference of 4%, which is\neight times less significant than the jump from 12px to 16px.\n71 Establish a spacing and sizing system"
+    },
+    {
+      "page": 72,
+      "text": "If you want your system to make sizing decisions easy, make sure no two\nvalues in your scale are ever closer than about 25%.\nDefining the system\nJust like you don’t want to toil over arbitrary values when sizing an element\nor fine-tuning the space between elements, you don’t want to build your\nspacing and sizing scale from arbitrary values either.\nA simple approach is to start with a sensible base value, then build a scale\nusing factors and multiples of that value.\n16px is a great number to start with because it divides nicely, and also\nhappens to be the default font size in every major web browser.\nEstablish a spacing and sizing system 72"
+    },
+    {
+      "page": 73,
+      "text": "The values at the small end of the scale should start pretty packed together,\nand get progressively more spaced apart as you get further up the scale.\nHere’s an example of a fairly practical scale built using this approach:\nUsing the system\nOnce you’ve defined your spacing and sizing system, you’ll find that you’re\nable to design a hell of a lot faster, especially if you design in the browser\n(sticking to a system is easier when you’re typing in numbers than when\nyou’re dragging with the mouse.)\n73 Establish a spacing and sizing system"
+    },
+    {
+      "page": 74,
+      "text": "Need to add some space under an element? Grab a value from your scale\nand try it out. Not quite enough? The next value is probably perfect.\nWhile the workflow improvements are probably the biggest benefit, you’ll\nalso start to notice a subtle consistency in your designs that wasn’t there\nbefore, and things will look just a little bit cleaner.\nA spacing and sizing system will help you create better designs, with less\neffort, in less time. Design advice doesn’t get much more valuable than that.\nEstablish a spacing and sizing system 74"
+    },
+    {
+      "page": 75,
+      "text": "75 Establish a spacing and sizing system"
+    },
+    {
+      "page": 76,
+      "text": "You don’t have to fill the whole\nscreen\nRemember when 960px was the de facto layout width for desktop-size\ndesigns? These days you’d be hard-pressed to find a phone with a resolution\nthat low.\nSo it’s no surprise that when most of us open our design tool of choice on\nour high resolution displays, we give ourselves at least 1200-1400px of space\nto fill. But just because you have the space, doesn’t mean you need to use it.\nIf you only need 600px, use 600px. Spreading things out or making things\nunnecessarily wide just makes an interface harder to interpret, while a little\nextra space around the edges never hurt anyone."
+    },
+    {
+      "page": 77,
+      "text": "This is just as applicable to individual sections of an interface, too. You don’t\nneed to make everything full-width just because something else (like your\nnavigation) is full-width.\n77 You don’t have to fill the whole screen"
+    },
+    {
+      "page": 78,
+      "text": "Give each element just the space it needs — don’t make something worse\njust to make it match something else.\nShrink the canvas\nIf you’re having a hard time designing a small interface on a large canvas,\nshrink the canvas! A lot of the time it’s easier to design something small\nwhen the constraints are real.\nIf you’re building a responsive web application, try starting with a ~400px\ncanvas and designing the mobile layout first.\nYou don’t have to fill the whole screen 78"
+    },
+    {
+      "page": 79,
+      "text": "Once you have a mobile design you’re happy with, bring it over to a larger\nsize screen and adjust anything that felt like a compromise on smaller\nscreens. Odds are you won’t have to change as much as you think.\nThinking in columns\nIf you’re designing something that works best at a narrower width but feels\nunbalanced in the context of an otherwise wide UI, see if you can split it into\ncolumns instead of just making it wider.\n79 You don’t have to fill the whole screen"
+    },
+    {
+      "page": 80,
+      "text": "For example, take this narrow form layout:\nYou don’t have to fill the whole screen 80"
+    },
+    {
+      "page": 81,
+      "text": "If you wanted to make better use of the available space without making the\nform harder to use, you could break the supporting text out into a separate\ncolumn:\nThis makes the design feel more balanced and consistent without\ncompromising on the optimal width for the form itself.\n81 You don’t have to fill the whole screen"
+    },
+    {
+      "page": 82,
+      "text": "Don’t force it\nJust like you shouldn’t worry about filling the whole screen, you shouldn’t try\nto cram everything into a small area unnecessarily either.\nIf you need a lot of space, go for it! Just don’t feel obligated to fill it if you\ndon’t have to.\nYou don’t have to fill the whole screen 82"
+    },
+    {
+      "page": 83,
+      "text": "83 You don’t have to fill the whole screen"
+    },
+    {
+      "page": 84,
+      "text": "Grids are overrated\nUsing a system like a 12-column grid is a great way to simplify layout\ndecisions, and can bring a satisfying sense of order to your designs.\nBut even though grids can be useful, outsourcing all of your layout decisions\nto a grid can do more harm than good.\nNot all elements should be fluid\nFundamentally, a grid system is just about giving elements fluid, percentage-\nbased widths, where you’re choosing from a constrained set of percentages.\nFor example, in a 12-column grid each column is 8.33% wide. As long as an"
+    },
+    {
+      "page": 85,
+      "text": "element’s width is some multiple of 8.33% (including any gutters), that\nelement is “on the grid”.\nThe problem with treating grid systems like a religion is that there are a lot of\nsituations where it makes much more sense for an element to have a fixed\nwidth instead of a relative width.\nFor example, consider a traditional sidebar layout. Using a 12-column grid\nsystem, you might give the sidebar a width of three columns (25%) and the\nmain content area a width of nine columns (75%).\n85 Grids are overrated"
+    },
+    {
+      "page": 86,
+      "text": "This might seem fine at first, but think about what happens when you resize\nthe screen.\nIf you make the screen wider the sidebar gets wider too, taking up space\nthat could’ve been put to better use by the main content area.\nSimilarly, if you make the screen narrower, the sidebar can shrink below its\nminimum reasonable width, causing awkward text wrapping or truncation.\nIn this situation, it makes much more sense to give the sidebar a fixed width\nthat’s optimized for its contents. The main content area can then flex to fill\nthe remaining space, using its own internal grid to lay out its children.\nGrids are overrated 86"
+    },
+    {
+      "page": 87,
+      "text": "This applies within components, too — don’t use percentages to size\nsomething unless you actually want it to scale.\n87 Grids are overrated"
+    },
+    {
+      "page": 88,
+      "text": "Don’t shrink an element until you need to\nSay you’re designing a login card. Using the full screen width would look\nugly, so you give it a width of 6 columns (50%) with a 3-column offset on\neach side.\nOn medium-sized screens you realize the card is a little narrow even though\nyou have the space to make it bigger, so at that screen size you switch it to a\nwidth of 8 columns, with two empty columns on each side.\nGrids are overrated 88"
+    },
+    {
+      "page": 89,
+      "text": "The silly thing about this approach is that because column widths are fluid,\nthere’s a range in screen sizes where the login card is wider on medium\nscreens than it is on large screens:\nIf you know that say 500px is the optimal size for the card, why should it\never get smaller than that if you have the space for it?\nInstead of sizing elements like this based on a grid, give them a max-width\nso they don’t get too large, and only force them to shrink when the screen\ngets smaller than that max-width.\n89 Grids are overrated"
+    },
+    {
+      "page": 90,
+      "text": "Don’t be a slave to the grid — give your components the space they need\nand don’t make any compromises until it’s actually necessary.\nGrids are overrated 90"
+    },
+    {
+      "page": 91,
+      "text": "91 Grids are overrated"
+    },
+    {
+      "page": 92,
+      "text": "Relative sizing doesn’t scale\nIt’s tempting to believe that every part of an interface should be sized\nrelative to one another, and that if element A needs to shrink by 25% on\nsmaller screens, that element B should shrink by 25%, too.\nFor example, say you’re designing an article at a large screen size. If your\nbody copy is 18px and your headlines are 45px, it’s tempting to encode that\nrelationship by defining your headline size as 2.5em; 2.5 times the current\nfont size.\nThere’s nothing inherently wrong with using relative units like em, but don’t\nbe fooled into believing that relationships defined this way can remain static\n— 2.5em might be the perfect headline size on desktop but there’s no\nguarantee that it’ll be the right size on smaller screens."
+    },
+    {
+      "page": 93,
+      "text": "Say you reduce the size of your body copy to 14px on small screens to keep\nthe line length in check. Keeping your headlines at 2.5em means a rendered\nfont size of 35px — way too big for a small screen!\nA better headline size for small screens might be somewhere between 20px\nand 24px:\n93 Relative sizing doesn’t scale"
+    },
+    {
+      "page": 94,
+      "text": "That’s only 1.5-1.7x the size of the 14px body copy — a totally different\nrelationship than what made sense on desktop screens. That means there\nisn’t any real relationship at all, and that there’s no real benefit in trying to\ndefine the headline size relative to the body copy size.\nAs a general rule, elements that are large on large screens need to shrink\nfaster than elements that are already fairly small — the difference between\nsmall elements and large elements should be less extreme at small screen\nsizes.\nRelationships within elements\nThe idea that things should scale independently doesn’t just apply to sizing\nelements at different screen sizes; it applies to the properties of a single\ncomponent, too.\nSay you’ve designed a button. It’s got a 16px font size, 16px of horizontal\npadding, and 12px of vertical padding:\nMuch like the previous example, it’s tempting to think that the padding\nshould be defined in terms of the current font size. That way if you want a\nlarger or smaller button, you only need to change the font size and the\npadding will update automatically, right?\nRelative sizing doesn’t scale 94"
+    },
+    {
+      "page": 95,
+      "text": "This works — the buttons do scale up or down and preserve the same\nproportions. But is that what we really want?\nCompare that to these buttons, where the padding gets more generous at\nlarger sizes and disproportionately tighter at smaller sizes:\nHere the large button actually feels like a larger button, and the small\nbuttons actually feel like smaller buttons, not like we simply adjusted the\nzoom.\nLet go of the idea that everything needs to scale proportionately — giving\nyourself the freedom to fine-tune things independently makes it a hell of a\nlot easier to design for multiple contexts.\n95 Relative sizing doesn’t scale"
+    },
+    {
+      "page": 96,
+      "text": "Avoid ambiguous spacing\nWhen groups of elements are explicitly separated — usually by a border or\nbackground color — it’s obvious which elements belong to which group.\nBut when there isn’t a visible separator, it’s not always so obvious.\nSay you’re designing a form with stacked labels and inputs. If the margin\nbelow the label is the same as the margin below the input, the elements in\nthe form group won’t feel obviously “connected”."
+    },
+    {
+      "page": 97,
+      "text": "At best the user has to work harder to interpret the UI, and at worst it means\naccidentally putting the wrong data in the wrong field.\nThe fix is to increase the space between each form group so it’s clear which\nlabel belongs to which input:\n97 Avoid ambiguous spacing"
+    },
+    {
+      "page": 98,
+      "text": "This same problem shows up in article design when there’s not enough\nspace above section headings:\n…and in bulleted lists, when the space between bullets matches the line-\nheight of a single bullet:\nAvoid ambiguous spacing 98"
+    },
+    {
+      "page": 99,
+      "text": "It’s not just vertical spacing that you have to worry about either; it’s easy to\nmake this mistake with components that are laid out horizontally, too:\nWhenever you’re relying on spacing to connect a group of elements, always\nmake sure there’s more space around the group than there is within it —\ninterfaces that are hard to understand always look worse.\n99 Avoid ambiguous spacing"
+    },
+    {
+      "page": 100,
+      "text": ""
+    },
+    {
+      "page": 101,
+      "text": "Designing Text"
+    },
+    {
+      "page": 102,
+      "text": "Establish a type scale\nMost interfaces use way too many font sizes. Unless a team has a rigid\ndesign system in place, it’s not uncommon to find that every pixel value from\n10px to 24px has been used in the UI somewhere.\nChoosing font sizes without a system is a bad idea for two reasons:\n1. It leads to annoying inconsistencies in your designs.\n2. It slows down your workflow.\nSo how do you define a type system?"
+    },
+    {
+      "page": 103,
+      "text": "Choosing a scale\nJust like with spacing and sizing, a linear scale won’t work. Smaller jumps\nbetween font sizes are useful at the bottom of the scale, but you don’t want\nto waste time deciding between 46px and 48px for a large headline.\nModular scales\nOne approach is to calculate your type scale using a ratio, like 4:5 (a “major\nthird”), 2:3 (a “perfect fifth”), or perhaps the “golden ratio”, 1:1.618. This is\noften called a “modular scale”.\nYou start with a sensible base value (16px is common since it’s the default\nfont size for most browsers), apply your ratio to get the next value, then\napply your ratio to that value to get the next value, and so on and so forth:\n103 Establish a type scale"
+    },
+    {
+      "page": 104,
+      "text": "The mathematical purity of this approach is alluring, but in practice, it’s not\nperfect for a couple of reasons.\n1. You end up with fractional values.\nUsing a 16px base and 4:5 ratio, your scale will end up with lots of sizes\nthat don’t land right on the pixel, like 31.25px, 39.063px, 48.828px, etc.\nBrowsers all handle subpixel rounding a little bit differently, so it’s best to\navoid fractional sizes if you can avoid it.\nIf you do want to use this approach, make sure you round the values\nyourself when defining the scale to avoid off-by-one pixel issues across\nbrowsers.\n2. You usually need more sizes.\nThis approach can work well if you’re defining a type scale for long form\ncontent like an article, but for interface design, the jumps you get using\na modular scale are often a bit too limiting.\nWith a (rounded) 3:4 type scale, you get sizes like 12px, 16px, 21px, and\n28px. While this might not seem too limiting on the surface, in practice\nyou’re going to wish you had a size between 12px and 16px, and another\nbetween 16px and 21px.\nYou could use a tighter ratio like 8:9, but at this point you’re just trying to\npick a scale that happens to match the sizes you already know you want.\nHand-crafted scales\nFor interface design, a more practical approach is to simply pick values by\nhand. You don’t have to worry about subpixel rounding errors this way, and\nyou have total control over which sizes exist instead of outsourcing that job\nto some mathematical formula.\nEstablish a type scale 104"
+    },
+    {
+      "page": 105,
+      "text": "Here’s an example of a scale that works well for most projects and aligns\nnicely with the spacing and sizing scale recommended in “Establishing a\nspacing and sizing system”:\nIt’s constrained just enough to speed up your decision making, but isn’t so\nlimited as to make you feel like you’re missing a useful size.\n105 Establish a type scale"
+    },
+    {
+      "page": 106,
+      "text": "Avoid em units\nWhen you’re building a type scale, don’t use em units to define your sizes.\nBecause em units are relative to the current font size, the computed font size\nof nested elements is often not actually a value in your scale.\nFor example, say you’ve defined an em-based type scale like this:\nEstablish a type scale 106"
+    },
+    {
+      "page": 107,
+      "text": "If you give an element a font size of 1.25em (20px by default), inside of that\nelement 1em is now equal to 20px. That means that if you give one of the\nnested elements a font size of .875em, the actual computed font size is\n17.5px, not a value from your type scale!\nStick to px or rem units — it’s the only way to guarantee you’re actually\nsticking to the system.\n107 Establish a type scale"
+    },
+    {
+      "page": 108,
+      "text": "Use good fonts\nWith thousands of different typefaces out there to choose from, separating\nthe good from the bad can be an intimidating task.\nDeveloping an eye for all of the details that make a good typeface can take\nyears. You probably don’t have years, so here are a few tricks you can use to\nstart picking out high quality typefaces right away.\nPlay it safe\nFor UI design, your safest bet is a fairly neutral sans-serif — think something\nlike Helvetica.\nIf you really don’t trust your own taste, one great option is to rely on the\nsystem font stack:\n-apple-system, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue;"
+    },
+    {
+      "page": 109,
+      "text": "It might not be the most ambitious choice, but at least your users will\nalready be used to seeing it.\nIgnore typefaces with less than five weights\nThis isn’t always true, but as a general rule, typefaces that come in a lot of\ndifferent weights tend to be crafted with more care and attention to detail\nthan typefaces with fewer weights.\nMany font directories (like Google Fonts) will let you filter by “number of\nstyles”, which is a combination of the available weights as well as the italic\nvariations of those weights.\nA great way to limit the number of options you have to choose from is to\ncrank that up to 10+ (to account for italics):\n109 Use good fonts"
+    },
+    {
+      "page": 110,
+      "text": "On Google Fonts specifically, that cuts out 85% of the available options,\nleaving you with less than 50 sans-serifs to choose from.\nOptimize for legibility\nWhen someone designs a font family, they are usually designing it for a\nspecific purpose. Fonts meant for headlines usually have tighter letter-\nspacing and shorter lowercase letters (a shorter x-height), while fonts meant\nfor smaller sizes have wider letter-spacing and taller lowercase letters.\nKeep this in mind and avoid using condensed typefaces with short x-heights\nfor your main UI text.\nTrust the wisdom of the crowd\nIf a font is popular, it’s probably a good font. Most font directories will let you\nsort by popularity, so this can be a great way to limit your choices.\nThis is especially useful when you’re trying to pick out something other than\na neutral UI typeface. Picking a nice serif with some personality for example\ncan be tough.\nUse good fonts 110"
+    },
+    {
+      "page": 111,
+      "text": "Leveraging the collective decision-making power of thousands of other\npeople can make it a lot easier.\nSteal from people who care\nInspect some of your favorite sites and see what typefaces they are using.\n111 Use good fonts"
+    },
+    {
+      "page": 112,
+      "text": "There are a lot of great design teams out there full of people with really\nstrong opinions about typography, and they’ll often choose great fonts that\nyou might have never found using some of the safer approaches outlined\nabove.\nDeveloping your intuition\nOnce you start paying closer attention to the typography on well-designed\nsites, it’s not long before you feel pretty comfortable labeling a typeface as\nawesome or terrible.\nYou’re gonna be a type snob soon enough, but the advice outlined above will\nhelp get you by in the meantime.\nUse good fonts 112"
+    },
+    {
+      "page": 113,
+      "text": "113 Use good fonts"
+    },
+    {
+      "page": 114,
+      "text": "Keep your line length in check\nWhen styling paragraphs, it’s easy to make the mistake of fitting the text to\nyour layout instead of trying to create the best reading experience.\nUsually this means lines that are too long, making text harder to read.\nFor the best reading experience, make your paragraphs wide enough to fit\nbetween 45 and 75 characters per line. The easiest way to do this on the\nweb is using em units, which are relative to the current font size. A width of\n20-35em will get you in the right ballpark."
+    },
+    {
+      "page": 115,
+      "text": "Going a bit wider than 75 characters per line can sometimes work too, but\nbe aware that you’re entering risky territory — stick to the 45-75 range if you\nwant to play it safe.\nDealing with wider content\nIf you’re mixing paragraph text with images or other large components, you\nshould still limit the paragraph width even if the overall content area needs\nto be wider to accommodate the other elements.\n115 Keep your line length in check"
+    },
+    {
+      "page": 116,
+      "text": "It might seem counterintuitive at first to use different widths in the same\ncontent area, but the result almost always looks more polished.\nKeep your line length in check 116"
+    },
+    {
+      "page": 117,
+      "text": "117 Keep your line length in check"
+    },
+    {
+      "page": 118,
+      "text": "Baseline, not center\nThere are a lot of situations where it makes sense to use multiple font sizes\nto create hierarchy on a single line.\nFor example, maybe you’re designing a card that has a large title in the top\nleft and a smaller list of actions in the top right.\nWhen you’re mixing font sizes like this, your instinct might be to vertically\ncenter the text for balance:"
+    },
+    {
+      "page": 119,
+      "text": "When there’s a decent amount of space between the different font sizes it\noften won’t look bad enough to catch your attention, but when the text is\nclose together the awkward alignment becomes more obvious:\nA better approach is to align mixed font sizes by their baseline, which is the\nimaginary line that letters rest on:\n119 Baseline, not center"
+    },
+    {
+      "page": 120,
+      "text": "When you align mixed font sizes by their baseline, you’re taking advantage of\nan alignment reference that your eyes already perceive.\nThe result is a simpler, cleaner look than what you get when you center two\npieces of text and offset their baselines.\nBaseline, not center 120"
+    },
+    {
+      "page": 121,
+      "text": "121 Baseline, not center"
+    },
+    {
+      "page": 122,
+      "text": "Line-height is proportional\nYou might have heard the advice that a line-height of about 1.5 is a good\nstarting point from a readability perspective.\nWhile that’s not necessarily untrue, choosing the right line-height for your\ntext is a bit more complicated than just using the same value across the\nboard in all situations.\nAccounting for line length\nThe reason we add space between lines of text is to make it easy for the\nreader to find the next line when the text wraps. Have you ever accidentally\nread the same line of text twice, or accidentally skipped a line? The line-\nheight was probably too short."
+    },
+    {
+      "page": 123,
+      "text": "When lines of text are spaced too tightly, it’s easy to finish reading a line of\ntext at the right edge of a page then jump your eyes all the way back to the\nleft edge only to be unsure which line is next.\nThis problem is magnified when lines of text are long. The further your eyes\nhave to jump horizontally to read the next line, the easier it is to lose your\nplace.\nThat means that your line-height and paragraph width should be\nproportional — narrow content can use a shorter line-height like 1.5, but wide\ncontent might need a line-height as tall as 2.\n123 Line-height is proportional"
+    },
+    {
+      "page": 124,
+      "text": "Accounting for font size\nLine length isn’t the only factor in choosing the right line-height — font size\nhas a big impact as well.\nWhen text is small, extra line spacing is important because it makes it a lot\neasier for your eyes to find the next line when the text wraps.\nBut as text gets larger, your eyes don’t need as much help. This means that\nfor large headline text you might not need any extra line spacing, and a line-\nheight of 1 is perfectly fine.\nLine-height is proportional 124"
+    },
+    {
+      "page": 125,
+      "text": "Line-height and font size are inversely proportional — use a taller line-height\nfor small text and a shorter line-height for large text.\n125 Line-height is proportional"
+    },
+    {
+      "page": 126,
+      "text": "Not every link needs a color\nWhen you’re including a link in a block of otherwise non-link text, it’s\nimportant to make sure that the link stands out and looks clickable.\nBut when you’re designing an interface where almost everything is a link,\nusing a treatment designed to make links “pop” in paragraph text can be\nreally overbearing."
+    },
+    {
+      "page": 127,
+      "text": "Instead, emphasize most links in a more subtle way, like by just using a\nheavier font weight or darker color.\nSome links might not even need to be emphasized by default at all. If you’ve\ngot links in your interface that are really ancillary and not part of the main\npath a user takes through the application, consider adding an underline or\nchanging the color only on hover.\nThey’ll still be discoverable to any users who think to try, but won’t compete\nfor attention with more important actions on the page.\n127 Not every link needs a color"
+    },
+    {
+      "page": 128,
+      "text": "Align with readability in mind\nIn general, text should be aligned to match the direction of the language it’s\nwritten in. For English (and most other languages), that means that the vast\nmajority of text should be left-aligned.\nOther alignment options do have their place though, you just need to use\nthem effectively.\nDon’t center long form text\nCenter-alignment can look great for headlines or short, independent blocks\nof text."
+    },
+    {
+      "page": 129,
+      "text": "But if something is longer than two or three lines, it will almost always look\nbetter left-aligned.\nIf you’ve got a few blocks of text you want to center but one of them is a bit\ntoo long, the easiest fix is to rewrite the content and make it shorter:\nNot only will it fix the alignment issue, it will make your design feel more\nconsistent, too.\n129 Align with readability in mind"
+    },
+    {
+      "page": 130,
+      "text": "Right-align numbers\nIf you’re designing a table that includes numbers, right-align them.\nWhen the decimal in a list of numbers is always in the same place, they’re a\nlot easier to compare at a glance.\nHyphenate justified text\nJustified text looks great in print and can work well on the web when you’re\ngoing for a more formal look, but without special care, it can create a lot of\nawkward gaps between words:\nAlign with readability in mind 130"
+    },
+    {
+      "page": 131,
+      "text": "To avoid this, whenever you justify text, you should also enable hyphenation:\nJustified text works best in situations where you’re trying to mimic a print\nlook, perhaps for an online magazine or newspaper. Even then, left aligned\ntext works great too, so it’s really just a matter of preference.\n131 Align with readability in mind"
+    },
+    {
+      "page": 132,
+      "text": "Use letter-spacing effectively\nWhen styling text, a lot of effort is put into getting the weight, color, and line-\nheight just right, but it’s easy to forget that letter-spacing can be tweaked,\ntoo.\nAs a general rule, you should trust the typeface designer and leave letter-\nspacing alone. That said, there are a couple of common situations where\nadjusting it can improve your designs."
+    },
+    {
+      "page": 133,
+      "text": "Tightening headlines\nWhen someone designs a font family, they design it with a purpose in mind.\nA family like Open Sans is designed to be highly legible even at small sizes,\nso the built-in letter-spacing is a lot wider than a family like Oswald which is\ndesigned for headlines.\nIf you want to use a family with wider letter-spacing for headlines or titles, it\ncan often make sense to decrease the letter-spacing to mimic the\ncondensed look of a purpose-built headline family:\nAvoid trying to make this work the other way around though — headline\nfonts rarely work well at small sizes even if you increase the letter spacing.\n133 Use letter-spacing effectively"
+    },
+    {
+      "page": 134,
+      "text": "Improving all-caps legibility\nThe letter-spacing in most font families is optimized for normal “sentence\ncase” text — a capital letter followed by mostly lowercase letters.\nLowercase letters have a lot of variety visually. Letters like n, v, and e fit\nentirely within a typeface’s x-height, other letters like y, g, and p have\ndescenders that poke out below the baseline, and letters like b, f, and t have\nascenders that extend above.\nAll-caps text on the other hand isn’t so diverse. Since every letter is the same\nheight, using the default letter-spacing often leads to text that is harder to\nread because there are fewer distinguishing characteristics between letters.\nFor that reason, it often makes sense to increase the letter-spacing of all-\ncaps text to improve readability:\nUse letter-spacing effectively 134"
+    },
+    {
+      "page": 135,
+      "text": ""
+    },
+    {
+      "page": 136,
+      "text": ""
+    },
+    {
+      "page": 137,
+      "text": "Working with Color"
+    },
+    {
+      "page": 138,
+      "text": "Ditch hex for HSL\nHex and RGB are the most common formats for representing color on the\nweb, but they’re not the most useful.\nUsing hex or RGB, colors that have a lot in common visually look nothing\nalike in code.\nHSL fixes this by representing colors using attributes the human-eye\nintuitively perceives: hue, saturation, and lightness.\nHue is a color’s position on the color wheel — it’s the attribute of a color that\nlets us identify two colors as “blue” even if they aren’t identical."
+    },
+    {
+      "page": 139,
+      "text": "Hue is measured in degrees, where 0° is red, 120° is green, and 240° is blue.\nSaturation is how colorful or vivid a color looks. 0% saturation is grey (no\ncolor), and 100% saturation is vibrant and intense.\nWithout saturation, hue is irrelevant — rotating the hue when saturation is\n0% doesn’t actually change the color at all.\n139 Ditch hex for HSL"
+    },
+    {
+      "page": 140,
+      "text": "Lightness is just what it sounds like — it measures how close a color is to\nblack or to white. 0% lightness is pure black, 100% lightness is pure white,\nand 50% lightness is a pure color at the given hue.\nHSL vs. HSB\nDon’t confuse HSL for HSB — lightness in HSL is not the same than\nbrightness in HSB.\nIn HSB, 0% brightness is always black, but 100% brightness is only white\nwhen the saturation is 0%. When saturation is 100%, 100% brightness in HSB\nis the same as 100% saturation and 50% lightness in HSL.\nDitch hex for HSL 140"
+    },
+    {
+      "page": 141,
+      "text": "HSB is more common than HSL in design software, but browsers only\nunderstand HSL, so if you’re designing for the web, HSL should be your\nweapon of choice.\n141 Ditch hex for HSL"
+    },
+    {
+      "page": 142,
+      "text": "You need more colors than you\nthink\nEver used one of those color palette generators where you pick a starting\ncolor, tweak some options, and are then bestowed the five perfect colors\nyou should use to build your website?\nThis calculated approach to picking the perfect color scheme is extremely\nseductive, but it’s not very useful unless you want your site to look like this:"
+    },
+    {
+      "page": 143,
+      "text": "What you actually need\nYou can’t build anything with five hex codes. To build something real, you\nneed a much more comprehensive set of colors to choose from.\nYou can break a good color palette down into three categories.\nGreys\nText, backgrounds, panels, form controls — almost everything in an interface\nis grey.\n143 You need more colors than you think"
+    },
+    {
+      "page": 144,
+      "text": "You’ll need more greys than you think, too — three or four shades might\nsound like plenty but it won’t be long before you wish you had something a\nlittle darker than shade #2 but a little lighter than shade #3.\nIn practice, you want 8-10 shades to choose from (more on this in “Define\nyour shades up front”). Not so many that you waste time deciding between\nshade #77 and shade #78, but enough to make sure you don’t have to\ncompromise too much.\nTrue black tends to look pretty unnatural, so start with a really dark grey and\nwork your way up to white in steady increments.\nYou need more colors than you think 144"
+    },
+    {
+      "page": 145,
+      "text": "Primary color(s)\nMost sites need one, maybe two colors that are used for primary actions,\nactive navigation elements, etc. These are the colors that determine the\noverall look of a site — the ones that make you think of Facebook as “blue”.\nJust like with greys, you need a variety (5-10) of lighter and darker shades to\nchoose from.\nUltra-light shades can be useful as a tinted background for things like alerts,\nwhile darker shades work great for text.\nAccent colors\nOn top of primary colors, every site needs a few accent colors for\ncommunicating different things to the user.\nFor example, you might want to use an eye-grabbing color like yellow, pink,\nor teal to highlight a new feature:\n145 You need more colors than you think"
+    },
+    {
+      "page": 146,
+      "text": "You might also need colors to emphasize different semantic states, like red\nfor confirming a destructive action:\n…yellow for a warning message:\n…or green to highlight a positive trend:\nYou need more colors than you think 146"
+    },
+    {
+      "page": 147,
+      "text": "You’ll want multiple shades for these colors too, even though they should be\nused pretty sparingly throughout the UI.\nIf you’re building something where you need to use color to distinguish or\ncategorize similar elements (like lines on graphs, events in a calendar, or\ntags on a project), you might need even more accent colors.\nAll in, it’s not uncommon to need as many as ten different colors with 5-10\nshades each for a complex UI.\n147 You need more colors than you think"
+    },
+    {
+      "page": 148,
+      "text": "Define your shades up front\nWhen you need to create a lighter or darker variation of a color in your\npalette, don’t get clever using CSS preprocessor functions like “lighten” or\n“darken” to create shades on the fly. That’s how you end up with 35 slightly\ndifferent blues that all look the same.\nInstead, define a fixed set of shades up front that you can choose from as\nyou work.\nSo how do you put together a palette like this anyways?\nChoose the base color first\nStart by picking a base color for the scale you want to create — the color in\nthe middle that your lighter and darker shades are based on."
+    },
+    {
+      "page": 149,
+      "text": "There’s no real scientific way to do this, but for primary and accent colors, a\ngood rule of thumb is to pick a shade that would work well as a button\nbackground.\nIt’s important to note that there are no real rules here like “start at 50%\nlightness” or anything — every color behaves a bit differently, so you’ll have\nto rely on your eyes for this one.\nFinding the edges\nNext, pick your darkest shade and your lightest shade. There’s no real\nscience to this either, but it helps to think about where they will be used and\nchoose them using that context.\nThe darkest shade of a color is usually reserved for text, while the lightest\nshade might be used to tint the background of an element.\nA simple alert component is a good example that combines both of these\nuse cases, so it can be a great place to pick these colors.\n149 Define your shades up front"
+    },
+    {
+      "page": 150,
+      "text": "Start with a color that matches the hue of your base color, and adjust the\nsaturation and lightness until you’re satisfied.\nFilling in the gaps\nOnce you’ve got your base, darkest, and lightest shades, you just need to fill\nin the gaps in between them.\nFor most projects, you’ll need at least 5 shades per color, and probably\ncloser to 10 if you don’t want to feel too constrained.\nNine is a great number because it’s easy to divide and makes filling in the\ngaps a little more straightforward. Let’s call our darkest shade 900, our base\nshade 500, and our lightest shade 100.\nStart by picking shades 700 and 300, the ones right in the middle of the\ngaps. You want these shades to feel like the perfect compromise between\nthe shades on either side.\nThis creates four more holes in the scale (800, 600, 400, and 200), which\nyou can fill using the same approach.\nDefine your shades up front 150"
+    },
+    {
+      "page": 151,
+      "text": "You should end up with a pretty balanced set of colors that provide just\nenough options to accommodate your design ideas without feeling limiting.\nWhat about greys?\nWith greys the base color isn’t as important, but otherwise the process is the\nsame. Start at the edges and fill in the gaps until you have what you need.\nPick your darkest grey by choosing a color for the darkest text in your\nproject, and your lightest grey by choosing something that works well for a\nsubtle off-white background.\nIt’s not a science\nAs tempting as it is, you can’t rely purely on math to craft the perfect color\npalette.\nA systematic approach like the one described above is great to get you\nstarted, but don’t be afraid to make little tweaks if you need to.\nOnce you actually start using your colors in your designs, it’s almost\ninevitable that you’ll want to tweak the saturation on a shade, or make a\ncouple of shades lighter or darker. Trust your eyes, not the numbers.\nJust try to avoid adding new shades too often if you can avoid it. If you’re not\ndiligent about limiting your palette, you might as well have no color system\nat all.\n151 Define your shades up front"
+    },
+    {
+      "page": 152,
+      "text": "Don’t let lightness kill your\nsaturation\nIn the HSL color space, as a color gets closer to 0% or 100% lightness, the\nimpact of saturation is weakened — the same saturation value at 50%\nlightness looks more colorful than it does at 90% lightness.\nThat means that if you don’t want the lighter and darker shades of a given\ncolor to look washed out, you need to increase the saturation as the\nlightness gets further away from 50%."
+    },
+    {
+      "page": 153,
+      "text": "It’s subtle but little details like this add up, especially when a color is being\napplied to a large section of a UI.\nBut what if your base color is already heavily saturated? How do you increase\nthe saturation if it’s already at 100%?\nUse perceived brightness to your advantage\nWhich of these two colors do you think is lighter?\nThe yellow, right? Well it turns out both colors actually have the exact same\n“lightness” in terms of HSL:\nSo why do we see the yellow as lighter? Well it turns out that every hue has\nan inherent perceived brightness due to how the human eye perceives color.\nYou can calculate the perceived brightness of a color by plugging its RGB\ncomponents into this formula:\n153 Don’t let lightness kill your saturation"
+    },
+    {
+      "page": 154,
+      "text": "Taking samples of different hues with 100% saturation and 50% lightness, we\ncan get a good sense of the perceived brightness of different colors around\nthe color wheel:\nAs expected, yellow has a higher perceived brightness than blue. But what’s\ninteresting here is that perceived brightness doesn’t simply change linearly\nfrom the darkest hue to the lightest hue — instead, there are three separate\nlocal minimums (red, green, and blue) and three local maximums (yellow,\ncyan, and magenta).\nChanging brightness by rotating hue\nOn the surface, this is certainly an interesting thing to understand about\ncolor. But things get really interesting when you realize how you can use this\nknowledge in your designs.\nDon’t let lightness kill your saturation 154"
+    },
+    {
+      "page": 155,
+      "text": "Normally when you want to change how light a color looks, you adjust the\nlightness component:\nWhile this does work to lighten or darken a color, you often lose some of the\ncolor’s intensity — the color also looks closer to white or to black, not just\nlighter or darker.\nSince different hues have a different perceived brightness, another way you\ncan change the brightness of a color is by rotating its hue.\nTo make a color lighter, rotate the hue towards the nearest bright hue — 60°,\n180°, or 300°.\n155 Don’t let lightness kill your saturation"
+    },
+    {
+      "page": 156,
+      "text": "To make a color darker, rotate the hue towards the nearest dark hue — 0°,\n120°, or 240°.\nThis can be really useful when trying to create a palette for a light color like\nyellow. By gradually rotating the hue towards more of an orange as you\ndecrease the lightness, the darker shades will feel warm and rich instead of\ndull and brown:\nYou can of course combine these approaches too, getting some of the\nbrightness by adjusting the hue and some from adjusting the lightness.\nDon’t let lightness kill your saturation 156"
+    },
+    {
+      "page": 157,
+      "text": "While this is a great way to change a color’s brightness without affecting its\nintensity, it works best in small doses. Don’t rotate the hue more than 20-30°\nor it will look like a totally different color instead of just lighter or darker.\n157 Don’t let lightness kill your saturation"
+    },
+    {
+      "page": 158,
+      "text": "Greys don’t have to be grey\nBy definition, true grey has a saturation of 0% — it doesn’t have any actual\ncolor in it at all.\nBut in practice, a lot of the colors that we think of as grey are actually\nsaturated quite heavily:\nThis saturation is what makes some greys feel cool and other greys feel\nwarm."
+    },
+    {
+      "page": 159,
+      "text": "Color temperature\nIf you’ve ever purchased light bulbs before, you’ve had to make the decision\nbetween “warm white” bulbs that give off a yellow-ish light, and “cool white”\nbulbs that give off a blue-ish light.\nSaturating greys in a user interface works in a similar same way.\nIf you want your greys to feel cool, saturate them with a bit of blue:\nTo give your greys a warmer feel, saturate them with a bit of yellow or\norange:\n159 Greys don’t have to be grey"
+    },
+    {
+      "page": 160,
+      "text": "To maintain a consistent temperature, don’t forget to increase the saturation\nfor the lighter and darker shades. If you don’t, those shades will look a bit\nwashed out compared to the greys that are closer to 50% lightness.\nHow much you want to saturate your greys is completely up to you — add\njust a little if you only want to tip the temperature slightly, or crank it up if\nyou want the interface to lean strongly in one direction or the other.\nGreys don’t have to be grey 160"
+    },
+    {
+      "page": 161,
+      "text": "161 Greys don’t have to be grey"
+    },
+    {
+      "page": 162,
+      "text": "Accessible doesn’t have to mean\nugly\nTo make sure your designs are accessible, the Web Content Accessibility\nGuidelines (WCAG) recommend that normal text (under ~18px) has a contrast\nratio of at least 4.5:1, and that larger text has a contrast ratio of at least 3:1.\nFor typical dark-text-on-a-light-background situations, meeting this\nrecommendation is pretty easy, but it gets a lot trickier when you start\nworking with color."
+    },
+    {
+      "page": 163,
+      "text": "Flipping the contrast\nWhen using white text on a colored background, you’d be surprised how\ndark the color often needs to be to meet that 4.5:1 contrast ratio.\nThis can create hierarchy issues when those elements aren’t supposed to be\nthe focus of the page — dark colored backgrounds will really grab the user’s\nattention.\n163 Accessible doesn’t have to mean ugly"
+    },
+    {
+      "page": 164,
+      "text": "You can solve this problem by flipping the contrast. Instead of using light\ntext on a dark colored background, use dark colored text on a light colored\nbackground:\nThe color is still there to help support the text, but it’s way less in-your-face\nand doesn’t interfere as much with other actions on the page.\nRotating the hue\nEven harder than white text on a colored background is colored text on a\ncolored background. You’ll run into this situation if you’re ever trying to pick\na color for some secondary text inside a dark-colored panel.\nIf you start by taking the background color and simply adjusting the\nlightness and saturation, you’ll find that it’s hard to meet the recommended\ncontrast ratio without getting very close to pure white.\nAccessible doesn’t have to mean ugly 164"
+    },
+    {
+      "page": 165,
+      "text": "You don’t want the primary text and the secondary text to look the same, so\nwhat else can you do?\nWell since some colors are brighter than others, one way to increase the\ncontrast without getting closer to white is to rotate the hue towards a\nbrighter color, like cyan, magenta, or yellow.\nThis can make it a lot easier to make the text accessible while still keeping it\ncolorful.\n165 Accessible doesn’t have to mean ugly"
+    },
+    {
+      "page": 166,
+      "text": "Don’t rely on color alone\nColor can be a fantastic way to enhance information and make it easier to\nunderstand, but be careful not to rely on it, or users with color blindness will\nhave a hard time interpreting your UI.\nTake these metric cards for example. With this design, someone who is red-\ngreen colorblind can’t easily tell if a metric has gotten better or worse:\nAn easy fix for this is to also communicate that information in some other\nway, like by adding icons to indicate if the change is positive or negative."
+    },
+    {
+      "page": 167,
+      "text": "What about something like a graph, where each trend line has a different\ncolor?\nIn situations like this, try relying on contrast instead of using completely\ndifferent colors. It’s much easier for someone who’s colorblind to tell the\n167 Don’t rely on color alone"
+    },
+    {
+      "page": 168,
+      "text": "difference between light and dark than it is for them to tell the difference\nbetween two distinct colors.\nAlways use color to support something that your design is already saying;\nnever use it as the only means of communication.\nDon’t rely on color alone 168"
+    },
+    {
+      "page": 169,
+      "text": ""
+    },
+    {
+      "page": 170,
+      "text": ""
+    },
+    {
+      "page": 171,
+      "text": "Creating Depth"
+    },
+    {
+      "page": 172,
+      "text": "Emulate a light source\nHave you ever noticed how some elements in an interface feel like they’re\nraised off of the page, while others feel like they are inset into the\nbackground?\nCreating this effect might look complicated at first, but it actually only\nrequires you to understand one fundamental rule."
+    },
+    {
+      "page": 173,
+      "text": "Light comes from above\nTake a look at the panelling on this door:\nEven though you’re just looking at a flat image, it’s still pretty obvious that\nthe panels on the door are raised. Why is that?\nNotice how the top edge of the panel is lighter? That’s because it’s angled\ntowards the sky and receives more light. Similarly, the bottom edge is darker\nbecause it’s angled away from the sky, receiving less light.\nThe only way those edges could possibly be oriented that way is if the panel\nitself is raised, so that’s how our brains perceive it.\n173 Emulate a light source"
+    },
+    {
+      "page": 174,
+      "text": "Now take a look at the panelling on this cabinet:\nIn this case it’s clear that the panels are inset because there’s a shadow at\nthe top indicating that the lip above is blocking the light, and the bottom\nedge is lighter, indicating that it’s angled upward.\nTo create this same sense of depth in your designs, all you need to do is\nmimic the way light affects things in the real world.\nEmulate a light source 174"
+    },
+    {
+      "page": 175,
+      "text": "Simulating light in a user interface\nIf you want an element to appear raised or inset, first figure out what profile\nyou want that element to have, then mimic how a light source would interact\nwith that shape.\nRaised elements\nFor example, say you had a button and you wanted it to feel raised off of the\npage, with perfectly flat edges on the top and bottom:\nBecause the top and bottom edges are both flat, it would be impossible to\nsee both of them at the same time. People generally look slightly downward\ntowards their screens, so for the most natural look, reveal a little bit of the\ntop edge and hide the bottom edge.\nSince the top edge is facing upward, make it slightly lighter than the face of\n175 Emulate a light source"
+    },
+    {
+      "page": 176,
+      "text": "the button, usually using a top border or an inset box shadow with a slight\nvertical offset:\nChoose the lighter color by hand instead of using a semi-transparent white\nfor best results — simply overlaying white can suck the saturation out of the\nunderlying color.\nNext, you need to account for the fact that a raised element will block some\nof the light from reaching the area below the element.\nDo this by adding a small dark box shadow with a slight vertical offset (you\nonly want the shadow to appear below the element):\nDon’t get carried away with the blur radius, a couple of pixels is plenty. These\nEmulate a light source 176"
+    },
+    {
+      "page": 177,
+      "text": "sorts of shadows should have pretty sharp edges — take a look at the\nshadow cast by the bottom of a wall outlet or window frame for a real-world\nexample.\nInset elements\nSay you’re designing a “well” component that should feel like it’s recessed\ninto the page.\nLooking slightly downward, only the bottom lip would be visible. Since it’s\nfacing towards the sky, give that edge a slightly lighter color using a bottom\nborder or inset shadow with a negative vertical offset:\n177 Emulate a light source"
+    },
+    {
+      "page": 178,
+      "text": "The area above the well should block some of the light from reaching the\nvery top of the well, so add a small dark inset box shadow with a slight\npositive vertical offset to make sure it doesn’t poke through at the bottom:\nThis same treatment works for any element that may need to appear inset,\nfor example text inputs and checkboxes:\nEmulate a light source 178"
+    },
+    {
+      "page": 179,
+      "text": "Don’t get carried away\nOnce you understand how to simulate light in an interface, it can be\ntempting to tinker away for hours, tweaking and tweaking to see how closely\nyou can mimic the real world.\nWhile this can be a fun exercise, in practice it can lead to interfaces that are\nbusy and unclear. Borrowing some visual cues from the real world is a great\nway to add a bit of depth, but there’s no need to try and make things look\nphoto-realistic.\n179 Emulate a light source"
+    },
+    {
+      "page": 180,
+      "text": "Use shadows to convey elevation\nShadows can be more than just a flashy effect — used thoughtfully, they let\nyou position elements on a virtual z-axis to create a meaningful sense of\ndepth.\nSmall shadows with a tight blur radius make an element feel only slightly\nraised off of the background, while larger shadows with a higher blur radius\nmake an element feel much closer to the user:\nThe closer something feels to the user, the more it will attract their focus."
+    },
+    {
+      "page": 181,
+      "text": "You might use a smaller shadow for something like a button, where you want\nthe user to notice it but don’t want it to dominate the page:\nMedium shadows are useful for things like dropdowns; elements that need\nto sit a bit further above the rest of the UI:\n181 Use shadows to convey elevation"
+    },
+    {
+      "page": 182,
+      "text": "Large shadows are great for modal dialogs, where you really want to capture\nthe user’s attention:\nEstablishing an elevation system\nJust like with color, typography, spacing, and sizing, defining a fixed set of\nshadows will speed up your workflow and help maintain consistency in your\ndesigns.\nYou don’t need a ton of different shadows — five options is usually plenty.\nUse shadows to convey elevation 182"
+    },
+    {
+      "page": 183,
+      "text": "Start by defining your smallest shadow and your largest shadow, then fill in\nthe middle with shadows that increase in size pretty linearly:\nCombining shadows with interaction\nShadows aren’t only useful for positioning elements on the z-axis statically;\nthey’re a great way to provide visual cues to the user as they interact with\nelements, too.\nFor example, say you had a list of items where the user could click and drag\neach item to sort them. Adding a shadow to an item when a user clicks it\nmakes it feel like it pops forward above the other items in the list, and makes\nit clear to the user that they can drag it:\n183 Use shadows to convey elevation"
+    },
+    {
+      "page": 184,
+      "text": "Similarly, you can make a button feel like it’s being pressed into the page\nwhen a user clicks it by switching to a smaller shadow, or perhaps removing\nthe shadow altogether:\nUsing shadows in a meaningful way like this is a great way to hack the\nprocess of choosing what sort of shadow an element should have. Don’t\nthink about the shadow itself, think about where you want the element to sit\non the z-axis and assign it a shadow accordingly.\nUse shadows to convey elevation 184"
+    },
+    {
+      "page": 185,
+      "text": "185 Use shadows to convey elevation"
+    },
+    {
+      "page": 186,
+      "text": "Shadows can have two parts\nEver inspected a really nice shadow on a site and noticed they were actually\nusing two shadows?\nThere’s a method to this madness, and it’s actually pretty simple and makes a\nlot of sense.\nWhen you see someone combining two shadows, they’re not just\nexperimenting randomly until things look nice, they’re using each shadow to\ndo a specific job.\nThe first shadow is larger and softer, with a considerable vertical offset and\nlarge blur radius. It simulates the shadow cast behind an object by a direct\nlight source."
+    },
+    {
+      "page": 187,
+      "text": "The second shadow is tighter and darker, with less of a vertical offset and a\nsmaller blur radius. It simulates the shadowed area underneath an object\nwhere even ambient light has a hard time reaching.\nUsing two shadows like this gives you a lot more control than you’d get with\na single shadow — you can keep the larger shadow nice and subtle while still\n187 Shadows can have two parts"
+    },
+    {
+      "page": 188,
+      "text": "making the shadow closer the element’s edges nice and defined.\nAccounting for elevation\nAs an object gets further away from a surface, the small, dark shadow\ncreated by a lack of ambient light slowly disappears (go ahead, try it out with\nsomething on your desk).\nShadows can have two parts 188"
+    },
+    {
+      "page": 189,
+      "text": "So if you’re going to use this two-shadow technique in your own projects,\nmake sure you make that shadow more subtle for shadows that represent a\nhigher elevation.\nIt should be quite distinct for your lowest elevation, and almost (or\ncompletely) invisible at your highest elevation.\n189 Shadows can have two parts"
+    },
+    {
+      "page": 190,
+      "text": "Even flat designs can have depth\nWhen most people talk about “flat design”, they mean designing without\nshadows, gradients, or any other effects that try to mimic how light interacts\nwith things in the real-world.\nBut the most effective flat designs still convey depth, they just do it in a\ndifferent way."
+    },
+    {
+      "page": 191,
+      "text": "Creating depth with color\nIn general (especially with shades of the same color), lighter objects feel\ncloser to us and darker objects feel further away.\nMake an element lighter than the background color to make it feel like it’s\nraised off of the page, or darker than the background color if you want it to\nfeel inset like a well:\nThis is just as applicable to non-flat designs, too — color is just another tool\nin your toolbelt for conveying distance.\n191 Even flat designs can have depth"
+    },
+    {
+      "page": 192,
+      "text": "Using solid shadows\nAnother way to communicate depth in a flat design is to use short, vertically\noffset shadows with no blur radius at all.\nIt’s a great way to make a card or button stand off the page a little bit without\nsacrificing that flat aesthetic.\nEven flat designs can have depth 192"
+    },
+    {
+      "page": 193,
+      "text": "193 Even flat designs can have depth"
+    },
+    {
+      "page": 194,
+      "text": "Overlap elements to create layers\nOne of the most effective ways to create depth is to overlap different\nelements to make it feel like a design has multiple layers.\nFor example, instead of containing a card entirely within another element,\noffset it so it crosses the transition between two different backgrounds:"
+    },
+    {
+      "page": 195,
+      "text": "You could also make an element taller than its parent, so it overlaps on both\nsides:\nOverlapping elements can add depth to smaller components too, for\nexample the controls on this carousel:\nOverlapping images\nThis technique can work great with images as well, but without special\n195 Overlap elements to create layers"
+    },
+    {
+      "page": 196,
+      "text": "consideration it’s easy for overlapping images to clash.\nA simple trick for avoiding this is to give the images an “invisible border” —\none that matches the background color — so there’s always a bit of a gap\nbetween images:\nYou’ll still create the appearance of layers but with none of the ugly clashing.\nOverlap elements to create layers 196"
+    },
+    {
+      "page": 197,
+      "text": ""
+    },
+    {
+      "page": 198,
+      "text": ""
+    },
+    {
+      "page": 199,
+      "text": "Working with Images"
+    },
+    {
+      "page": 200,
+      "text": "Use good photos\nBad photos will ruin a design, even if everything else about it looks great.\nIf your design needs photography and you’re not a talented photographer,\nyou’ve got two options:\n1. Hire a professional photographer.\nIf you need very specific photos for your project, entrust a professional.\nTaking great photos isn’t just about using an expensive camera, it’s\nabout lighting, composition, color — skills that take years to develop."
+    },
+    {
+      "page": 201,
+      "text": "2. Use high quality stock photography.\nIf your needs are more generic, there are tons of great resources out\nthere where you can purchase great stock photos. There are even sites\nlike Unsplash that offer beautiful photography for free.\nWhatever you do, don’t design using placeholder images and expect to be\nable to take some photos with your smartphone and swap them in later. It\nnever works.\n201 Use good photos"
+    },
+    {
+      "page": 202,
+      "text": "Text needs consistent contrast\nEver tried to slap a headline on a big hero image, only to find that no matter\nwhat color you tried for the text, it was still hard to read?\nThat’s because the problem isn’t the text, it’s the image.\nThe problem with background images\nPhotos can be very dynamic, with a lot of really light areas, and a lot of really\ndark areas. White text might look great in the dark areas, but it gets lost in\nthe light areas. Dark text looks great in the light areas, but gets lost in the\ndark areas."
+    },
+    {
+      "page": 203,
+      "text": "To solve this problem, you need to reduce the dynamics in the image to\nmake the contrast between the text and the background more consistent.\nAdd an overlay\nOne way to increase the overall text contrast is to add a semi-transparent\noverlay to the background image.\n203 Text needs consistent contrast"
+    },
+    {
+      "page": 204,
+      "text": "A black overlay will tone down the light areas and help light text stand out,\nwhile a white overlay will brighten up the dark areas and help dark text stand\nout.\nLower the image contrast\nOne of the compromises you make when using an overlay is that you’re\nlightening or darkening the whole image, not just the problem areas.\nIf you want more control, another solution is to lower the contrast of the\nimage itself:\nLowering the contrast will change how light or dark the image feels overall,\nso make sure to adjust the brightness to compensate.\nText needs consistent contrast 204"
+    },
+    {
+      "page": 205,
+      "text": "Colorize the image\nAnother way to help text stand out against an image is to colorize the image\nwith a single color.\nSome photo editing software includes this as a first-class feature, but if\nyours doesn’t, you can create this effect in three steps:\n1. Lower the image contrast, to balance things out a bit.\n2. Desaturate the image, to remove any existing color.\n3. Add a solid fill, using the “multiply” blend mode.\nThis can also be a great way to make a background image pair more nicely\nwith your existing brand colors.\n205 Text needs consistent contrast"
+    },
+    {
+      "page": 206,
+      "text": "Add a text shadow\nIf you want to preserve a bit more of the dynamics in a background image, a\ntext shadow can be a great way to increase contrast only where you need it\nmost.\nYou want it to look more like a subtle glow than an actual shadow, so use a\nlarge blur radius and don’t add any kind of offset.\nIt’s still a good idea to reduce the overall image contrast, but combining that\nwith a text shadow means you can reduce it a little less.\nText needs consistent contrast 206"
+    },
+    {
+      "page": 207,
+      "text": "207 Text needs consistent contrast"
+    },
+    {
+      "page": 208,
+      "text": "Everything has an intended size\nEveryone knows that scaling bitmap images to larger than their original size\nis a bad idea — they immediately feel “fuzzy” and lose their definition.\nBut that’s not the only way you can go wrong with scaling, even when you\nthink you’re playing it safe.\nDon’t scale up icons\nIf you’re designing something that could use some large icons (like maybe\nthe “features” section of a landing page), you might instinctively grab your\nfavorite SVG icon set and bump up the size until they fit your needs.\nThey’re vector images after all, so the quality isn’t going to suffer if you\nincrease the size, right?"
+    },
+    {
+      "page": 209,
+      "text": "While it’s true that vector images won’t degrade in quality when you increase\ntheir size, icons that were drawn at 16–24px are never going to look very\nprofessional when you blow them up to 3x or 4x their intended size. They\nlack detail, and always feel disproportionately “chunky”.\nIf small icons are all you’ve got, try enclosing them inside another shape and\ngiving the shape a background color:\nThis lets you keep the actual icon closer to its intended size, while still filling\nthe larger space.\n209 Everything has an intended size"
+    },
+    {
+      "page": 210,
+      "text": "Don’t scale down screenshots\nSay you want to include a screenshot of your app on that same features\npage.\nIf you take a full-size screenshot and shrink it by 70% to make it fit, you’ll end\nup with an image that’s trying to cram way too much detail into far too little\nspace.\nThe 16px font in your app becomes a 4px font in your screenshot, and\nvisitors will be squinting with their eyeballs two inches from the screen,\nstruggling to make out what all that text says.\nIf you want to include a detailed screenshot in your design, take the\nscreenshot at a smaller screen size (like maybe your tablet layout) and save a\nEverything has an intended size 210"
+    },
+    {
+      "page": 211,
+      "text": "lot of space for it so you don’t have to shrink it as much:\nOr consider taking just a partial screenshot, so you can display it in less\nspace without needing to scale it down:\n211 Everything has an intended size"
+    },
+    {
+      "page": 212,
+      "text": "If you really need to fit a whole-app screenshot in a tight space, try drawing\na simplified version of the UI with details removed and small text replaced\nwith simple lines:\nIt’ll still communicate the big-picture design without tempting visitors to try\nand make out all of the details.\nDon’t scale down icons, either\nJust as icons drawn to be used at 16px look chunky when you scale them up,\nicons intended to be used at larger sizes look choppy and fuzzy when you\nscale them down.\nThe most extreme example of this are favicons, those little icons you see\nnext to the page title in a browser tab.\nIf you try to shrink a logo drawn at 128px down to favicon size, it all turns to\nEverything has an intended size 212"
+    },
+    {
+      "page": 213,
+      "text": "mush as the browser tries its best to render all of that detail in a tiny 16px\nsquare:\nA better approach is to redraw a super simplified version of the logo at the\ntarget size, so you control the compromises instead of leaving it up to the\nbrowser:\n213 Everything has an intended size"
+    },
+    {
+      "page": 214,
+      "text": "Beware user-uploaded content\nWhen you’re depending on user-uploaded images, you don’t have the luxury\nof fine-tuning contrast, carefully adjusting colors, or cropping the perfect\nframe.\nWhile you’ll always be at your users’ mercy to some extent, there are a few\nthings you can do to make sure their content doesn’t completely undermine\nyour design.\nControl the shape and size\nDisplaying user-uploaded images at their intrinsic aspect ratio can really\nthrow off a layout, especially if there are a lot of images on the screen at\nonce."
+    },
+    {
+      "page": 215,
+      "text": "Instead of letting users wreak havoc on your page structure, center their\nimages inside fixed containers, cropping out anything that doesn’t fit.\nThis is really easy to do with CSS these days by making the image a\nbackground image, and setting the background-size property to cover.\n215 Beware user-uploaded content"
+    },
+    {
+      "page": 216,
+      "text": "Prevent background bleed\nWhen a user provides an image with a background color that’s similar to the\nbackground in your UI, the image and the background can bleed together,\ncausing the image to lose its shape.\nInstead of trying to solve this with a border, try using a subtle inner box\nshadow:\nBeware user-uploaded content 216"
+    },
+    {
+      "page": 217,
+      "text": "Borders will often clash with the colors in the image, while most people will\nbarely even realize the shadow is there.\nIf you don’t like the slight “inset” look you get from using a box shadow, a\nsemi-transparent inner border works great, too.\n217 Beware user-uploaded content"
+    },
+    {
+      "page": 218,
+      "text": ""
+    },
+    {
+      "page": 219,
+      "text": "Finishing Touches"
+    },
+    {
+      "page": 220,
+      "text": "Supercharge the defaults\nYou don’t always have to add new elements to a design to add flare — there\nare a lot of ways to liven up a page by “supercharging” what’s already there.\nFor example, if your design includes a bulleted list, try replacing the bullets\nwith icons:\nCheckmarks and arrows are great generic choices for a lot of situations, but\nyou can also use something more specific to your content, like a padlock\nicon for a list of security-related features:"
+    },
+    {
+      "page": 221,
+      "text": "Similarly, if you’re working on a testimonial try “promoting” the quotes into\nvisual elements by increasing the size and changing the color:\nLinks are another great candidate for special styling. You can do something\nas simple as changing the color and font weight, or something as fancy as a\nthick and colorful custom underline that partially overlaps the text:\n221 Supercharge the defaults"
+    },
+    {
+      "page": 222,
+      "text": "If you’re working on a form, using custom checkboxes and radio buttons is\nan easy way to add some color to the design:\nJust using one of your brand colors for the selected states instead of the\nbrowser defaults is often enough to take something from feeling boring to\nfeeling polished and well-designed.\nSupercharge the defaults 222"
+    },
+    {
+      "page": 223,
+      "text": "223 Supercharge the defaults"
+    },
+    {
+      "page": 224,
+      "text": "Add color with accent borders\nIf you’re not a graphic designer, how do you add that dash of visual flair to\nyour UI that other designs get from beautiful photography or colorful\nillustrations?\nOne simple trick that can make a big difference is to add colorful accent\nborders to parts of your interface that would otherwise feel a bit bland.\nFor example, across the top of a card:"
+    },
+    {
+      "page": 225,
+      "text": "…or to highlight active navigation items:\n…or along the side of an alert message:\n…or as a short accent underneath a headline:\n225 Add color with accent borders"
+    },
+    {
+      "page": 226,
+      "text": "…or even across the top of your entire layout:\nIt doesn’t take any graphic design talent to add a colored rectangle to your\nUI, and it can go a long way towards making something feel more\n“designed.”\nAdd color with accent borders 226"
+    },
+    {
+      "page": 227,
+      "text": "227 Add color with accent borders"
+    },
+    {
+      "page": 228,
+      "text": "Decorate your backgrounds\nEven if you do a great job with hierarchy, spacing, and typography,\nsometimes a design will still feel a little bit plain.\nA great way to break up some of the monotony without drastically altering\nthe design is to add some excitement to a few of your backgrounds.\nChange the background color\nOne way to add some excitement to a background is to simply change the\ncolor."
+    },
+    {
+      "page": 229,
+      "text": "This works great for emphasizing an individual panel, as well as for adding\nsome distinction between entire page sections.\nFor a more energetic look, you could even use a slight gradient:\nFor best results, use two hues that are no more than about 30° apart.\n229 Decorate your backgrounds"
+    },
+    {
+      "page": 230,
+      "text": "Use a repeating pattern\nAnother approach is to add a subtle repeatable pattern, like this one from\nHero Patterns:\nYou don’t have to necessarily repeat it across the entire background, either\n— a pattern designed to repeat along a single edge can look great, too.\nKeep the contrast between the background and the pattern pretty low to\nensure readability.\nDecorate your backgrounds 230"
+    },
+    {
+      "page": 231,
+      "text": "Add a simple shape or illustration\nInstead of decorating an entire background, you can also try including an\nindividual graphic or two in specific positions.\nSimple geometric shapes work well for this:\n…as do small chunks of a repeatable pattern:\n231 Decorate your backgrounds"
+    },
+    {
+      "page": 232,
+      "text": "You can even do something more complex, like a simplified world map:\nJust like with a full background pattern, it’s best to keep the contrast low so\nnothing interferes with the content.\nDecorate your backgrounds 232"
+    },
+    {
+      "page": 233,
+      "text": "233 Decorate your backgrounds"
+    },
+    {
+      "page": 234,
+      "text": "Don’t overlook empty states\nImagine you’re designing a new feature for an app you’re working on.\nYou’ve spent a ton of time crafting the perfect realistic sample data, picking\nout usernames and avatars, and putting together a beautiful and electrifying\nscreen."
+    },
+    {
+      "page": 235,
+      "text": "You code it all up and deploy it to production. But when an excited user\nclicks the new item in the nav, they see this:\nIf you’re designing something that depends on user-generated content, the\nempty state should be a priority, not an afterthought.\nTry incorporating an image or illustration to grab the user’s attention, and\nemphasizing the call-to-action to encourage them to take the next step:\n235 Don’t overlook empty states"
+    },
+    {
+      "page": 236,
+      "text": "If you’re working on something that has a bunch of supporting UI like tabs or\nfilters, consider hiding that stuff entirely. There’s no point in presenting a\nbunch of actions that don’t do anything until the user has created some\ncontent.\nEmpty states are a user’s first interaction with a new product or feature. Use\nthem as an opportunity to be interesting and exciting — don’t settle for plain\nand boring.\nDon’t overlook empty states 236"
+    },
+    {
+      "page": 237,
+      "text": "237 Don’t overlook empty states"
+    },
+    {
+      "page": 238,
+      "text": "Use fewer borders\nWhen you need to create separation between two elements, try to resist\nimmediately reaching for a border.\nWhile borders are a great way to distinguish two elements from one another,\nthey aren’t the only way, and using too many of them can make your design\nfeel busy and cluttered."
+    },
+    {
+      "page": 239,
+      "text": "Use a box shadow\nBox shadows do a great job of outlining an element like a border would, but\ncan be more subtle and accomplish the same goal without being as\ndistracting.\nThis approach works best when the element you are applying the box\nshadow to is not the same color as the background.\n239 Use fewer borders"
+    },
+    {
+      "page": 240,
+      "text": "Use two different background colors\nGiving adjacent elements slightly different background colors is usually all\nyou need to create distinction between them.\nIf you’re already using different background colors in addition to a border, try\nremoving the border; you might not need it.\nUse fewer borders 240"
+    },
+    {
+      "page": 241,
+      "text": "Add extra spacing\nWhat better way to create separation between elements than to simply\nincrease the separation?\nSpacing things further apart is a great way to create distinction between\ngroups of elements without introducing any new UI at all.\n241 Use fewer borders"
+    },
+    {
+      "page": 242,
+      "text": "Think outside the box\nMost people have a lot of preconceived notions about how certain\ncomponents are supposed to look. But just because we’ve been conditioned\nto believe that there’s only one way to design a particular component,\ndoesn’t mean it’s true.\nFor example, picture a dropdown menu. You’re probably picturing a white\nbox with a bit of a drop shadow and a list of links stacked inside of it:"
+    },
+    {
+      "page": 243,
+      "text": "But who says a dropdown needs to be a boring list of links? It’s just a floating\nbox on the screen, you can do anything you want with it.\nBreak it into sections, use multiple columns, add supporting text or colorful\nicons — do something fun with it!\nAnd don’t just stop at dropdowns; what about something like a table?\n243 Think outside the box"
+    },
+    {
+      "page": 244,
+      "text": "When you imagine a table, you probably think of columns that each contain\none specific piece of data:\nTables don’t have to work this way, though — if a column doesn’t need to be\nsortable, there’s no reason you can’t combine it with a related column and\nintroduce some interesting hierarchy:\nThink outside the box 244"
+    },
+    {
+      "page": 245,
+      "text": "Table content doesn’t have to be plain text, either. Add images if it makes\nsense, or introduce some color to enrich the existing data:\nHow about radio buttons? There’s nothing more boring than a stack of labels\nwith little circles next to them.\n245 Think outside the box"
+    },
+    {
+      "page": 246,
+      "text": "If a set of radio buttons are an important part of the UI you’re designing, try\nsomething like selectable cards instead:\nDon’t let your existing beliefs hold back your designs — constraints are\npowerful but sometimes a bit of freedom is just what you need to take an\ninterface to the next level.\nThink outside the box 246"
+    },
+    {
+      "page": 247,
+      "text": ""
+    },
+    {
+      "page": 248,
+      "text": ""
+    },
+    {
+      "page": 249,
+      "text": "Leveling Up"
+    },
+    {
+      "page": 250,
+      "text": "Leveling up\nHopefully after reading this book you feel much more confident in your\nability to make something look awesome, without relying on a designer. But\neven though we’ve tried our best to cram in every good idea we could\npossibly think of, there will always be more out there to learn.\nHere are two of the best ways you can continue to hone your skills, and add\nnew tools to your toolbelt.\nLook for decisions you wouldn’t have made\nWhenever you stumble across a design you really like, ask yourself:\n“Did the designer do anything here that I never would have thought to do?”\nMaybe it’s the way they inverted the background color on a datepicker:"
+    },
+    {
+      "page": 251,
+      "text": "…or the way they positioned a button within a text input instead of on the\noutside:\n…or something as simple as using two different font colors for a headline:\nPaying attention to these sorts of unintuitive decisions is a great way to\ndiscover new ideas that you can apply to your own designs.\nRebuild your favorite interfaces\nThe absolute best way to notice the little details that make a design look\n251 Leveling up"
+    },
+    {
+      "page": 252,
+      "text": "really polished is to recreate that design from scratch, without peeking at the\ndeveloper tools.\nWhen you’re trying to figure out why your version looks different than the\noriginal, you’ll discover tricks like “reduce your line height for headings”,\n“add letter-spacing to uppercase text”, or “combine multiple shadows” all on\nyour own.\nBy continually studying the work that inspires you with a careful eye, you’ll\nbe picking up design tricks for years to come.\n— Adam Wathan & Steve Schoger\nLeveling up 252"
+    }
+  ]
+}

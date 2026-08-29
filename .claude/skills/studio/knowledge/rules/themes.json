@@ -1,0 +1,104 @@
+{
+  "id": "themes",
+  "title": "Themes — the 22-theme catalog, defined",
+  "author": "studio",
+  "domain": "rules",
+  "pages": [
+    {
+      "page": 1,
+      "text": "# Themes — the 22-theme catalog, defined\n\nSingle source of truth for every named Studio theme. Picked at STEP 2; tokens are **seeded from here, never improvised** (slop gate 58). Genre membership here is canonical and supersedes any lists in genre files or component-cookbook routing tables. Nav/footer defaults mirror `structure.md` § Theme-suggested fingerprints; the cookbook's routing tables list acceptable alternates.\n\nEvery palette below was machine-verified (coloraide/WCAG 2.1): ink-on-paper ≥ 7:1, muted-on-paper ≥ 4.5:1, accent-ink-on-accent ≥ 4.5:1, focus-on-paper ≥ 3:1. The cascade (`derive-states.ts` → `contrast-check.ts`) still runs on every build and remains authoritative — these are seeds, not exemptions."
+    },
+    {
+      "page": 2,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Genre membership (canonical)\n\n| Genre | Themes | Temperament |\n|---|---|---|\n| **editorial** (default) | Editorial · Salon · Newsprint · Almanac · Atelier · Garden · Linen · Specimen · Studio · Riso · Sport · Brutal · Manifesto | print-rooted; spans quiet (Salon, Linen) to loud poster (Brutal, Sport, Manifesto) |\n| **modern-minimal** | Quiet · Coral · Violet | restrained product surfaces |\n| **atmospheric** | Bloom · Midnight · Terminal · Aurora · Halo | dark canvas, mood-first |\n| **playful** | Plume | soft consumer; deliberately small |\n\nSecondary-genre flex (real, not theoretical): Specimen + Studio flex modern-minimal on product briefs; Riso / Sport / Brutal flex playful-loud when the brief is consumer-kinetic; Coral flexes playful. Note the flex in the stamp when used.\n\n---"
+    },
+    {
+      "page": 3,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Editorial — classic magazine: black-on-white, serif displays, one link-red\n\n```css\n--color-paper:      oklch(97.5% 0.003 90);\n--color-paper-2:    oklch(94.5% 0.004 90);\n--color-ink:        oklch(18% 0.005 90);\n--color-muted:      oklch(45% 0.008 90);\n--color-accent:     oklch(48% 0.17 25);\n--color-accent-ink: oklch(97.5% 0.003 90);\n--color-focus:      oklch(48% 0.17 25);\n```\ndisplay: Newsreader (italic available) · body: IBM Plex Sans · outlier: JetBrains Mono\ndepth: flat · radius: sharp · motion: quiet fade-up, one entrance\nband: light · accent: warm\nnav: N6 Masthead · footer: Ft1 Mast-headed"
+    },
+    {
+      "page": 4,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Salon — literary parlor: warm cream, high-contrast serif, oxblood\n\n```css\n--color-paper:      oklch(95.5% 0.015 85);\n--color-paper-2:    oklch(92.5% 0.018 85);\n--color-ink:        oklch(26% 0.03 50);\n--color-muted:      oklch(47% 0.03 50);\n--color-accent:     oklch(42% 0.14 25);\n--color-accent-ink: oklch(96% 0.01 85);\n--color-focus:      oklch(42% 0.14 25);\n```\ndisplay: Fraunces (deep italic) · body: Newsreader · outlier: —\ndepth: flat + fleuron ornament · radius: soft · motion: none — the page is set, not staged\nband: light · accent: warm\nnav: N6 Masthead · footer: Ft1 Mast-headed"
+    },
+    {
+      "page": 5,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Newsprint — warm gray broadsheet, red second ink\n\n```css\n--color-paper:      oklch(93% 0.006 90);\n--color-paper-2:    oklch(90% 0.007 90);\n--color-ink:        oklch(20% 0.005 90);\n--color-muted:      oklch(44% 0.008 90);\n--color-accent:     oklch(50% 0.19 28);\n--color-accent-ink: oklch(97% 0.004 90);\n--color-focus:      oklch(50% 0.19 28);\n```\ndisplay: Newsreader 700 · body: Source Serif 4 · outlier: IBM Plex Mono\ndepth: flat, double rules · radius: sharp · motion: none\nband: light · accent: warm\nnav: N6 Masthead · footer: Ft4 Dense colophon"
+    },
+    {
+      "page": 6,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Almanac — amber reference-book: sepia ink, tabular everything\n\n```css\n--color-paper:      oklch(94% 0.02 85);\n--color-paper-2:    oklch(91% 0.022 85);\n--color-ink:        oklch(25% 0.04 60);\n--color-muted:      oklch(46% 0.04 60);\n--color-accent:     oklch(48% 0.11 75);\n--color-accent-ink: oklch(96% 0.012 85);\n--color-focus:      oklch(48% 0.11 75);\n```\ndisplay: Cardo · body: IBM Plex Sans · outlier: IBM Plex Mono (tabular numerals everywhere)\ndepth: flat, hairlines · radius: sharp · motion: number-tick reveal only\nband: light · accent: warm\nnav: N3 Side-rail · footer: Ft3 Index columns"
+    },
+    {
+      "page": 7,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Atelier — warm gallery white, charcoal, one ochre pigment\n\n```css\n--color-paper:      oklch(96.5% 0.008 85);\n--color-paper-2:    oklch(93.5% 0.01 85);\n--color-ink:        oklch(24% 0.015 60);\n--color-muted:      oklch(46% 0.018 60);\n--color-accent:     oklch(62% 0.13 70);\n--color-accent-ink: oklch(20% 0.015 60);\n--color-focus:      oklch(50% 0.13 70);\n```\ndisplay: Instrument Serif · body: Crimson Pro · outlier: —\ndepth: flat, negative space only · radius: sharp · motion: type-unmask on the display line\nband: light · accent: warm\nnav: N9 Edge-aligned minimal · footer: Ft6 Letter close"
+    },
+    {
+      "page": 8,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Garden — botanical: leaf-green ink on cream\n\n```css\n--color-paper:      oklch(96% 0.012 110);\n--color-paper-2:    oklch(93% 0.014 110);\n--color-ink:        oklch(24% 0.04 140);\n--color-muted:      oklch(45% 0.04 140);\n--color-accent:     oklch(45% 0.12 145);\n--color-accent-ink: oklch(97% 0.008 110);\n--color-focus:      oklch(45% 0.12 145);\n```\ndisplay: Cormorant Garamond · body: Crimson Pro · outlier: —\ndepth: flat, marginalia · radius: soft · motion: none\nband: light · accent: cool\nnav: N9 Edge-aligned minimal · footer: Ft6 Letter close"
+    },
+    {
+      "page": 9,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Linen — warm textile off-white, flax-indigo accent\n\n```css\n--color-paper:      oklch(95.5% 0.012 80);\n--color-paper-2:    oklch(92.5% 0.014 80);\n--color-ink:        oklch(28% 0.02 60);\n--color-muted:      oklch(47% 0.022 60);\n--color-accent:     oklch(45% 0.09 270);\n--color-accent-ink: oklch(96.5% 0.008 80);\n--color-focus:      oklch(45% 0.09 270);\n```\ndisplay: Sentient · body: Switzer · outlier: —\ndepth: flat · radius: default · motion: fade-up, gentle\nband: light · accent: cool\nnav: N6 Masthead · footer: Ft1 Mast-headed"
+    },
+    {
+      "page": 10,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Specimen — type-foundry neutral + specimen red\n\n```css\n--color-paper:      oklch(97.5% 0.004 80);\n--color-paper-2:    oklch(94.5% 0.005 80);\n--color-ink:        oklch(22% 0.01 80);\n--color-muted:      oklch(45% 0.012 80);\n--color-accent:     oklch(52% 0.19 27);\n--color-accent-ink: oklch(97.5% 0.004 80);\n--color-focus:      oklch(52% 0.19 27);\n```\ndisplay: Fraunces · body: Switzer · outlier: Geist Mono (specimen labels)\ndepth: flat, hairlines · radius: sharp · motion: fade-up staggered\nband: light · accent: warm\nnav: N5 Floating pill · footer: Ft2 Inline single line"
+    },
+    {
+      "page": 11,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Studio — the house workshop theme: warm neutral, small green accent\n\n```css\n--color-paper:      oklch(96.5% 0.005 90);\n--color-paper-2:    oklch(93.5% 0.006 90);\n--color-ink:        oklch(21% 0.01 90);\n--color-muted:      oklch(45% 0.012 90);\n--color-accent:     oklch(52% 0.13 150);\n--color-accent-ink: oklch(97.5% 0.004 90);\n--color-focus:      oklch(52% 0.13 150);\n```\ndisplay: Instrument Serif · body: Geist · outlier: Geist Mono\ndepth: flat · radius: default · motion: fade-up, restrained\nband: light · accent: cool\nnav: N7 Brutal slab · footer: Ft3 Index columns"
+    },
+    {
+      "page": 12,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Riso — risograph two-ink: punchy pink on warm off-white\n\n```css\n--color-paper:      oklch(95% 0.01 90);\n--color-paper-2:    oklch(92% 0.012 90);\n--color-ink:        oklch(20% 0.01 90);\n--color-muted:      oklch(44% 0.012 90);\n--color-accent:     oklch(62% 0.21 0);\n--color-accent-ink: oklch(18% 0.02 0);\n--color-focus:      oklch(50% 0.19 0);\n```\ndisplay: Bricolage Grotesque 700 · body: Switzer · outlier: Space Mono\ndepth: flat, grain texture allowed · radius: sharp · motion: none — print doesn't animate\nband: light · accent: chromatic-other\nnav: N7 Brutal slab · footer: Ft8 Marquee scroll"
+    },
+    {
+      "page": 13,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Sport — loud condensed: track red, italic display\n\n```css\n--color-paper:      oklch(96% 0.004 250);\n--color-paper-2:    oklch(92.5% 0.005 250);\n--color-ink:        oklch(15% 0.01 250);\n--color-muted:      oklch(43% 0.012 250);\n--color-accent:     oklch(52% 0.2 27);\n--color-accent-ink: oklch(98% 0.003 250);\n--color-focus:      oklch(52% 0.2 27);\n```\ndisplay: Big Shoulders Display (italic moments) · body: Geist · outlier: Space Grotesk (numerals)\ndepth: flat, bleed-colour dividers · radius: sharp · motion: horizontal sweep\nband: light · accent: warm\nnav: N7 Brutal slab · footer: Ft8 Marquee scroll"
+    },
+    {
+      "page": 14,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Brutal — raw concrete + one shock accent\n\n```css\n--color-paper:      oklch(92% 0.005 260);\n--color-paper-2:    oklch(88% 0.006 260);\n--color-ink:        oklch(15% 0.02 260);\n--color-muted:      oklch(41% 0.02 260);\n--color-accent:     oklch(50% 0.21 29);\n--color-accent-ink: oklch(97% 0.004 260);\n--color-focus:      oklch(50% 0.21 29);\n```\ndisplay: Bricolage Grotesque 800 · body: Geist · outlier: Space Grotesk\ndepth: flat, 2px borders · radius: 0 everywhere · motion: horizontal sweep only\nband: light · accent: warm\nnav: N7 Brutal slab · footer: Ft8 Marquee scroll"
+    },
+    {
+      "page": 15,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Manifesto — stark declarative dark: poster energy\n\n```css\n--color-paper:      oklch(18% 0.01 260);\n--color-paper-2:    oklch(23% 0.012 260);\n--color-ink:        oklch(95% 0.005 260);\n--color-muted:      oklch(72% 0.008 260);\n--color-accent:     oklch(52% 0.21 27);\n--color-accent-ink: oklch(97% 0.003 260);\n--color-focus:      oklch(75% 0.13 27);\n```\ndisplay: Anton · body: Geist · outlier: —\ndepth: flat, bleed-colour blocks · radius: 0 · motion: horizontal sweep\nband: dark · accent: warm\nnav: N7 Brutal slab · footer: Ft5 Statement"
+    },
+    {
+      "page": 16,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Quiet — barely-there monochrome (gate-8 / gate-24 modern-minimal exceptions apply)\n\n```css\n--color-paper:      oklch(100% 0 0);\n--color-paper-2:    oklch(97% 0 0);\n--color-ink:        oklch(25% 0 0);\n--color-muted:      oklch(48% 0 0);\n--color-accent:     oklch(25% 0 0);       /* accent IS ink — monochrome discipline */\n--color-accent-ink: oklch(100% 0 0);\n--color-focus:      oklch(55% 0.18 260);  /* the one chromatic note: focus only */\n```\ndisplay: Geist 600 · body: Geist 400 · outlier: Geist Mono (single-family discipline)\ndepth: flat, subtle borders · radius: default, pill CTAs · motion: none — the page is composed\nband: light · accent: neutral\nnav: N9 Edge-aligned minimal · footer: Ft2 Inline single line"
+    },
+    {
+      "page": 17,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Coral — warm light minimal, coral accent\n\n```css\n--color-paper:      oklch(97% 0.006 40);\n--color-paper-2:    oklch(94% 0.008 40);\n--color-ink:        oklch(24% 0.015 40);\n--color-muted:      oklch(46% 0.018 40);\n--color-accent:     oklch(66% 0.17 30);\n--color-accent-ink: oklch(18% 0.02 30);\n--color-focus:      oklch(55% 0.16 30);\n```\ndisplay: General Sans · body: Switzer · outlier: —\ndepth: elevated (soft 2-layer shadows) · radius: soft · motion: hover-lift only\nband: light · accent: warm\nnav: N5 Floating pill · footer: Ft1 Mast-headed"
+    },
+    {
+      "page": 18,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Violet — cool light minimal, violet accent\n\n```css\n--color-paper:      oklch(97.5% 0.005 300);\n--color-paper-2:    oklch(94.5% 0.007 300);\n--color-ink:        oklch(24% 0.02 300);\n--color-muted:      oklch(46% 0.022 300);\n--color-accent:     oklch(48% 0.19 300);\n--color-accent-ink: oklch(97.5% 0.005 300);\n--color-focus:      oklch(48% 0.19 300);\n```\ndisplay: Switzer 600 · body: Geist · outlier: Geist Mono\ndepth: flat · radius: default, pill CTAs · motion: fade-up, minimal\nband: light · accent: cool\nnav: N5 Floating pill · footer: Ft2 Inline single line"
+    },
+    {
+      "page": 19,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Bloom — atmospheric canonical: dark plum canvas, warm coral bloom\n\n```css\n--color-paper:      oklch(15% 0.02 320);\n--color-paper-2:    oklch(20% 0.024 320);\n--color-ink:        oklch(92% 0.01 320);\n--color-muted:      oklch(70% 0.015 320);\n--color-accent:     oklch(70% 0.16 25);\n--color-accent-ink: oklch(18% 0.03 25);\n--color-focus:      oklch(70% 0.16 25);\n```\ndisplay: Geist 600 · body: Geist · outlier: Geist Mono\ndepth: glass (one blur layer over blooms) · radius: default, pill CTAs · motion: fade-in only; blooms static (≤2, 20–30 %, background-only)\nband: dark · accent: warm\nnav: N5 Floating pill · footer: Ft5 Statement"
+    },
+    {
+      "page": 20,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Midnight — deep blue-black, electric indigo\n\n```css\n--color-paper:      oklch(17% 0.03 265);\n--color-paper-2:    oklch(22% 0.035 265);\n--color-ink:        oklch(93% 0.01 265);\n--color-muted:      oklch(70% 0.02 265);\n--color-accent:     oklch(62% 0.17 275);\n--color-accent-ink: oklch(14% 0.03 275);\n--color-focus:      oklch(62% 0.17 275);\n```\ndisplay: Geist 600 · body: Geist · outlier: Geist Mono (numbered display labels)\ndepth: flat, hairlines · radius: default · motion: typewriter reveal on display labels\nband: dark · accent: cool\nnav: N5 Floating pill · footer: Ft2 Inline single line"
+    },
+    {
+      "page": 21,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Terminal — phosphor on near-black; mono-everywhere IS the design\n\n```css\n--color-paper:      oklch(16% 0.015 150);\n--color-paper-2:    oklch(21% 0.018 150);\n--color-ink:        oklch(82% 0.17 150);\n--color-muted:      oklch(60% 0.06 150);\n--color-accent:     oklch(80% 0.14 80);\n--color-accent-ink: oklch(16% 0.015 80);\n--color-focus:      oklch(80% 0.14 80);\n```\ndisplay: JetBrains Mono 700 · body: JetBrains Mono 400 · outlier: — (single-font-as-design, per typography.md)\ndepth: flat · radius: 0 · motion: typewriter + block cursor (nav only, per N8)\nband: dark · accent: warm\nnav: N8 Terminal command · footer: Ft4 Dense colophon"
+    },
+    {
+      "page": 22,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Aurora — dark canvas, green-teal aurora accent\n\n```css\n--color-paper:      oklch(16% 0.025 250);\n--color-paper-2:    oklch(21% 0.028 250);\n--color-ink:        oklch(93% 0.008 200);\n--color-muted:      oklch(70% 0.012 200);\n--color-accent:     oklch(75% 0.14 175);\n--color-accent-ink: oklch(15% 0.03 175);\n--color-focus:      oklch(75% 0.14 175);\n```\ndisplay: Tomorrow · body: Geist · outlier: JetBrains Mono\ndepth: glass over aurora gradient (background-only, static) · radius: default · motion: fade-up, slow (atmospheric 1500ms+ allowed on background)\nband: dark · accent: cool\nnav: N5 Floating pill · footer: Ft5 Statement"
+    },
+    {
+      "page": 23,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Halo — dark with a pale ring-glow accent\n\n```css\n--color-paper:      oklch(14% 0.01 270);\n--color-paper-2:    oklch(19% 0.012 270);\n--color-ink:        oklch(94% 0.005 270);\n--color-muted:      oklch(71% 0.008 270);\n--color-accent:     oklch(85% 0.08 90);\n--color-accent-ink: oklch(15% 0.015 90);\n--color-focus:      oklch(85% 0.08 90);\n```\ndisplay: Sentient · body: Geist · outlier: Geist Mono\ndepth: flat with one halo ring (CSS radial, background-only) · radius: soft · motion: fade-in only\nband: dark · accent: warm\nnav: N5 Floating pill · footer: Ft5 Statement"
+    },
+    {
+      "page": 24,
+      "text": "# Themes — the 22-theme catalog, defined\n\n## Plume — playful canonical: blush-white, soft indigo\n\n```css\n--color-paper:      oklch(97.5% 0.008 320);\n--color-paper-2:    oklch(94.5% 0.01 320);\n--color-ink:        oklch(26% 0.02 300);\n--color-muted:      oklch(47% 0.022 300);\n--color-accent:     oklch(50% 0.13 282);\n--color-accent-ink: oklch(97.5% 0.006 320);\n--color-focus:      oklch(50% 0.13 282);\n```\ndisplay: Satoshi 700 · body: Geist · outlier: —\ndepth: elevated-soft (`0 8px 24px -10px` accent-tinted) · radius: soft (12px cards / 8px inputs / pill CTAs) · motion: hover-lift, one bounce-free reveal per section\nband: light · accent: cool\nnav: N9 Edge-aligned minimal · footer: Ft1 Mast-headed"
+    }
+  ]
+}

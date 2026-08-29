@@ -1,0 +1,161 @@
+
+COMPLIANCE & CERTIFICATION
+
+Audit Evidence, Contracts and Conformance
+
+Closes gaps G7, G14 and G24 · Required before enterprise sales
+
+Document Owner
+[Name / Team]
+Version
+1.0
+Status
+Draft — for review
+Date
+August 29, 2026
+Distribution
+Engineering, Legal, Security, Sales
+
+Section 2 argues that four separate obligations are satisfied by one execution log.
+
+
+1. Obligations Landscape
+Four regimes apply, on different clocks. Two are already enforceable.
+
+Regime
+Status
+Effect here
+EU AI Act Art.50
+Enforceable since 2 Aug 2026
+AI disclosure perceivable in the interface
+EU AI Act high-risk
+Deferred to 2 Dec 2027
+Conformity assessment; logging duties apply earlier
+GDPR
+In force
+Erasure, residency, rights — see Data Protection doc
+SOC 2 Type II
+Customer-driven
+3–12 month observation window before a report exists
+EAA / WCAG 2.2
+Enforced
+AA conformance; VPAT for procurement
+
+The Digital Omnibus deferred Annex III high-risk compliance to 2 December 2027 and Annex I to 2 August 2028, but Article 50 transparency stayed on the original schedule and is live now. Read the deferral as time to do conformity work properly, not as permission to defer the logging that the conformity work will depend on.
+2. The Execution Log Is the Load-Bearing Artefact
+
+One capability, four obligations
+Erasure evidence under GDPR Art.17, serious-incident investigation under AI Act Art.73, SOC 2 evidence of production execution, and AI Act deployer logging duties all resolve to the same thing: a complete, queryable, tamper-evident record of what the agent did, with what data, on whose behalf. AI in production expands SOC 2 scope to models, training data and automated decision-making, and expands evidentiary requirements to auditable records of production execution. Build this once, properly, in Phase 1.
+
+Required fields per agent session:
+	•	Triggering request and its authenticated principal — human or agent
+	•	Tenant, region, and the legal basis policy governing the session
+	•	Records retrieved, with data classification and provenance
+	•	Every tool call: which tool, arguments, result status, side effects committed
+	•	Model, snapshot version, prompt version, router decision and rationale
+	•	Guardrail evaluations: which policies fired, what was allowed or blocked
+	•	Human interventions: who approved, when, how long they took
+	•	Token counts and cost, reconcilable to the billing ledger
+Tamper-evidence matters. An audit log that engineers can edit is not evidence. Use append-only storage with integrity verification, and separate retention of metadata from retention of content so minimisation and auditability can coexist.
+3. SOC 2
+Understand the standards gap before scoping. The AICPA has issued no authoritative AI-specific SOC 2 standard; auditors apply the 2017 Trust Services Criteria plus a practitioner-assembled AI overlay, increasingly tested against the OWASP LLM Top 10, with prompt injection cited in nearly every 2026 audit evidence request.
+
+Criterion
+In scope
+Why
+Security
+Mandatory
+Always required
+Confidentiality
+Yes
+Tenant data isolation is the core enterprise concern
+Privacy
+Yes
+Personal data is processed; effectively unavoidable
+Availability
+Yes
+Once SLAs are contractual — see Reliability doc
+Processing integrity
+Consider
+Relevant where output correctness is contractual
+
+Most AI companies selling to enterprise scope Security plus Confidentiality at minimum, adding Availability when SLAs are contractual and Privacy whenever personal data is processed; ISO/IEC 42001 typically follows in year two or three.
+Type I versus Type II. Type I evaluates whether controls are designed properly at a point in time; Type II evaluates whether they operated effectively over 3–12 months, and enterprise customers almost universally require Type II. The practical consequence is a scheduling one: the observation window must start long before the first enterprise deal closes, so control implementation is a Phase 1 dependency rather than a sales-cycle response.
+3.1 AI-specific evidence auditors now request
+	•	Model registry access controls and change history
+	•	Prompt version control with approval and rollback records
+	•	Red-team findings mapped to OWASP, with remediation evidence
+	•	Guardrail configuration history and enforcement logs
+	•	Sandbox isolation design and escape-test results
+	•	Vendor management for model providers as subprocessors
+	•	Evidence that human oversight operated — not that it existed
+4. Article 50 Transparency
+Already enforceable. The requirement is a UI one and is specified in the Design Standards; this section records the compliance view.
+	•	Disclosure must be perceivable in the interaction itself. Terms and conditions, a metadata watermark alone, or a vague reference to an "assistant" do not discharge the duty.
+	•	Deployers cannot rely on provider marking. If a tenant deploys our agent to their users, both parties have obligations; the contract must state who discharges which.
+	•	Disclosure copy is versioned in the prompt/config registry and changes go through Legal review, so the wording in production is always the approved wording.
+5. API and Contract Versioning
+Published boundaries need stability guarantees that internal code does not. Three version planes, kept distinct: public API, webhook payload, and workflow definition.
+
+Element
+Position
+Scheme
+URL path versioning for the public API — debuggable and CDN-cacheable
+Breaking change
+Anything that removes a field, changes a type, or alters semantics. Additive changes never bump the version.
+Deprecation signal
+RFC 9745 Deprecation header plus RFC 8594 Sunset header, with a Link to the migration guide
+Notice period
+6–12 months for a public API version
+Sunset behaviour
+410 Gone with a link to migration documentation
+Monitoring
+Alert when deprecated-version traffic has not fallen 30 days after deprecation
+
+Both headers are standards-track and give client tooling a machine-readable signal instead of a changelog entry nobody reads. Notify 6–12 months in advance with changelogs and migration guides, and use deprecated-traffic alerting to drive proactive outreach to high-volume consumers before sunset.
+The workflow-definition plane is the one teams forget. A durable workflow may outlive the API version that started it, so workflow definitions need independent versioning and a replay guarantee across deployments.
+6. Accessibility Conformance
+WCAG 2.2 Level AA is the target; the new criteria cover focus, dragging, target size, consistent help, redundant entry and accessible authentication.
+	•	Prepare a VPAT 2.5 accessibility conformance report in advance, not under deadline. 75% of surveyed professionals said their organisation requires proof of accessibility at least most of the time when purchasing, and 31% require it for every purchase.
+	•	Budget the manual audit. Automated tooling catches roughly 30–40% of issues; the remainder requires keyboard and screen-reader testing. A VPAT built only from automated results will not survive scrutiny.
+	•	Re-issue on material product change, and state the evaluated version explicitly — an ACR describes a version, not a product.
+7. Vendor and Contract Controls
+
+Control
+Requirement
+Model deprecation notice
+Minimum 30–60 days contractual notice; "commercially reasonable" is not a commitment
+Zero data retention
+Written ZDR arrangement before any EU traffic
+Subprocessor notice
+30 days before addition, with a right to object
+Data residency
+Storage, processing, retention, training, subprocessors and jurisdiction recorded separately
+Secrets
+Provider keys rotated on the schedule in the security standard; prefer short-lived workload identity where supported
+Exit
+Rehearsed provider switch on a schedule — an abstraction layer is not an exit plan
+
+Median deprecation notice runs roughly 63–91 days by provider with observed ranges as low as zero days, which is why the notice period belongs in the contract rather than in hope. On credentials, rotation does not change the underlying model — prefer authenticating the workload by an existing platform identity and minting short-lived credentials, falling back to tiered rotation where that is not possible.
+8. Evidence Calendar
+
+Cadence
+Activity
+Continuous
+Execution logging; automated control evidence collection
+Per deploy
+Eval gate results; red-team automation; prompt version records
+Monthly
+Access review; deprecated-API traffic review; subprocessor check
+Quarterly
+Manual red-team exercise; DR test; oversight quality sampling
+Annually
+SOC 2 Type II report; VPAT refresh; DPIA review; penetration test
+9. Definition of Done
+	•	Execution log implemented with all fields in Section 2, append-only and integrity-verified.
+	•	SOC 2 scope agreed; controls implemented; observation window started.
+	•	Article 50 disclosure live and Legal-approved, with copy under version control.
+	•	API versioning scheme published with Deprecation and Sunset headers implemented.
+	•	VPAT 2.5 completed from manual plus automated testing.
+	•	Vendor contracts include deprecation notice, ZDR, and subprocessor terms.
+	•	Evidence calendar assigned to named owners.

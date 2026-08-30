@@ -1,4 +1,5 @@
 import {
+  type ContentHasher,
   err,
   ok,
   type RetentionBucket,
@@ -7,12 +8,7 @@ import {
   type TenantId,
 } from "@custodian/domain-primitives";
 import type { SubjectKeyStore } from "@custodian/crypto-shred";
-import {
-  appendEntry,
-  type EntryHasher,
-  type LoggedEntry,
-  type RunId,
-} from "@custodian/execution-log";
+import { appendEntry, type LoggedEntry, type RunId } from "@custodian/execution-log";
 import type { IdempotencyStore, RequestHash } from "@custodian/idempotency";
 import {
   selectProvider,
@@ -37,7 +33,7 @@ export type ServeRequest = {
   readonly candidates: readonly ProviderProfile[];
   readonly providers: readonly ModelProvider[];
   readonly idempotency: IdempotencyStore;
-  readonly hasher: EntryHasher;
+  readonly hasher: ContentHasher;
   readonly at: string;
   readonly jitter: number;
   /** The completion is personal data, so it is sealed before it reaches the idempotency store. */

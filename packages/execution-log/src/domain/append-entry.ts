@@ -1,5 +1,10 @@
-import { canonicalJson, err, ok, type Result } from "@custodian/domain-primitives";
-import type { EntryHasher } from "./entry-hasher";
+import {
+  canonicalJson,
+  type ContentHasher,
+  err,
+  ok,
+  type Result,
+} from "@custodian/domain-primitives";
 import type { ExecutionEvent } from "./execution-event";
 import type { LoggedEntry } from "./logged-entry";
 import type { RunId } from "./run-id";
@@ -14,7 +19,7 @@ export type AppendFailure = {
 export type AppendContext = {
   readonly runId: RunId;
   readonly at: string;
-  readonly hasher: EntryHasher;
+  readonly hasher: ContentHasher;
 };
 
 export function hashableEntry(entry: Omit<LoggedEntry, "hash">): string {

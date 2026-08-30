@@ -9,3 +9,6 @@ export { parseSubjectId } from "./domain/subject-id";
 export type { InvalidRetentionBucket, RetentionBucket } from "./domain/retention-bucket";
 export { parseRetentionBucket } from "./domain/retention-bucket";
 export type { SealedContent } from "./domain/sealed-content";
+export type { TokenCounter } from "./domain/token-counter";
+export type { ContentHasher } from "./domain/content-hasher";
+export { REPLAY_WINDOW_MS } from "./domain/replay-window";

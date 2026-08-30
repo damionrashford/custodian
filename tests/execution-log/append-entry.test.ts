@@ -1,16 +1,16 @@
 import { expect, test } from "bun:test";
+import type { ContentHasher } from "@custodian/domain-primitives";
 import {
   appendEntry,
   GENESIS_HASH,
   parseRunId,
-  type EntryHasher,
   type ExecutionEvent,
   type LoggedEntry,
 } from "@custodian/execution-log";
 
 const RUN = "r_01jd7k9h2m4n6p8r0s2t4v6x8z";
 
-const stubHasher: EntryHasher = { hash: (input) => `h(${input.length.toString()})` };
+const stubHasher: ContentHasher = { hash: (input) => `h(${input.length.toString()})` };
 
 function run() {
   const parsed = parseRunId(RUN);

@@ -15,7 +15,3 @@ export type ContextItem =
       readonly tool: string;
       readonly truncated: boolean;
     };
-
-export function textOf(item: ContextItem): string {
-  return item.text;
-}

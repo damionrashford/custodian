@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "@custodian/domain-primitives";
 import type { ContextItem } from "./context-item";
-import type { TokenCounter } from "./token-counter";
+import type { TokenCounter } from "@custodian/domain-primitives";
 
 export type CompactionFailure = {
   readonly kind: "pins-exceed-budget";
@@ -45,5 +45,8 @@ export function compact(
     kept = kept.slice(1);
   }
 
+  // Filtered from the original order rather than concatenated as [...pinned, ...kept]: a concat
+  // would group every pin at the front, destroying the interleaving that tells the model which
+  // constraint applied at which point in the conversation.
   return ok(items.filter((item) => item.kind === "pinned-constraint" || kept.includes(item)));
 }

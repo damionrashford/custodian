@@ -9,7 +9,7 @@ import {
   type ProviderFailure,
 } from "@custodian/gateway";
 import { InMemoryIdempotencyStore, parseRequestHash } from "@custodian/idempotency";
-import { parseRunId, Sha256EntryHasher } from "@custodian/execution-log";
+import { parseRunId, Sha256ContentHasher } from "@custodian/execution-log";
 import { parseProviderId, parseRegion, type ProviderProfile } from "@custodian/routing";
 
 function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {
@@ -17,7 +17,7 @@ function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label:
   return parsed.value;
 }
 
-const hasher = new Sha256EntryHasher();
+const hasher = new Sha256ContentHasher();
 const model = parsedOrThrow(parseModelSnapshot("frontier-1.5-20260801"), "model");
 const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "tenant");
 const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");

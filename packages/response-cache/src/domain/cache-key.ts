@@ -1,4 +1,4 @@
-import type { Brand } from "@custodian/domain-primitives";
+import type { Brand, ContentHasher } from "@custodian/domain-primitives";
 import type { Namespace } from "@custodian/knowledge-base";
 
 /**
@@ -9,14 +9,6 @@ import type { Namespace } from "@custodian/knowledge-base";
 export type CacheKey = Brand<string, "CacheKey">;
 
 /**
- * Hashing needs a runtime primitive and the domain layer imports none, so the capability is a port.
- * Same shape as the execution log's EntryHasher, deliberately - one way to hash in this codebase.
- */
-export interface KeyDigest {
-  digest(canonicalInput: string): string;
-}
-
-/**
  * The key is a digest, not the prompt. Building the key from the prompt in the clear would leave the
  * question readable in the cache index even after the answer is crypto-shredded - erasing the value
  * while the key still says what was asked is not erasure.
@@ -25,7 +17,7 @@ export function cacheKeyFor(
   namespace: Namespace,
   model: string,
   prompt: string,
-  digest: KeyDigest,
+  hasher: ContentHasher,
 ): CacheKey {
-  return digest.digest(`${namespace} ${model} ${prompt}`) as CacheKey;
+  return hasher.hash(`${namespace} ${model} ${prompt}`) as CacheKey;
 }

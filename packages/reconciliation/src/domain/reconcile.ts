@@ -1,5 +1,5 @@
 /**
- * Version 1 treated reconciliation as a closing step. It is the load-bearing component
+ * Reconciliation is the load-bearing component, not a closing step
  * (AI_Agent_Implementation_Plan_v2.txt:119). Documented causes of divergence: events lost to network
  * partitions, events double-counted from a retry without idempotency, provider changes to
  * token-counting rules, and timezone mismatches at date boundaries.

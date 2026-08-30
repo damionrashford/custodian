@@ -2,12 +2,12 @@ import { expect, test } from "bun:test";
 import { parseRetentionBucket, parseSubjectId, parseTenantId } from "@custodian/domain-primitives";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import { DATA_MAP, runErasure } from "@custodian/erasure";
-import { cacheKeyFor, InMemoryResponseCache, Sha256KeyDigest } from "@custodian/response-cache";
+import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
 import {
   appendEntry,
   parseRunId,
-  Sha256EntryHasher,
+  Sha256ContentHasher,
   subjectsIn,
   verifyRunLog,
   type LoggedEntry,
@@ -23,7 +23,7 @@ import {
  * agent memory — rather than writing a new test.
  */
 const PERSONAL_DATA = "Jane Doe, jane@example.test, account 4187";
-const hasher = new Sha256EntryHasher();
+const hasher = new Sha256ContentHasher();
 
 function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {
   if (!parsed.ok) throw new Error(`fixture: bad ${label}`);
@@ -79,7 +79,7 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   });
   if (!claim.ok) throw new Error("fixture: claim rejected");
 
-  const digest = new Sha256KeyDigest();
+  const digest = new Sha256ContentHasher();
   const cache = new InMemoryResponseCache();
   const key = cacheKeyFor(
     namespaceFor(claim.value),

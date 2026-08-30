@@ -1,6 +1,5 @@
-import { type Brand, err, ok, type Result } from "@custodian/domain-primitives";
+import { type Brand, type ContentHasher, err, ok, type Result } from "@custodian/domain-primitives";
 import { GENESIS_HASH, hashableEntry } from "./append-entry";
-import type { EntryHasher } from "./entry-hasher";
 import type { LoggedEntry } from "./logged-entry";
 
 /** A log that cannot be constructed without passing verification. */
@@ -18,7 +17,7 @@ export type LogIntegrityFailure =
  */
 export function verifyRunLog(
   log: readonly LoggedEntry[],
-  hasher: EntryHasher,
+  hasher: ContentHasher,
 ): Result<VerifiedRunLog, LogIntegrityFailure> {
   let expectedPrevious = GENESIS_HASH;
 

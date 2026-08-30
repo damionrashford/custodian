@@ -6,9 +6,7 @@
  * occurred, minimise the personal content inside it. That is why the execution log appears twice
  * here with different periods.
  *
- * Before this existed the periods were magic numbers scattered across packages, referencing
- * nothing, with three classes not encoded anywhere. A schedule that lives only in prose is a
- * schedule nothing enforces.
+ * A schedule that lives only in prose is a schedule nothing enforces.
  */
 export type RetentionClass =
   | "prompts-and-completions"

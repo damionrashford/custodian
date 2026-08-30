@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { Sha256EntryHasher } from "@custodian/execution-log";
+import { Sha256ContentHasher } from "@custodian/execution-log";
 
-const hasher = new Sha256EntryHasher();
+const hasher = new Sha256ContentHasher();
 
 test("hashing is deterministic and 64 hex characters wide", () => {
   const first = hasher.hash("custodian");

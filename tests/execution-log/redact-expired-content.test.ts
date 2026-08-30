@@ -5,12 +5,12 @@ import {
   appendEntry,
   parseRunId,
   redactExpiredContent,
-  Sha256EntryHasher,
+  Sha256ContentHasher,
   verifyRunLog,
   type LoggedEntry,
 } from "@custodian/execution-log";
 
-const hasher = new Sha256EntryHasher();
+const hasher = new Sha256ContentHasher();
 
 function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {
   if (!parsed.ok) throw new Error(`fixture: bad ${label}`);

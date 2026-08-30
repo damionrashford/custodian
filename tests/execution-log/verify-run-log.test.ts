@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
+import type { ContentHasher } from "@custodian/domain-primitives";
 import {
   appendEntry,
   parseRunId,
   verifyRunLog,
-  type EntryHasher,
   type ExecutionEvent,
   type LoggedEntry,
 } from "@custodian/execution-log";
@@ -14,7 +14,7 @@ import {
  * A length counter would collide and hide a real hash-mismatch, so this is a real avalanche
  * function.
  */
-const hasher: EntryHasher = {
+const hasher: ContentHasher = {
   hash: (input) => {
     let accumulator = 0x811c9dc5;
     for (const character of input) {

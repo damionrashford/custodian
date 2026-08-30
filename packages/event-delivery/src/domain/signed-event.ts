@@ -1,4 +1,4 @@
-import { type Brand, err, ok, type Result } from "@custodian/domain-primitives";
+import { type Brand, err, ok, REPLAY_WINDOW_MS, type Result } from "@custodian/domain-primitives";
 
 /**
  * Every major provider delivers at least once and none delivers exactly once, which makes
@@ -30,8 +30,8 @@ export type SignatureRejection =
   | { readonly kind: "signature-mismatch" }
   | { readonly kind: "timestamp-outside-window"; readonly ageMs: number };
 
-/** Five minutes, the common default, to defeat replay. */
-export const SIGNATURE_WINDOW_MS = 5 * 60 * 1000;
+/** The platform replay window, shared with agent-card verification. */
+export const SIGNATURE_WINDOW_MS = REPLAY_WINDOW_MS;
 
 export interface EventSigner {
   sign(timestampMs: number, body: string): string;

@@ -1,4 +1,5 @@
-export type { Chunk, TokenCounter } from "./domain/chunk";
+export type { Chunk } from "./domain/chunk";
+export type { TokenCounter } from "@custodian/domain-primitives";
 export type { ChunkingOptions } from "./domain/chunk-recursive";
 export {
   chunkRecursive,

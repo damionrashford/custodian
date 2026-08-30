@@ -1,4 +1,5 @@
-import type { Chunk, TokenCounter } from "./chunk";
+import type { TokenCounter } from "@custodian/domain-primitives";
+import type { Chunk } from "./chunk";
 
 export type ChunkingOptions = {
   readonly maxTokens: number;

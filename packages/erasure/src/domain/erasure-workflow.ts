@@ -6,18 +6,7 @@ import type { ErasureProof } from "@custodian/crypto-shred";
  * (Data_Protection_and_Retention.txt:92-93) — which is why this is an exhaustive union rather than
  * a list of strings.
  */
-export type ErasureLocation =
-  | "primary-store"
-  | "vector-index"
-  | "response-cache"
-  | "agent-memory"
-  | "experience-store"
-  | "execution-log"
-  | "idempotency-store"
-  | "backups"
-  | "routing-memory";
-
-export const DATA_MAP: readonly ErasureLocation[] = [
+export const DATA_MAP = [
   "primary-store",
   "vector-index",
   "response-cache",
@@ -27,7 +16,14 @@ export const DATA_MAP: readonly ErasureLocation[] = [
   "idempotency-store",
   "backups",
   "routing-memory",
-];
+] as const;
+
+/**
+ * Derived from DATA_MAP, never written alongside it. When the two were separate declarations a
+ * location could be added to the union and forgotten in the map, which compiles clean and produces
+ * an erasure that `missingFrom` then reports as complete — an unprovable erasure that looks proven.
+ */
+export type ErasureLocation = (typeof DATA_MAP)[number];
 
 export type LegalHold = {
   readonly basis: string;

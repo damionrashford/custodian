@@ -7,14 +7,15 @@ import {
   type SealedContent,
 } from "@custodian/domain-primitives";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
-import { cacheKeyFor, InMemoryResponseCache, Sha256KeyDigest } from "@custodian/response-cache";
+import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
+import { Sha256ContentHasher } from "@custodian/execution-log";
 
 const STORED_AT = "2026-08-29T00:00:00.000Z";
 const SAME_DAY = "2026-08-29T06:00:00.000Z";
 /** One day past the 30-day "prompts and completions" period. */
 const PAST_RETENTION = "2026-09-29T00:00:00.000Z";
 
-const digest = new Sha256KeyDigest();
+const digest = new Sha256ContentHasher();
 const keys = new AesGcmSubjectKeyStore({ now: () => new Date(STORED_AT) });
 
 async function seal(plaintext: string): Promise<SealedContent> {

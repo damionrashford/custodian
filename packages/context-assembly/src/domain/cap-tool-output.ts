@@ -8,7 +8,11 @@ import type { ContextItem } from "./context-item";
  */
 export const DEFAULT_TOOL_OUTPUT_CAP = 4_000;
 
-export function capToolOutput(tool: string, text: string, maxChars: number): ContextItem {
+export function capToolOutput(
+  tool: string,
+  text: string,
+  maxChars: number = DEFAULT_TOOL_OUTPUT_CAP,
+): ContextItem {
   const truncated = text.length > maxChars;
   return {
     kind: "tool-output",

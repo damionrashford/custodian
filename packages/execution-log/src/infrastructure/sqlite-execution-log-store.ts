@@ -15,7 +15,7 @@ import type { LoggedEntry } from "../domain/logged-entry";
 
 type TailRow = { readonly seq: number; readonly hash: string };
 type EntryRow = { readonly seq: number; readonly entry: string };
-type RunRow = { readonly namespace: string; readonly run_id: string; readonly last_at: string };
+type RunRow = { readonly namespace: string; readonly runId: string; readonly lastAt: string };
 
 /**
  * The durable half of C15 — "doubles as the compliance log store"
@@ -67,7 +67,7 @@ export class SqliteExecutionLogStore implements ExecutionLogStore {
     if (first === undefined) {
       return Promise.resolve(ok(undefined));
     }
-    const expectedPrevious = tail?.hash ?? GENESIS_HASH;
+    const expectedPrevious = tail === null ? GENESIS_HASH : tail.hash;
     if (first.previousHash !== expectedPrevious) {
       return Promise.resolve(
         err({ kind: "chain-diverged", expectedPrevious, received: first.previousHash }),
@@ -77,16 +77,16 @@ export class SqliteExecutionLogStore implements ExecutionLogStore {
     const insert = this.#db.query(
       "INSERT INTO entries (namespace, run_id, seq, at, entry) VALUES (?, ?, ?, ?, ?)",
     );
-    this.#db.run("BEGIN IMMEDIATE;");
-    try {
+    // BEGIN IMMEDIATE rather than the default deferred begin: the write lock is taken before the
+    // first insert, so two processes appending to the same run contend at the lock instead of one
+    // of them failing mid-batch with a partially written tail. Bun commits on return and rolls
+    // back on throw, so a failed batch leaves no entries behind.
+    const insertAll = this.#db.transaction(() => {
       for (const entry of incoming) {
         insert.run(namespace, runId, entry.seq, entry.at, canonicalJson(entry));
       }
-      this.#db.run("COMMIT;");
-    } catch (cause) {
-      this.#db.run("ROLLBACK;");
-      throw cause;
-    }
+    });
+    insertAll.immediate();
     return Promise.resolve(ok(undefined));
   }
 
@@ -125,15 +125,15 @@ export class SqliteExecutionLogStore implements ExecutionLogStore {
   disposeExpiredRuns(now: string): number {
     const runs = this.#db
       .query<RunRow, []>(
-        "SELECT namespace, run_id, MAX(at) AS last_at FROM entries GROUP BY namespace, run_id",
+        "SELECT namespace, run_id AS runId, MAX(at) AS lastAt FROM entries GROUP BY namespace, run_id",
       )
       .all();
     let disposed = 0;
     for (const run of runs) {
-      if (isDueForDisposal("execution-log-metadata", run.last_at, now)) {
+      if (isDueForDisposal("execution-log-metadata", run.lastAt, now)) {
         this.#db.run("DELETE FROM entries WHERE namespace = ? AND run_id = ?", [
           run.namespace,
-          run.run_id,
+          run.runId,
         ]);
         disposed += 1;
       }

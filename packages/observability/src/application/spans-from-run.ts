@@ -13,7 +13,6 @@ import { GEN_AI_ATTRIBUTE, type GenAiSpan } from "../domain/gen-ai-conventions";
  */
 export function spansFromRun(log: readonly LoggedEntry[]): readonly GenAiSpan[] {
   const spans: GenAiSpan[] = [];
-  let lastInvocation = -1;
   for (const entry of log) {
     if (entry.event.kind === "model-invoked") {
       spans.push({
@@ -26,12 +25,13 @@ export function spansFromRun(log: readonly LoggedEntry[]): readonly GenAiSpan[] 
           [GEN_AI_ATTRIBUTE.responseModel]: entry.event.snapshot,
         },
       });
-      lastInvocation = spans.length - 1;
     }
     if (entry.event.kind === "usage-recorded") {
-      const span = spans[lastInvocation];
+      // Only model-invoked pushes a span, so the last span is the last invocation by construction.
+      const last = spans.length - 1;
+      const span = spans[last];
       if (span !== undefined) {
-        spans[lastInvocation] = {
+        spans[last] = {
           ...span,
           attributes: {
             ...span.attributes,

@@ -1,5 +1,10 @@
-import { err, ok, type Result, type SubjectId } from "@custodian/domain-primitives";
-import type { ErasureProof } from "@custodian/crypto-shred";
+import {
+  type ErasureProof,
+  err,
+  ok,
+  type Result,
+  type SubjectId,
+} from "@custodian/domain-primitives";
 
 /**
  * Every location personal data reaches. Any location not in this map is a defect, logged as such

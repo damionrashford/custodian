@@ -1,5 +1,6 @@
 import {
   canonicalJson,
+  type RunId,
   type ContentHasher,
   err,
   ok,
@@ -7,7 +8,6 @@ import {
 } from "@custodian/domain-primitives";
 import type { ExecutionEvent } from "./execution-event";
 import type { LoggedEntry } from "./logged-entry";
-import type { RunId } from "./run-id";
 
 export const GENESIS_HASH = "0".repeat(64);
 

@@ -12,3 +12,8 @@ export type { SealedContent } from "./domain/sealed-content";
 export type { TokenCounter } from "./domain/token-counter";
 export type { ContentHasher } from "./domain/content-hasher";
 export { REPLAY_WINDOW_MS } from "./domain/replay-window";
+export type { InvalidRunId, RunId } from "./domain/run-id";
+export { parseRunId } from "./domain/run-id";
+export type { ErasureProof } from "./domain/erasure-proof";
+export type { CompletionUsage, InvalidModelSnapshot, ModelSnapshot } from "./domain/model-snapshot";
+export { parseModelSnapshot } from "./domain/model-snapshot";

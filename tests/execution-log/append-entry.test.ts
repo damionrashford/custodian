@@ -1,9 +1,9 @@
+import { parseRunId } from "@custodian/domain-primitives";
 import { expect, test } from "bun:test";
 import type { ContentHasher } from "@custodian/domain-primitives";
 import {
   appendEntry,
   GENESIS_HASH,
-  parseRunId,
   type ExecutionEvent,
   type LoggedEntry,
 } from "@custodian/execution-log";

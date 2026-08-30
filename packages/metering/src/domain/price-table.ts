@@ -1,4 +1,4 @@
-import type { ModelSnapshot } from "@custodian/gateway";
+import type { ModelSnapshot } from "@custodian/domain-primitives";
 
 export type ModelPrice = {
   readonly inputMicrosPerToken: number;

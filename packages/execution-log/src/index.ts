@@ -1,5 +1,3 @@
-export type { InvalidRunId, RunId } from "./domain/run-id";
-export { parseRunId } from "./domain/run-id";
 export type { ExecutionEvent } from "./domain/execution-event";
 export { subjectsIn } from "./domain/execution-event";
 export type { LoggedEntry } from "./domain/logged-entry";

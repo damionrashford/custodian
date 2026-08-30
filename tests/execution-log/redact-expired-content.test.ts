@@ -1,9 +1,13 @@
 import { expect, test } from "bun:test";
-import { parseRetentionBucket, parseSubjectId, parseTenantId } from "@custodian/domain-primitives";
+import {
+  parseRetentionBucket,
+  parseRunId,
+  parseSubjectId,
+  parseTenantId,
+} from "@custodian/domain-primitives";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import {
   appendEntry,
-  parseRunId,
   redactExpiredContent,
   Sha256ContentHasher,
   verifyRunLog,

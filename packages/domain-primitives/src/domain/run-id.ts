@@ -1,4 +1,5 @@
-import { type Brand, err, ok, type Result } from "@custodian/domain-primitives";
+import type { Brand } from "./brand";
+import { err, ok, type Result } from "./result";
 
 export type RunId = Brand<string, "RunId">;
 

@@ -1,12 +1,16 @@
 import { expect, test } from "bun:test";
-import { parseRetentionBucket, parseSubjectId, parseTenantId } from "@custodian/domain-primitives";
+import {
+  parseRetentionBucket,
+  parseRunId,
+  parseSubjectId,
+  parseTenantId,
+} from "@custodian/domain-primitives";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import { DATA_MAP, runErasure } from "@custodian/erasure";
 import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
 import {
   appendEntry,
-  parseRunId,
   Sha256ContentHasher,
   subjectsIn,
   verifyRunLog,

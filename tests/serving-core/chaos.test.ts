@@ -1,15 +1,20 @@
 import { expect, test } from "bun:test";
-import { parseRetentionBucket, parseSubjectId, parseTenantId } from "@custodian/domain-primitives";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import {
   parseModelSnapshot,
+  parseRetentionBucket,
+  parseRunId,
+  parseSubjectId,
+  parseTenantId,
+} from "@custodian/domain-primitives";
+import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
   serveCompletion,
   type CompletionResponse,
   type ModelProvider,
   type ProviderFailure,
 } from "@custodian/gateway";
 import { InMemoryIdempotencyStore, parseRequestHash } from "@custodian/idempotency";
-import { parseRunId, Sha256ContentHasher } from "@custodian/execution-log";
+import { Sha256ContentHasher } from "@custodian/execution-log";
 import { parseProviderId, parseRegion, type ProviderProfile } from "@custodian/routing";
 
 function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {

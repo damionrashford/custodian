@@ -1,14 +1,16 @@
 import {
+  type CompletionUsage,
   type ContentHasher,
   err,
   ok,
-  type RetentionBucket,
   type Result,
+  type RetentionBucket,
+  type RunId,
   type SubjectId,
   type TenantId,
 } from "@custodian/domain-primitives";
 import type { SubjectKeyStore } from "@custodian/crypto-shred";
-import { appendEntry, type LoggedEntry, type RunId } from "@custodian/execution-log";
+import { appendEntry, type LoggedEntry } from "@custodian/execution-log";
 import type { IdempotencyStore, RequestHash } from "@custodian/idempotency";
 import {
   selectProvider,
@@ -19,7 +21,6 @@ import {
 import type {
   CompletionRequest,
   CompletionResponse,
-  CompletionUsage,
   ModelProvider,
 } from "../domain/model-provider";
 import { DEFAULT_RETRY_POLICY, nextRetry } from "../domain/retry-policy";

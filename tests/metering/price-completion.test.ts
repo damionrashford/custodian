@@ -1,5 +1,6 @@
+import { parseModelSnapshot } from "@custodian/domain-primitives";
 import { expect, test } from "bun:test";
-import { parseModelSnapshot } from "@custodian/gateway";
+
 import { priceCompletion, replayUsageLog, type PriceTable } from "@custodian/metering";
 
 function model(value: string) {

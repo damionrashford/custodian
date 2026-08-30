@@ -1,13 +1,9 @@
 export type {
   CompletionRequest,
   CompletionResponse,
-  CompletionUsage,
-  InvalidModelSnapshot,
   ModelProvider,
-  ModelSnapshot,
   ProviderFailure,
 } from "./domain/model-provider";
-export { parseModelSnapshot } from "./domain/model-provider";
 export type { RetryContext, RetryDecision, RetryPolicy } from "./domain/retry-policy";
 export { DEFAULT_RETRY_POLICY, nextRetry } from "./domain/retry-policy";
 export type { BudgetExhausted } from "./domain/budget";

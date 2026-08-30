@@ -81,7 +81,6 @@
       "name": "@custodian/erasure",
       "version": "0.0.0",
       "dependencies": {
-        "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
       },
     },
@@ -153,7 +152,6 @@
       "version": "0.0.0",
       "dependencies": {
         "@custodian/domain-primitives": "workspace:*",
-        "@custodian/gateway": "workspace:*",
       },
     },
     "packages/oversight": {
@@ -196,7 +194,6 @@
       "version": "0.0.0",
       "dependencies": {
         "@custodian/domain-primitives": "workspace:*",
-        "@custodian/execution-log": "workspace:*",
       },
     },
     "packages/tool-registry": {

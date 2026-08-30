@@ -1,5 +1,5 @@
 import type { ExecutionEvent } from "./execution-event";
-import type { RunId } from "./run-id";
+import type { RunId } from "@custodian/domain-primitives";
 
 export type LoggedEntry = {
   readonly runId: RunId;

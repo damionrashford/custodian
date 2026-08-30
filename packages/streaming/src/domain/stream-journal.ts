@@ -1,5 +1,4 @@
-import type { Result, SealedContent } from "@custodian/domain-primitives";
-import type { RunId } from "@custodian/execution-log";
+import type { Result, RunId, SealedContent } from "@custodian/domain-primitives";
 
 export type JournalFailure = { readonly kind: "unknown-run"; readonly runId: RunId };
 

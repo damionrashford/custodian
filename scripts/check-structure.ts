@@ -40,6 +40,26 @@ for await (const file of new Bun.Glob("packages/*/src/**/*.ts").scan(".")) {
   }
 }
 
+/**
+ * .dependency-cruiser.cjs lets a domain file import these package barrels and no others, on the
+ * grounds that they export domain only. If one ever gains an infrastructure or application export
+ * the exemption becomes a route from domain to an adapter, so the claim is checked rather than
+ * trusted.
+ */
+const PURE_VOCABULARY_PACKAGES: readonly string[] = ["domain-primitives", "retention"];
+
+for (const name of PURE_VOCABULARY_PACKAGES) {
+  const barrel = Bun.file(`packages/${name}/src/index.ts`);
+  const source = await barrel.text();
+  if (/from "\.\/(infrastructure|application)\//.test(source)) {
+    violations.push(
+      `packages/${name}/src/index.ts: listed as pure vocabulary in .dependency-cruiser.cjs but ` +
+        `exports from infrastructure/ or application/. Either remove that export or drop the ` +
+        `package from the exemption — domain files are allowed to import this barrel.`,
+    );
+  }
+}
+
 for (const [folder, count] of folderCounts) {
   if (count > MAX_FILES_PER_FOLDER) {
     violations.push(

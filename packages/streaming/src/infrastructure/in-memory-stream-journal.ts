@@ -1,5 +1,4 @@
-import { err, ok, type Result, type SealedContent } from "@custodian/domain-primitives";
-import type { RunId } from "@custodian/execution-log";
+import { err, ok, type Result, type RunId, type SealedContent } from "@custodian/domain-primitives";
 import type { JournalFailure, StreamJournal } from "../domain/stream-journal";
 
 export class InMemoryStreamJournal implements StreamJournal {

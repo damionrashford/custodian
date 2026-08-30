@@ -2,10 +2,11 @@ import { expect, test } from "bun:test";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import {
   parseRetentionBucket,
+  parseRunId,
   parseSubjectId,
   type SealedContent,
 } from "@custodian/domain-primitives";
-import { parseRunId } from "@custodian/execution-log";
+
 import { InMemoryStreamJournal, STREAMING_RESPONSE_HEADERS } from "@custodian/streaming";
 
 const AT = "2026-08-29T00:00:00.000Z";

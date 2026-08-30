@@ -7,7 +7,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@custodian/domain-primitives": "workspace:*",
-    "@custodian/execution-log": "workspace:*"
+    "@custodian/domain-primitives": "workspace:*"
   }
 }

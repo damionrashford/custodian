@@ -1,4 +1,5 @@
 import {
+  type ErasureProof,
   err,
   ok,
   type RetentionBucket,
@@ -6,7 +7,6 @@ import {
   type SealedContent,
   type SubjectId,
 } from "@custodian/domain-primitives";
-import type { ErasureProof } from "../domain/erasure-proof";
 import type { KeyStoreFailure, SealRequest, SubjectKeyStore } from "../domain/subject-key-store";
 
 const IV_BYTES = 12;

@@ -7,7 +7,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@custodian/domain-primitives": "workspace:*",
-    "@custodian/gateway": "workspace:*"
+    "@custodian/domain-primitives": "workspace:*"
   }
 }

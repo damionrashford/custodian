@@ -1,10 +1,10 @@
 import type {
+  ErasureProof,
   RetentionBucket,
   Result,
   SealedContent,
   SubjectId,
 } from "@custodian/domain-primitives";
-import type { ErasureProof } from "./erasure-proof";
 
 export type KeyStoreFailure =
   | { readonly kind: "subject-erased"; readonly subject: SubjectId }

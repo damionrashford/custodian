@@ -1,5 +1,10 @@
-import { err, ok, type Result } from "@custodian/domain-primitives";
-import type { CompletionUsage, ModelSnapshot } from "@custodian/gateway";
+import {
+  type CompletionUsage,
+  err,
+  type ModelSnapshot,
+  ok,
+  type Result,
+} from "@custodian/domain-primitives";
 import type { PriceTable } from "./price-table";
 
 export type UnpricedModel = {

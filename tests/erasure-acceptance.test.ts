@@ -187,7 +187,7 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   // destruction — soft delete is insufficient" (Data_Protection_and_Retention.txt:49-50) — so the
   // embedding is sealed under the same subject key rather than merely deleted. A bare vector would
   // survive the erasure, and embedding inversion makes that a recoverable fragment, not a detail.
-  const embedding = [0.42, 0.17, 0.91];
+  const embedding = [0.4242424242, 0.1717171717, 0.9191919191];
   const sealedEmbedding = await sealEmbedding(store, {
     subject,
     bucket: bucketFor("prompts-and-completions", "2026-08-29T00:00:00.000Z"),
@@ -272,8 +272,15 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
     ok: false,
     error: { kind: "subject-erased", subject },
   });
-  // The pre-request snapshot of the index cannot be inverted back to the vector either.
-  expect(indexBackup).not.toContain("0.42");
+  // The whole encoded vector, not a fragment of one number.
+  //
+  // This asserted `not.toContain("0.42")` and could fail by chance: `iv` is `base64 "." base64`,
+  // so the literal "0.42" turns up at random about once in 200,000 runs when the first half ends
+  // in "0" and the second begins "42". It failed exactly that way once. A probabilistic assertion
+  // inside the erasure gate is worse than a missing one — a gate that fires at random teaches
+  // people to re-run until green, and takes the credibility of every gate beside it (LD-10).
+  expect(indexBackup).not.toContain(JSON.stringify(embedding));
+  expect(indexBackup).not.toContain("0.4242424242");
 
   // 4d. Recovery attempt from raw bytes — no fragment of the plaintext survives anywhere.
   expect(backup).not.toContain("jane@example.test");

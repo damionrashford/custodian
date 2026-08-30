@@ -7,8 +7,13 @@
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/execution-log": "workspace:*",
+        "@custodian/gateway": "workspace:*",
         "@custodian/idempotency": "workspace:*",
         "@custodian/identity": "workspace:*",
+        "@custodian/metering": "workspace:*",
+        "@custodian/routing": "workspace:*",
+        "@custodian/streaming": "workspace:*",
+        "@custodian/tool-registry": "workspace:*",
         "@eslint/js": "^10.0.1",
         "@types/bun": "^1.3.14",
         "@types/node": "^26.4.0",
@@ -40,6 +45,16 @@
         "@custodian/domain-primitives": "workspace:*",
       },
     },
+    "packages/gateway": {
+      "name": "@custodian/gateway",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+        "@custodian/execution-log": "workspace:*",
+        "@custodian/idempotency": "workspace:*",
+        "@custodian/routing": "workspace:*",
+      },
+    },
     "packages/idempotency": {
       "name": "@custodian/idempotency",
       "version": "0.0.0",
@@ -54,6 +69,36 @@
         "@custodian/domain-primitives": "workspace:*",
       },
     },
+    "packages/metering": {
+      "name": "@custodian/metering",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+        "@custodian/gateway": "workspace:*",
+      },
+    },
+    "packages/routing": {
+      "name": "@custodian/routing",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+      },
+    },
+    "packages/streaming": {
+      "name": "@custodian/streaming",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+        "@custodian/execution-log": "workspace:*",
+      },
+    },
+    "packages/tool-registry": {
+      "name": "@custodian/tool-registry",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+      },
+    },
   },
   "packages": {
     "@custodian/crypto-shred": ["@custodian/crypto-shred@workspace:packages/crypto-shred"],
@@ -62,9 +107,19 @@
 
     "@custodian/execution-log": ["@custodian/execution-log@workspace:packages/execution-log"],
 
+    "@custodian/gateway": ["@custodian/gateway@workspace:packages/gateway"],
+
     "@custodian/idempotency": ["@custodian/idempotency@workspace:packages/idempotency"],
 
     "@custodian/identity": ["@custodian/identity@workspace:packages/identity"],
+
+    "@custodian/metering": ["@custodian/metering@workspace:packages/metering"],
+
+    "@custodian/routing": ["@custodian/routing@workspace:packages/routing"],
+
+    "@custodian/streaming": ["@custodian/streaming@workspace:packages/streaming"],
+
+    "@custodian/tool-registry": ["@custodian/tool-registry@workspace:packages/tool-registry"],
 
     "@emnapi/core": ["@emnapi/core@1.10.0", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.1", "tslib": "^2.4.0" } }, "sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw=="],
 

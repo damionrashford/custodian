@@ -1,6 +1,31 @@
 import type { SealedContent } from "@custodian/domain-primitives";
 import type { Namespace } from "@custodian/knowledge-base";
+import { expiresAt } from "@custodian/retention";
 import type { CacheKey } from "./cache-key";
+
+export type CacheEntry = {
+  readonly namespace: Namespace;
+  readonly value: SealedContent;
+  readonly storedAt: string;
+  readonly expiresAt: string;
+};
+
+/**
+ * A cached completion is a completion, so it takes the "prompts and completions" period rather than
+ * living forever. Without this the cache was the one store with no retention at all — sealing made
+ * it erasable on request, but nothing disposed of it on schedule.
+ */
+export function cacheEntryFor(
+  namespace: Namespace,
+  value: SealedContent,
+  storedAt: string,
+): CacheEntry {
+  const due = expiresAt("prompts-and-completions", storedAt);
+  if (due === undefined) {
+    throw new Error("prompts-and-completions must be a duration class");
+  }
+  return { namespace, value, storedAt, expiresAt: due };
+}
 
 /**
  * Cached completions hold SealedContent, never plaintext. The data map requires "key destruction
@@ -9,8 +34,9 @@ import type { CacheKey } from "./cache-key";
  * subject's key reaches the cache without the cache needing a per-subject index of its own.
  */
 export interface ResponseCache {
-  get(key: CacheKey): SealedContent | undefined;
-  set(key: CacheKey, namespace: Namespace, value: SealedContent): void;
+  /** Returns nothing once the entry is past its retention period, even if it is still stored. */
+  get(key: CacheKey, now: string): SealedContent | undefined;
+  set(key: CacheKey, namespace: Namespace, value: SealedContent, storedAt: string): void;
   /**
    * Tenant-level invalidation, for the rollback runbook rather than for erasure. Cache invalidation
    * is a rollback step, not follow-up cleanup - a documented incident had the cache serving a bad

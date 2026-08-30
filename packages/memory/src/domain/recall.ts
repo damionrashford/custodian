@@ -1,3 +1,4 @@
+import { isDueForDisposal } from "@custodian/retention";
 import type { MemoryEntry, Provenance } from "./memory-entry";
 
 /**
@@ -62,15 +63,18 @@ export function scoreRecall(input: RecallInput): number {
 
 /**
  * Decay handles low-relevance memories. A high-relevance memory that has become false is
- * confidently retrieved and confidently wrong, so factual entries expire on a schedule rather than
- * being left to decay (Agent_Architecture_Addendum.txt:153). Twelve months rolling overall
- * (Data_Protection_and_Retention.txt:132-134).
+ * confidently retrieved and confidently wrong, so factual entries expire on a shorter schedule
+ * rather than being left to decay (Agent_Architecture_Addendum.txt:153).
+ *
+ * The outer bound is not defined here — it comes from the platform retention schedule, so the
+ * legal position lives in one place instead of as a number in this file that happens to agree.
  */
-export const MEMORY_RETENTION_DAYS = 365;
 export const FACT_EXPIRY_DAYS = 90;
 
 export function isStale(entry: MemoryEntry, now: string): boolean {
+  if (isDueForDisposal("agent-memory", entry.writtenAt, now)) {
+    return true;
+  }
   const ageDays = (Date.parse(now) - Date.parse(entry.writtenAt)) / DAY_MS;
-  const limit = entry.category === "fact" ? FACT_EXPIRY_DAYS : MEMORY_RETENTION_DAYS;
-  return ageDays > limit;
+  return entry.category === "fact" && ageDays > FACT_EXPIRY_DAYS;
 }

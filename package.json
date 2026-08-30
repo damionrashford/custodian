@@ -34,6 +34,7 @@
     "@custodian/memory": "workspace:*",
     "@custodian/metering": "workspace:*",
     "@custodian/response-cache": "workspace:*",
+    "@custodian/retention": "workspace:*",
     "@custodian/retrieval": "workspace:*",
     "@custodian/routing": "workspace:*",
     "@custodian/streaming": "workspace:*",

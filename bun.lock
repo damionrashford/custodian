@@ -19,6 +19,7 @@
         "@custodian/memory": "workspace:*",
         "@custodian/metering": "workspace:*",
         "@custodian/response-cache": "workspace:*",
+        "@custodian/retention": "workspace:*",
         "@custodian/retrieval": "workspace:*",
         "@custodian/routing": "workspace:*",
         "@custodian/streaming": "workspace:*",
@@ -124,6 +125,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@custodian/domain-primitives": "workspace:*",
+        "@custodian/retention": "workspace:*",
       },
     },
     "packages/metering": {
@@ -140,7 +142,12 @@
       "dependencies": {
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/knowledge-base": "workspace:*",
+        "@custodian/retention": "workspace:*",
       },
+    },
+    "packages/retention": {
+      "name": "@custodian/retention",
+      "version": "0.0.0",
     },
     "packages/retrieval": {
       "name": "@custodian/retrieval",
@@ -202,6 +209,8 @@
     "@custodian/metering": ["@custodian/metering@workspace:packages/metering"],
 
     "@custodian/response-cache": ["@custodian/response-cache@workspace:packages/response-cache"],
+
+    "@custodian/retention": ["@custodian/retention@workspace:packages/retention"],
 
     "@custodian/retrieval": ["@custodian/retrieval@workspace:packages/retrieval"],
 

@@ -87,14 +87,14 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
     PERSONAL_DATA,
     digest,
   );
-  cache.set(key, namespaceFor(claim.value), sealed.value);
+  cache.set(key, namespaceFor(claim.value), sealed.value, "2026-08-29T00:00:00.000Z");
 
   // The cache key is a digest, so the question is not readable from the index either.
   expect(String(key)).not.toContain("jane@example.test");
 
   // 2. Backup: a snapshot taken BEFORE the erasure request, serialised as bytes on disk would be.
   const backup = JSON.stringify(log);
-  const cacheBackup = JSON.stringify(cache.get(key));
+  const cacheBackup = JSON.stringify(cache.get(key, "2026-08-29T00:00:00.000Z"));
 
   // 3. Erase — through the workflow, not by calling the key store directly, so the gate exercises
   // the identity, legal-hold and data-map steps that guard the destruction.
@@ -129,7 +129,7 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   });
 
   // 4c. Recovery attempt from the response cache — the same destroyed key covers it.
-  const cached = cache.get(key);
+  const cached = cache.get(key, "2026-08-29T00:00:00.000Z");
   if (cached === undefined) throw new Error("cache lost the entry");
   expect(await store.unseal(cached)).toEqual({
     ok: false,

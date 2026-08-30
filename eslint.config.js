@@ -79,6 +79,7 @@ export default defineConfig(
       "packages/*/src/domain/sanitize-*.ts",
       "packages/*/src/domain/retention-bucket.ts",
       "packages/*/src/domain/request-hash.ts",
+      "packages/*/src/domain/tool-name.ts",
     ],
     rules: { "@typescript-eslint/consistent-type-assertions": "off" },
   },

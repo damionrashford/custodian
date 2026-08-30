@@ -10,3 +10,4 @@ export type { RedactionRefusal, RedactionRequest } from "./application/redact-ex
 export { redactExpiredContent } from "./application/redact-expired-content";
 export type { ExecutionLogStore, LogStoreFailure } from "./domain/execution-log-store";
 export { InMemoryExecutionLogStore } from "./infrastructure/in-memory-execution-log-store";
+export { SqliteExecutionLogStore } from "./infrastructure/sqlite-execution-log-store";

@@ -9,7 +9,9 @@ export type LogStoreFailure =
       readonly received: string;
     }
   | { readonly kind: "sequence-rewind"; readonly tail: number; readonly received: number }
-  | { readonly kind: "unknown-run"; readonly runId: RunId };
+  | { readonly kind: "unknown-run"; readonly runId: RunId }
+  /** A stored row whose recomputed hash no longer matches — evidence edited or decayed at rest. */
+  | { readonly kind: "corrupt-entry"; readonly runId: RunId; readonly seq: number };
 
 /**
  * Append-only storage for the execution log. `verifyRunLog` detects tampering after the fact; this

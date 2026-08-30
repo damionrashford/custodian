@@ -121,5 +121,9 @@ test("type assertions are exempt in exactly one source file", async () => {
   // entry — and growing it back is a decision someone has to make in this test first.
   expect(exempt.map((m) => m[1])).toEqual([
     "packages/domain-primitives/src/domain/language/brand.ts",
+    // The sqlite store's one assertion rehydrates rows whose hash is recomputed and compared
+    // before the value is returned — a parser exemption in the standard's own sense, made
+    // deliberately here (LD-11: growing this list is a decision, not a drive-by).
+    "packages/execution-log/src/infrastructure/sqlite-execution-log-store.ts",
   ]);
 });

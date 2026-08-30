@@ -1,0 +1,102 @@
+# The agent, and the Vault that holds its key-encryption keys.
+#
+# The default composition expects an EXTERNAL Vault: set CUSTODIAN_VAULT_ADDR and CUSTODIAN_VAULT_TOKEN
+# and bring up `agent` alone. That is the production shape, and it is the default precisely so that
+# nobody deploys the convenience below by accident.
+#
+#   docker compose up agent                     # against a Vault you operate
+#   docker compose --profile dev up             # throwaway local Vault, see the warning on it
+#
+# Why the local Vault is not the default: it runs in dev mode, which keeps its storage IN MEMORY.
+# Every restart destroys every key-encryption key, and every sealed row on the agent's volume becomes
+# permanently unreadable — durable ciphertext with ephemeral keys, which is the defect the agent
+# refuses to boot into and would be silly to reintroduce underneath it. A real Vault needs
+# initialising and unsealing with keys a compose file must never hold, so it is operated, not
+# composed.
+
+services:
+  agent:
+    build: .
+    ports: ["8787:8787"]
+    environment:
+      # No `:?` guard here. Compose interpolates every service's variables regardless of profile, so
+      # a required-variable check on this service makes `--profile dev` unusable. It would also be a
+      # second copy of a control that already exists and is tested: custodyDecision refuses to boot
+      # on a missing or half-configured Vault, with a better message than compose can produce.
+      CUSTODIAN_VAULT_ADDR: ${CUSTODIAN_VAULT_ADDR:-}
+      CUSTODIAN_VAULT_TOKEN: ${CUSTODIAN_VAULT_TOKEN:-}
+      # Supplied by the operator, never baked in. The agent holds only public keys; the private half
+      # belongs to the issuer and must not appear in this file or its environment.
+      CUSTODIAN_CLAIM_KEYS: ${CUSTODIAN_CLAIM_KEYS:-}
+      CUSTODIAN_DEV_CLAIM: ${CUSTODIAN_DEV_CLAIM:-}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+    volumes:
+      # Named, not a bind mount. The sealed stores must survive a redeploy: ciphertext that outlives
+      # its keys is unreadable forever, and losing the execution log loses the evidence itself.
+      #
+      # Single instance only. These are SQLite files on one volume, so a second replica would get its
+      # own idempotency ledger and stop deduplicating redeliveries — the double-execution the ledger
+      # exists to prevent. Scaling out means moving those stores to a shared engine first, not
+      # raising the replica count.
+      - custodian-data:/data
+    # In-flight runs finish before the socket closes; the log's tail is the part worth keeping.
+    stop_grace_period: 30s
+
+  # ---- development only, behind a profile ---------------------------------------------------------
+  vault:
+    profiles: [dev]
+    image: hashicorp/vault:1.21
+    cap_add: [IPC_LOCK]
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports: ["8201:8200"]
+    healthcheck:
+      # Vault answers 200 only once initialised and unsealed, so this gates the agent on a Vault that
+      # can actually mint a data key rather than one that has merely opened a socket.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8200/v1/sys/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # The transit engine is not enabled by default, and the agent refuses to boot without a custodian
+  # rather than falling back to in-process keys. Enabling it is therefore part of bringing the stack
+  # up, not a step someone remembers: a half-configured Vault is the case custodyDecision exists to
+  # refuse, and it should not be reachable by forgetting a curl.
+  vault-init:
+    profiles: [dev]
+    image: hashicorp/vault:1.21
+    depends_on:
+      vault: { condition: service_healthy }
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: root
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - vault secrets enable transit || vault secrets list | grep -q '^transit/'
+    restart: "no"
+
+  # Same image and volume as `agent`, wired to the throwaway Vault above. A separate service rather
+  # than an override, so the production composition cannot inherit a dev default by omission.
+  agent-dev:
+    profiles: [dev]
+    build: .
+    depends_on:
+      vault: { condition: service_healthy }
+      vault-init: { condition: service_completed_successfully }
+    ports: ["8787:8787"]
+    environment:
+      CUSTODIAN_VAULT_ADDR: http://vault:8200
+      CUSTODIAN_VAULT_TOKEN: root
+      CUSTODIAN_CLAIM_KEYS: ${CUSTODIAN_CLAIM_KEYS:-}
+      CUSTODIAN_DEV_CLAIM: ${CUSTODIAN_DEV_CLAIM:-}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+    volumes:
+      - custodian-dev-data:/data
+    stop_grace_period: 30s
+
+volumes:
+  custodian-data:
+  # Separate from the production volume on purpose: a dev Vault's keys die with it, so rows sealed
+  # against it are already unreadable and must never share a volume with rows that are not.
+  custodian-dev-data:

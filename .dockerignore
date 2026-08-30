@@ -1,0 +1,43 @@
+# Everything the image does not need, and several things it must never contain.
+
+# Never: the spec corpus and machine-local decisions are not distributable, and .env holds secrets.
+.research/
+.claude/
+.env
+.env.*
+*.pem
+*.key
+
+# Never: live databases. Baking a developer's sealed rows into an image ships their ciphertext, and
+# the keys that open it live in a Vault the image will never reach.
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+data/
+
+# The gates run in CI, not in the build, so their inputs stay out of the context.
+tests/
+scripts/
+node_modules/
+bun.lock
+
+.git/
+.github/
+.graphify/
+.worktrees/
+.superpowers/
+dist/
+coverage/
+
+CHANGELOG.md
+README.md
+LICENSE.md
+CLAUDE.md
+Dockerfile
+compose.yaml
+.dockerignore
+.gitignore
+.prettierrc.json
+.dependency-cruiser.cjs
+eslint.config.js
+knip.json

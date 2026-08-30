@@ -14,19 +14,30 @@ import {
   parseRunId,
   parseSubjectId,
   parseTenantId,
-} from "@custodian/domain-primitives";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
-import { admissibleProof, DATA_MAP, runErasure } from "@custodian/erasure";
-import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
-import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
+} from "@custodian/primitives";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/custody";
+import { admissibleProof, DATA_MAP, runErasure } from "@custodian/custody";
+import { cacheKeyFor, InMemoryResponseCache } from "@custodian/serving";
+import {
+  InMemoryVectorIndex,
+  namespaceFor,
+  sealEmbedding,
+  verifyTenantClaim,
+  type ClaimVerifier,
+} from "@custodian/knowledge";
+import { bucketFor } from "@custodian/primitives";
 import {
   Sha256ContentHasher,
   subjectsIn,
   verifyRunLog,
   type LoggedEntry,
-} from "@custodian/execution-log";
-import { serveCompletion } from "@custodian/gateway";
-import { parseRequestHash, SqliteIdempotencyStore } from "@custodian/idempotency";
+} from "@custodian/evidence";
+import { serveCompletion } from "@custodian/serving";
+import { parseRequestHash, SqliteIdempotencyStore } from "@custodian/serving";
 
 function principal(tenant: TenantId): Principal {
   const id = parsePrincipalId("p_operator");
@@ -58,7 +69,10 @@ function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label:
 }
 
 test("erasure gate: a crypto-shredded subject is unrecoverable from storage and from a pre-request backup", async () => {
-  const store = new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") });
+  const store = new EnvelopeSubjectKeyStore({
+    custodian: new InMemoryKeyCustodian({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
+    registry: new SqliteDeletionRegistry(":memory:"),
+  });
   const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
   const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "tenant");
   const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
@@ -169,9 +183,40 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   // The cache key is a digest, so the question is not readable from the index either.
   expect(String(key)).not.toContain("jane@example.test");
 
+  // 1c. And the vector index. The data map gives this location one erasure mechanism — "Key
+  // destruction — soft delete is insufficient" (Data_Protection_and_Retention.txt:49-50) — so the
+  // embedding is sealed under the same subject key rather than merely deleted. A bare vector would
+  // survive the erasure, and embedding inversion makes that a recoverable fragment, not a detail.
+  const embedding = [0.42, 0.17, 0.91];
+  const sealedEmbedding = await sealEmbedding(store, {
+    subject,
+    bucket: bucketFor("prompts-and-completions", "2026-08-29T00:00:00.000Z"),
+    embedding,
+  });
+  if (!sealedEmbedding.ok) throw new Error("fixture: sealing the embedding failed");
+  const index = new InMemoryVectorIndex({
+    documents: [
+      {
+        namespace: namespaceFor(tenantClaim),
+        documentId: "jane-profile",
+        embedding: sealedEmbedding.value,
+      },
+    ],
+    keys: store,
+  });
+
+  const beforeErasure = await index.query({
+    namespace: namespaceFor(tenantClaim),
+    embedding,
+    topK: 4,
+  });
+  if (!beforeErasure.ok || beforeErasure.value.length !== 1)
+    throw new Error("fixture: the index did not hold the subject's document");
+
   // 2. Backup: a snapshot taken BEFORE the erasure request, serialised as bytes on disk would be.
   const backup = JSON.stringify(log);
   const cacheBackup = JSON.stringify(cache.get(key, "2026-08-29T00:00:00.000Z"));
+  const indexBackup = JSON.stringify(sealedEmbedding.value);
 
   // 3. Erase — through the workflow, not by calling the key store directly, so the gate exercises
   // the identity, legal-hold and data-map steps that guard the destruction.
@@ -213,6 +258,23 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   });
   expect(cacheBackup).not.toContain("jane@example.test");
 
+  // 4c-bis. Recovery attempt from the vector index. Not "the query returns nothing" — a soft delete
+  // would also return nothing while leaving the vector on disk. The bytes are no longer an embedding
+  // to anyone, and the index drops the entry it can no longer read.
+  const afterErasure = await index.query({
+    namespace: namespaceFor(tenantClaim),
+    embedding,
+    topK: 4,
+  });
+  expect(afterErasure).toEqual({ ok: true, value: [] });
+  expect(index.size()).toBe(0);
+  expect(await store.unseal(sealedEmbedding.value)).toEqual({
+    ok: false,
+    error: { kind: "subject-erased", subject },
+  });
+  // The pre-request snapshot of the index cannot be inverted back to the vector either.
+  expect(indexBackup).not.toContain("0.42");
+
   // 4d. Recovery attempt from raw bytes — no fragment of the plaintext survives anywhere.
   expect(backup).not.toContain("jane@example.test");
   expect(backup).not.toContain("Jane Doe");
@@ -249,7 +311,7 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   // refusing until a KMS-backed store returns a record someone outside this process issued.
   expect(admissibleProof(erased.value.proof)).toEqual({
     ok: false,
-    error: { kind: "self-attested", target: String(subject) },
+    error: { kind: "self-attested", target: `subject-${String(subject)}` },
   });
 
   // 6. Erasure is idempotent — a repeat request returns the original proof.

@@ -9,7 +9,7 @@ boundary during failover, and an erased subject cannot be recovered from a backu
 
 ## What this is
 
-Twenty-five packages implementing the serving, retrieval, execution and governance layers an agent
+Seven components implementing the serving, retrieval, execution and governance layers an agent
 needs before it can run on someone else's data. It is not a framework you install — it is the
 infrastructure underneath one, built against a specification that resolves the questions most agent
 projects hit later: what happens on the second delivery of a request, where the prompt lives after a
@@ -37,61 +37,61 @@ bun run gate:erasure
 
 ```mermaid
 flowchart TB
-    subgraph serving [Serving]
-        gateway[gateway] --> routing[routing]
-        gateway --> idempotency[idempotency]
-        streaming[streaming]
-        metering[metering]
-    end
-    subgraph knowledge [Knowledge]
-        retrieval[retrieval] --> kb[knowledge-base]
-        kb --> cache[response-cache]
-        context[context-assembly]
-    end
-    subgraph execution [Execution]
-        durable[durable-execution] --> erasure[erasure]
-        loop[agent-loop]
-        memory[memory]
-        events[event-delivery]
-    end
-    subgraph governance [Governance]
-        guardrails[guardrails]
-        registry[config-registry]
-        evalpkg[eval]
-        oversight[oversight]
-    end
-    gateway --> log[execution-log]
-    erasure --> shred[crypto-shred]
-    log --> shred
-    cache --> shred
-    idempotency --> shred
-    shred --> retention[retention]
+    agent[agent<br/><i>ReAct loop, tools, guardrails</i>]
+    serving[serving<br/><i>gateway, routing, idempotency, cache</i>]
+    knowledge[knowledge<br/><i>retrieval, chunking, context, memory</i>]
+    governance[governance<br/><i>prompt registry, eval, oversight</i>]
+    evidence[evidence<br/><i>execution log, spans, reconciliation</i>]
+    custody[custody<br/><i>envelope keys, erasure workflow</i>]
+    primitives[primitives<br/><i>branded types, Result, retention</i>]
+
+    agent --> serving
+    agent --> knowledge
+    agent --> governance
+    serving --> knowledge
+    serving --> governance
+    serving --> evidence
+    knowledge --> custody
+    evidence --> custody
+    custody --> primitives
+    serving --> primitives
+    knowledge --> primitives
+    governance --> primitives
+    evidence --> primitives
 ```
 
-Every package defines a **port** in `domain` and an **adapter** in `infrastructure`. Dependencies
-point inward only, and `dependency-cruiser` fails the build on any violation or cycle — so a
-provider swap is a new adapter, never a change to business logic, and the whole platform is
-testable without a network.
+Every component defines a **port** in `domain` and an **adapter** in `infrastructure`. Dependencies
+point inward only, and `dependency-cruiser` fails the build on any violation or cycle — so a provider
+swap is a new adapter, never a change to business logic, and the whole platform is testable without a
+network.
 
-`crypto-shred` sits under everything that stores content. No store holds plaintext; destroying one
-key reaches the log, the cache and the idempotency store at once.
+`custody` sits under everything that stores content. No store holds plaintext; destroying one
+subject key reaches the log, the cache, the idempotency ledger and the vector index at once.
 
 ## Project structure
 
 ```
-packages/          25 packages, one per platform component
-  crypto-shred/      per-subject and per-bucket envelope encryption
-  execution-log/     hash-chained, append-only record of every run
-  erasure/           the nine-step data-subject erasure workflow
-  routing/           residency-constrained provider selection
-  gateway/           model-provider port, retries, budgets
-  …
+src/               7 components, each with four layers and one barrel
+  primitives/        branded types, Result, the retention schedule
+  custody/           envelope encryption, key destruction, the erasure workflow
+  evidence/          hash-chained execution log, spans, cost reconciliation
+  serving/           gateway, routing, idempotency, cache, streaming, identity
+  knowledge/         tenant-scoped retrieval, chunking, context, memory
+  agent/             the ReAct loop, tool catalogue, guardrails, composition root
+  governance/        prompt registry, eval gates, human-oversight lanes
 scripts/           repository checks no linter covers
-tests/             every test, mirrored one folder per package
+tests/             every test, mirrored one folder per component
 ```
 
-Tests live under `tests/`, not beside their source, and import the package barrel — so the tested
-surface and the supported surface stay identical.
+Each component is imported as `@custodian/<component>`, mapped to `src/<component>/index.ts` by
+`tsconfig` `paths`. That barrel is the component's whole public surface: a file may import another
+component's barrel and never its internals, and never its own — enforced by `dependency-cruiser`.
+
+Which component may depend on which is a table in `tests/standards.test.ts`, checked in both
+directions, so an undeclared import and an unused declaration each fail the build.
+
+Tests live under `tests/`, not beside their source, and import the barrel — so the tested surface and
+the supported surface stay identical.
 
 ## Documentation
 
@@ -104,7 +104,7 @@ surface and the supported surface stay identical.
 ## Status
 
 Stages 0–5 are on `main`: toolchain gates, foundations, serving core, knowledge and context, agent
-execution, and safety and governance. 214 tests.
+execution, and safety and governance. 355 tests.
 
 Deliberately not built: microVM sandbox isolation, which is a deployment rather than a module;
 telemetry and autoscaling; learned router training, which needs captured production traffic; and

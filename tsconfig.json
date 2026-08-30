@@ -1,7 +1,16 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    // No `baseUrl`: it is deprecated in TypeScript 6 and removed in 7, and `paths` has resolved
+    // relative to this file since 4.4 without it.
+    // Every component keeps its published-looking specifier. `@custodian/gateway` reads the same at
+    // every call site as it did when each component was its own workspace package, so collapsing the
+    // packages changed no import in the codebase — and a component could be extracted back out by
+    // restoring its manifest, without touching a line of source.
+    "paths": {
+      "@custodian/*": ["./src/*/index.ts"]
+    }
   },
-  "include": ["tests/**/*.ts", "scripts/**/*.ts", "packages/*/src/**/*.ts"]
+  "include": ["tests/**/*.ts", "scripts/**/*.ts", "src/**/*.ts"]
 }

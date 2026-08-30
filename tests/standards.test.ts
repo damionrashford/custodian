@@ -76,17 +76,83 @@ test("CI runs on every pull request, not only those targeting main", async () =>
 });
 
 test("no test reaches the network", async () => {
+  // Keyed on the calls that perform I/O, not on URL literals.
+  //
+  // It used to forbid any `http(s)://` in a test file. That caught the incident it was written for —
+  // a test that navigated a browser to example.com — and also forbade testing any code that handles
+  // a URL, which is most of an SSRF defence. A gate that stands between the repo and the tests most
+  // worth having is one people route around, so it now looks for the verbs that actually reach the
+  // network. A URL sitting in a table of things a pure function must refuse performs nothing.
+  const NETWORK_CALLS = /\b(fetch|WebSocket|Bun\.connect|\.navigate)\s*\(/;
+  const LOCAL_ONLY = /^(https?:\/\/)?(127\.0\.0\.1|localhost|\[::1\])/;
+
   const offenders: string[] = [];
   for await (const path of new Bun.Glob("tests/**/*.ts").scan(".")) {
     const source = await readRepoFile(path);
-    if (/https?:\/\//.test(source)) {
-      offenders.push(path);
+    if (!NETWORK_CALLS.test(source)) {
+      continue;
+    }
+    const remote = [...source.matchAll(/https?:\/\/[^"'`\s)]+/g)]
+      .map(([url]) => url)
+      .filter((url) => !LOCAL_ONLY.test(url));
+    if (remote.length > 0) {
+      offenders.push(`${path} -> ${String(remote[0])}`);
     }
   }
 
   // A flaky network dependency inside a blocking gate is worse than no gate: a gate that never
   // fires is false assurance, but one that fires at random trains people to click through red CI,
   // which costs the credibility of every gate beside it.
+  expect(offenders).toEqual([]);
+});
+
+test("the job main is protected on is still called test", async () => {
+  const workflow = await readRepoFile(".github/workflows/ci.yml");
+
+  // Branch protection requires a status check named "test", matched by string. Rename the job and
+  // every merge blocks forever waiting for a check that will never report — it fails closed, which
+  // is the right direction and an afternoon to diagnose. The coupling is invisible from either side
+  // on its own, so it is pinned from the side that lives in the repo.
+  expect(workflow).toContain("\n  test:\n");
+
+  // And the stacked-PR guard lives in that job, so it cannot be skipped by moving it elsewhere.
+  const testJob = workflow.slice(
+    workflow.indexOf("\n  test:\n"),
+    workflow.indexOf("\n  sandbox:\n"),
+  );
+  expect(testJob).toContain("Refuse to merge a branch another PR is stacked on");
+});
+
+test("nothing that needs a container runs in the merge-blocking suite", async () => {
+  const manifest: unknown = await Bun.file(new URL("../package.json", import.meta.url)).json();
+  const scripts = readProperty(
+    typeof manifest === "object" && manifest !== null ? manifest : {},
+    "scripts",
+  );
+  const testScript = readProperty(
+    typeof scripts === "object" && scripts !== null ? scripts : {},
+    "test",
+  );
+
+  // `bun run test` is what CI blocks a merge on. Container tests pull images over the network, and
+  // a network dependency in a blocking position is the flaky gate LD-10 warns about — the one that
+  // teaches people to click through red CI.
+  expect(String(testScript)).toContain("sandbox");
+
+  const offenders: string[] = [];
+  for await (const path of new Bun.Glob("tests/**/*.ts").scan(".")) {
+    // This file names those classes in order to look for them, so it matches itself.
+    if (path.startsWith("tests/sandbox/") || path === "tests/standards.test.ts") {
+      continue;
+    }
+    const source = await readRepoFile(path);
+    if (/"docker"|DockerCodeExecutor|DockerBrowserTool/.test(source)) {
+      offenders.push(path);
+    }
+  }
+
+  // And the separation cannot drift: a container test written in the wrong folder fails here rather
+  // than quietly rejoining the blocking path.
   expect(offenders).toEqual([]);
 });
 
@@ -111,20 +177,187 @@ test("the layering gate sees type-only imports", async () => {
   expect(config).toContain("tsPreCompilationDeps: true");
 });
 
+/**
+ * Which component may depend on which. This table *is* the coupling graph — there is nowhere else
+ * it is written down.
+ *
+ * It used to live across 27 `package.json` manifests, and it was never enforced there. Under Bun's
+ * isolated linker `packages/<name>/node_modules` really did hold only that package's declared deps,
+ * but module resolution walks *upward*, and the root `node_modules` held all 27 because LD-3 needs
+ * them in the root `devDependencies` for `tests/` to import. Two sound decisions, one hole between
+ * them: `gateway/infrastructure` importing `@custodian/oversight`, absent from gateway's manifest,
+ * passed tsc, dependency-cruiser, knip and ESLint together, and ran.
+ *
+ * dependency-cruiser catches the `domain` case only because a *layering* rule fires there by
+ * coincidence; a workspace import reaches it as `dependencyTypes: unknown`, which is the documented
+ * reason `.dependency-cruiser.cjs` keys on paths at all.
+ *
+ * So the manifests were documentation that could drift from the truth in silence. This table cannot:
+ * it is checked in both directions, so an undeclared import fails, and an entry nothing imports any
+ * more fails too rather than rotting into a permission nobody meant to grant.
+ */
+const COMPONENT_DEPENDENCIES: Readonly<Record<string, readonly string[]>> = {
+  agent: ["custody", "evidence", "governance", "knowledge", "primitives", "serving"],
+  custody: ["primitives"],
+  evidence: ["custody", "primitives"],
+  governance: ["primitives"],
+  knowledge: ["custody", "primitives"],
+  primitives: [],
+  serving: ["custody", "evidence", "governance", "knowledge", "primitives"],
+};
+
+async function importsByComponent(): Promise<Map<string, Set<string>>> {
+  const pattern = /from\s+"@custodian\/([a-z-]+)"/g;
+  const found = new Map<string, Set<string>>();
+
+  for await (const path of new Bun.Glob("src/*/**/*.ts").scan(".")) {
+    const component = path.split("/")[1] ?? "";
+    const text = await readRepoFile(path);
+    for (const [, imported] of text.matchAll(pattern)) {
+      if (imported !== undefined && imported !== component) {
+        const existing = found.get(component) ?? new Set<string>();
+        existing.add(imported);
+        found.set(component, existing);
+      }
+    }
+  }
+  return found;
+}
+
+test("the component list matches the components on disk", async () => {
+  const onDisk: string[] = [];
+  for await (const path of new Bun.Glob("src/*/index.ts").scan(".")) {
+    onDisk.push(path.split("/")[1] ?? "");
+  }
+
+  // A component with no entry would be silently exempt from the rule below, which is the failure
+  // mode of every allowlist that is not itself checked against reality.
+  expect(onDisk.sort()).toEqual(Object.keys(COMPONENT_DEPENDENCIES).sort());
+});
+
+test("no component imports another it has not declared", async () => {
+  const actual = await importsByComponent();
+  const undeclared: string[] = [];
+
+  for (const [component, imports] of actual) {
+    const declared = new Set(COMPONENT_DEPENDENCIES[component] ?? []);
+    for (const imported of imports) {
+      if (!declared.has(imported)) {
+        undeclared.push(`${component} → ${imported}`);
+      }
+    }
+  }
+
+  expect(undeclared.sort()).toEqual([]);
+});
+
+test("no component declares a dependency it does not use", async () => {
+  const actual = await importsByComponent();
+  const unused: string[] = [];
+
+  for (const [component, declared] of Object.entries(COMPONENT_DEPENDENCIES)) {
+    const imports = actual.get(component) ?? new Set<string>();
+    for (const dependency of declared) {
+      if (!imports.has(dependency)) {
+        unused.push(`${component} → ${dependency}`);
+      }
+    }
+  }
+
+  // Without this half the table only ever grows, and a stale entry is a standing permission to
+  // couple two components that no longer have anything to do with each other.
+  expect(unused.sort()).toEqual([]);
+});
+
+/**
+ * Every durable store has a location in the erasure data map.
+ *
+ * `runErasure` checks that a request covers every location in `DATA_MAP`, which catches a request
+ * that forgot one — and can never catch a location missing from the map itself. That is not
+ * hypothetical: `SqliteDeletionRegistry` shipped writing a subject identifier to disk, with no
+ * DATA_MAP entry, no retention class and no way to remove a row, and every gate passed.
+ *
+ * So the map is diffed against the durable stores that actually exist. A new `Sqlite*` adapter has
+ * to be classified here before the build goes green, which is the moment someone is actually
+ * thinking about where its rows go.
+ */
+const DURABLE_STORE_LOCATIONS: Readonly<Record<string, string>> = {
+  SqliteExecutionLogStore: "execution-log",
+  SqliteIdempotencyStore: "idempotency-store",
+  SqliteDeletionRegistry: "deletion-registry",
+  SqliteVectorIndex: "vector-index",
+};
+
+test("every durable store is classified in the erasure data map", async () => {
+  const dataMap = await readRepoFile("src/custody/domain/erasure-workflow.ts");
+  const declared = new Set(
+    [...dataMap.matchAll(/^\s*"([a-z-]+)",$/gm)].map(([, location]) => location),
+  );
+
+  const unclassified: string[] = [];
+  for await (const path of new Bun.Glob("src/*/infrastructure/*.ts").scan(".")) {
+    const source = await readRepoFile(path);
+    for (const [, name] of source.matchAll(/export class (Sqlite\w+)/g)) {
+      if (name === undefined) {
+        continue;
+      }
+      const location = DURABLE_STORE_LOCATIONS[name];
+      if (location === undefined || !declared.has(location)) {
+        unclassified.push(`${name} (${path})`);
+      }
+    }
+  }
+
+  expect(unclassified).toEqual([]);
+});
+
+test("no subject key store holds its own keys", async () => {
+  const offenders: string[] = [];
+  for await (const path of new Bun.Glob("src/**/*.ts").scan(".")) {
+    const source = await readRepoFile(path);
+    if (/implements SubjectKeyStore/.test(source) && !/KeyCustodian/.test(source)) {
+      offenders.push(path);
+    }
+  }
+
+  // The deleted AesGcmSubjectKeyStore generated and held its own keys, so a restart was an Article
+  // 17 erasure of every subject at once. Reintroducing that shape looks like a helpful test double
+  // right up to the moment it is composed in main.ts, and nothing else would catch it.
+  expect(offenders).toEqual([]);
+});
+
+test("the vector index stores sealed embeddings, never bare vectors", async () => {
+  const source = await readRepoFile("src/knowledge/infrastructure/in-memory-vector-index.ts");
+
+  // Scoped to the stored type, not the whole file. `sealEmbedding` legitimately *takes* a bare
+  // vector — it is the thing being sealed — so a file-wide match would fail on correct code, and a
+  // gate that fires on the right file for the wrong reason teaches people to edit the gate.
+  const declaration = source.slice(
+    source.indexOf("export type IndexedDocument"),
+    source.indexOf("};", source.indexOf("export type IndexedDocument")),
+  );
+
+  // The data map gives the vector index exactly one erasure mechanism: key destruction, because
+  // "soft delete is insufficient" (Data_Protection_and_Retention.txt:49-50). A bare number[] here
+  // is a fragment that survives erasure, which is precisely what the release gate exists to fail.
+  expect(declaration).toContain("readonly embedding: SealedContent");
+  expect(declaration).not.toMatch(/readonly embedding:\s*readonly number\[\]/);
+});
+
 test("type assertions are exempt in exactly the two pinned source files", async () => {
   const config = await Bun.file("eslint.config.js").text();
   const block = config.slice(config.indexOf("Two exceptions the standard names"));
-  const exempt = [...block.slice(0, block.indexOf("],")).matchAll(/"(packages\/[^"]+)"/g)];
+  const exempt = [...block.slice(0, block.indexOf("],")).matchAll(/"(src\/[^"]+)"/g)];
 
   // A path list of individual parsers used to hold this exemption, and six files silently lost it
   // by moving one folder deeper. Every brand is now built through `brand()`, so the list is one
   // entry — and growing it back is a decision someone has to make in this test first.
   expect(exempt.map((m) => m[1])).toEqual([
-    "packages/domain-primitives/src/domain/language/brand.ts",
+    "src/primitives/domain/language/brand.ts",
     // A single-purpose row parser whose one assertion is hash-verified before anything returns —
     // a parser exemption in the standard's own sense, made deliberately here (LD-11: growing this
     // list is a decision, not a drive-by), and scoped to the parser file so the sqlite adapter
     // itself stays under the assertion ban.
-    "packages/execution-log/src/infrastructure/parse-stored-entry.ts",
+    "src/evidence/infrastructure/parse-stored-entry.ts",
   ]);
 });

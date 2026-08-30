@@ -1,3 +1,5 @@
+import type { ActionClass } from "@custodian/primitives";
+
 /**
  * Risk-tiered decision lanes with SLAs. On timeout, fail safe to denied and capture partial context
  * for audit (Gap_Register_v2.txt:317, Reliability_and_Operations.txt:193-208).
@@ -20,9 +22,6 @@ export const LANE_POLICIES: Readonly<Record<Lane, LanePolicy>> = {
   standard: { slaMs: 5 * 60_000, onTimeout: "deny" },
   high: { slaMs: 30 * 60_000, onTimeout: "deny" },
 };
-
-export type ActionClass =
-  "low-risk-reversible" | "sensitive-data-access" | "financial-or-irreversible";
 
 export function laneFor(action: ActionClass): Lane {
   switch (action) {

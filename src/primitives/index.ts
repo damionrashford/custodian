@@ -42,3 +42,4 @@ export {
   RETENTION_SCHEDULE,
 } from "./domain/retention-schedule";
 export { bucketFor } from "./domain/retention-bucket-for";
+export type { ActionClass } from "./domain/oversight/action-class";

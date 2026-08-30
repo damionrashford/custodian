@@ -7,7 +7,7 @@ import {
 } from "@custodian/primitives";
 import { capToolOutput } from "@custodian/knowledge";
 import { railRetrieved, type RetrievedChunk } from "../domain/retrieval-rail";
-import { screen, type Classifier } from "../domain/screen";
+import type { Classifier } from "../domain/screen";
 import { namespaceFor } from "@custodian/knowledge";
 import { bucketFor } from "@custodian/primitives";
 import type { AgentStep } from "../domain/step";
@@ -98,7 +98,25 @@ async function runTool(
     return ok({ kind: "tool-failed" });
   }
 
-  const admitted = admittedRecords(executed.value.retrieved, deps.classifiers);
+  // An acting tool's bytes are railed like a retrieved chunk before any of it reaches the model.
+  // A shell's stdout or a fetched page is content the model reads, which is the channel indirect
+  // injection arrives through (AI_Agent_Implementation_Plan_v2.txt:229) — that this platform asked
+  // for it makes it no more trustworthy than a document someone else wrote.
+  const observation = executed.value;
+  const admitted =
+    observation.kind === "retrieved"
+      ? admittedRecords(observation.retrieved, deps.classifiers)
+      : admittedRecords(
+          [
+            {
+              recordId: `${String(tool.name)}:output`,
+              classification: "internal" as const,
+              provenance: "external-untrusted" as const,
+              text: observation.receipt.output,
+            },
+          ],
+          deps.classifiers,
+        );
   const appended = appendEvents(
     retrievalEvents({
       tool: tool.name,
@@ -120,10 +138,7 @@ async function runTool(
     context.seen.add(record.recordId);
   }
   context.observations.push(
-    capToolOutput(
-      String(tool.name),
-      observationFor(executed.value, admitted, hasNewEvidence, deps),
-    ),
+    capToolOutput(String(tool.name), observationFor(observation, admitted, hasNewEvidence)),
   );
   return ok({ kind: hasNewEvidence ? "observed-new-evidence" : "observed-nothing-new" });
 }
@@ -166,14 +181,19 @@ function observationFor(
   observed: ToolObservation,
   railed: RailedRecords,
   hasNewEvidence: boolean,
-  deps: AgentRunDeps,
 ): string {
+  if (observed.kind === "acted") {
+    // The summary is this platform's own words and needs no screening; the output has just been
+    // through the rail, so a blocked one is reported rather than quietly dropped — a model that
+    // cannot see whether its command ran will run it again.
+    return railed.records.length === 0 && railed.blocked.length > 0
+      ? `${observed.receipt.summary}\n${WITHHELD_COPY}`
+      : [observed.receipt.summary, ...railed.records.map((record) => record.text)].join("\n");
+  }
   if (railed.records.length === 0) {
     // Everything the tool found was withheld. Saying so beats a blank turn: the model cannot
     // otherwise tell "found nothing" from "found something it may not see", and would search again.
-    return railed.blocked.length > 0
-      ? WITHHELD_COPY
-      : screenedObservation(observed.observation, deps.classifiers);
+    return railed.blocked.length > 0 ? WITHHELD_COPY : "No matching records.";
   }
   return hasNewEvidence
     ? railed.records.map((record) => record.text).join("\n")
@@ -181,11 +201,3 @@ function observationFor(
 }
 
 const WITHHELD_COPY = "The tool's response was withheld by a safety policy.";
-
-/** A tool's free-form observation is model-visible text, so it passes the same screen a record does. */
-function screenedObservation(observation: string, classifiers: readonly Classifier[]): string {
-  if (observation.length === 0 || classifiers.length === 0) {
-    return observation;
-  }
-  return screen(observation, classifiers).kind === "block" ? WITHHELD_COPY : observation;
-}

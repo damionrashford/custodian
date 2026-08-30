@@ -45,3 +45,14 @@ export { screen, STAGE_ORDER } from "./domain/screen";
 export type { BlockedChunk, RailResult, RetrievedChunk } from "./domain/retrieval-rail";
 export { railRetrieved } from "./domain/retrieval-rail";
 export { PhraseInjectionClassifier } from "./infrastructure/phrase-injection-classifier";
+export { ShellTool } from "./infrastructure/shell-tool";
+export { ReadFileTool, WriteFileTool, type WorkspaceOptions } from "./infrastructure/file-tools";
+export { WebFetchTool, type WebFetchOptions } from "./infrastructure/web-fetch-tool";
+export { safePath, type PathRejection, type SafePath } from "./domain/workspace-path";
+export {
+  permitUrl,
+  type EgressPolicy,
+  type PermittedUrl,
+  type UrlRejection,
+} from "./domain/url-policy";
+export type { ActionReceipt } from "./domain/tool";

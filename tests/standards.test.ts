@@ -76,11 +76,27 @@ test("CI runs on every pull request, not only those targeting main", async () =>
 });
 
 test("no test reaches the network", async () => {
+  // Keyed on the calls that perform I/O, not on URL literals.
+  //
+  // It used to forbid any `http(s)://` in a test file. That caught the incident it was written for —
+  // a test that navigated a browser to example.com — and also forbade testing any code that handles
+  // a URL, which is most of an SSRF defence. A gate that stands between the repo and the tests most
+  // worth having is one people route around, so it now looks for the verbs that actually reach the
+  // network. A URL sitting in a table of things a pure function must refuse performs nothing.
+  const NETWORK_CALLS = /\b(fetch|WebSocket|Bun\.connect|\.navigate)\s*\(/;
+  const LOCAL_ONLY = /^(https?:\/\/)?(127\.0\.0\.1|localhost|\[::1\])/;
+
   const offenders: string[] = [];
   for await (const path of new Bun.Glob("tests/**/*.ts").scan(".")) {
     const source = await readRepoFile(path);
-    if (/https?:\/\//.test(source)) {
-      offenders.push(path);
+    if (!NETWORK_CALLS.test(source)) {
+      continue;
+    }
+    const remote = [...source.matchAll(/https?:\/\/[^"'`\s)]+/g)]
+      .map(([url]) => url)
+      .filter((url) => !LOCAL_ONLY.test(url));
+    if (remote.length > 0) {
+      offenders.push(`${path} -> ${String(remote[0])}`);
     }
   }
 

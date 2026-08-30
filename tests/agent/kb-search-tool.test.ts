@@ -81,7 +81,7 @@ test("a query maps matches through the document map into retrieved records", asy
   expect(executed).toEqual({
     ok: true,
     value: {
-      observation: "",
+      kind: "retrieved",
       retrieved: [
         {
           recordId: "doc-1",
@@ -99,15 +99,17 @@ test("a match whose document is unknown is skipped, not a crash", async () => {
     '{"query":"x"}',
     namespace(),
   );
-  if (!executed.ok) throw new Error("execute failed");
+  if (!executed.ok || executed.value.kind !== "retrieved") throw new Error("execute failed");
   expect(executed.value.retrieved).toHaveLength(1);
 });
 
-test("no matches yields an honest empty observation", async () => {
+test("no matches yields an empty retrieval, not a message the tool invented", async () => {
   const executed = await tool(indexReturning([])).execute('{"query":"nothing"}', namespace());
-  if (!executed.ok) throw new Error("execute failed");
+  if (!executed.ok || executed.value.kind !== "retrieved") throw new Error("execute failed");
+
+  // The "no matching records" wording is the runtime's to choose, not the adapter's. A tool that
+  // returns prose is a tool that can return prose someone else wrote.
   expect(executed.value.retrieved).toEqual([]);
-  expect(executed.value.observation).toBe("No matching records.");
 });
 
 test("missing or wrong-shaped arguments are invalid-arguments", async () => {
@@ -156,6 +158,9 @@ test("two tenants using the same document id each get their own text", async () 
   const forAcme = await search.execute('{"query":"note"}', acme);
   const forOther = await search.execute('{"query":"note"}', other);
   if (!forAcme.ok || !forOther.ok) throw new Error("execute failed");
+  if (forAcme.value.kind !== "retrieved" || forOther.value.kind !== "retrieved") {
+    throw new Error("expected a retrieval");
+  }
   expect(forAcme.value.retrieved[0]?.text).toBe("ACME's own note.");
   expect(forOther.value.retrieved[0]?.text).toBe("OTHER's own note.");
 });

@@ -129,6 +129,7 @@ function fakeTool(recordsPerCall: readonly (readonly RetrievedRecord[] | undefin
   let call = 0;
   return {
     name: searchKb,
+    actionClass: "low-risk-reversible",
     execute: () => {
       const records = recordsPerCall[Math.min(call, recordsPerCall.length - 1)];
       call += 1;
@@ -138,7 +139,10 @@ function fakeTool(recordsPerCall: readonly (readonly RetrievedRecord[] | undefin
           error: { kind: "execution-failed" as const, reason: "index-down" },
         });
       }
-      return Promise.resolve({ ok: true as const, value: { observation: "", retrieved: records } });
+      return Promise.resolve({
+        ok: true as const,
+        value: { kind: "retrieved" as const, retrieved: records },
+      });
     },
   };
 }
@@ -287,12 +291,13 @@ test("the iteration ceiling halts with run-finished(halted) and the fixed copy",
   let counter = 0;
   const growingTool: Tool = {
     name: searchKb,
+    actionClass: "low-risk-reversible",
     execute: () => {
       counter += 1;
       return Promise.resolve({
         ok: true as const,
         value: {
-          observation: "",
+          kind: "retrieved" as const,
           retrieved: [record(`kb-${String(counter)}`, `fact ${String(counter)}`)],
         },
       });

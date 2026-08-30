@@ -42,6 +42,8 @@ export function kbDocumentKey(namespace: Namespace, documentId: string): string 
  */
 export class KbSearchTool implements Tool {
   readonly name: ToolName;
+  /** Reading the tenant's own knowledge base: reversible, and it changes nothing. */
+  readonly actionClass = "low-risk-reversible" as const;
   readonly #deps: KbSearchToolDeps;
 
   constructor(deps: KbSearchToolDeps) {
@@ -89,6 +91,6 @@ export class KbSearchTool implements Tool {
             },
           ];
     });
-    return ok({ observation: retrieved.length === 0 ? "No matching records." : "", retrieved });
+    return ok({ kind: "retrieved", retrieved });
   }
 }

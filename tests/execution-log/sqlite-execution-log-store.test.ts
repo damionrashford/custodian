@@ -265,3 +265,17 @@ test("a run whose timestamps cannot be verified is never disposed of", async () 
   const reopened = new SqliteExecutionLogStore(path, hasher);
   expect(await reopened.disposeExpiredRuns("2026-08-30T00:00:00.000Z")).toBe(0);
 });
+
+test("a closed store releases its file, and what it wrote is still readable", async () => {
+  const path = storePath();
+  const log = logOf(3);
+  const store = new SqliteExecutionLogStore(path, hasher);
+  await store.append(ACME, runId(), log);
+  store.close();
+
+  // Closing is a shutdown step, not a disposal one: the evidence survives it intact.
+  expect(await new SqliteExecutionLogStore(path, hasher).read(ACME, runId())).toEqual({
+    ok: true,
+    value: log,
+  });
+});

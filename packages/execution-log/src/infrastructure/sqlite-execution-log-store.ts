@@ -154,6 +154,15 @@ export class SqliteExecutionLogStore implements ExecutionLogStore {
     return Promise.resolve(ok(verified.value));
   }
 
+  /**
+   * Releases the file handle. Not on the port: an in-memory adapter has nothing to close, and a
+   * no-op on an interface is a promise no caller can rely on. The composition root holds the
+   * concrete store and is the one place that knows a shutdown is happening.
+   */
+  close(): void {
+    this.#db.close();
+  }
+
   disposeExpiredRuns(now: string): Promise<number> {
     let disposed = 0;
     this.#db.run("BEGIN IMMEDIATE;");

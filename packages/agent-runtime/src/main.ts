@@ -282,12 +282,17 @@ async function main(): Promise<void> {
   });
   console.log(`agent runtime listening on :${String(server.port)}`);
 
-  process.on("SIGTERM", () => {
-    void server.stop().then(() => process.exit(0));
-  });
-  process.on("SIGINT", () => {
-    void server.stop().then(() => process.exit(0));
-  });
+  // In-flight runs finish first, then the evidence store's handle is released — closing the log
+  // out from under a run still writing to it would lose the tail of exactly the record that run
+  // exists to leave behind.
+  const shutdown = (): void => {
+    void server.stop().then(() => {
+      logStore.close();
+      process.exit(0);
+    });
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
 
 void main();

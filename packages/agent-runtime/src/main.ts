@@ -141,8 +141,6 @@ const SEED_DOCUMENTS: readonly (readonly [string, KbDocument])[] = [
 ];
 
 const embedder = new HashEmbedder();
-const documents = new Map<string, KbDocument>(SEED_DOCUMENTS);
-const indexed: IndexedDocument[] = [];
 
 const verifier: ClaimVerifier = {
   // Dev verifier: accepts the shared-secret token and answers with the dev tenant on a fresh
@@ -198,6 +196,7 @@ async function main(): Promise<void> {
   }
   const seedNamespace = namespaceFor(bootClaim.value);
 
+  const indexed: IndexedDocument[] = [];
   for (const [documentId, document] of SEED_DOCUMENTS) {
     const embedded = await embedder.embed(document.text);
     if (!embedded.ok) {
@@ -208,7 +207,13 @@ async function main(): Promise<void> {
   }
 
   const index = new InMemoryVectorIndex(indexed);
-  const tool = new KbSearchTool({ name: searchKb, embedder, index, documents, topK: 4 });
+  const tool = new KbSearchTool({
+    name: searchKb,
+    embedder,
+    index,
+    documents: new Map<string, KbDocument>(SEED_DOCUMENTS),
+    topK: 4,
+  });
 
   const handler = runsHandler({
     run: (request) =>

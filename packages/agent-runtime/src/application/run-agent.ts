@@ -8,7 +8,9 @@ import {
   type Region,
   type Result,
   type RunId,
+  type SealedContent,
   type SubjectId,
+  type ToolName,
 } from "@custodian/domain-primitives";
 import {
   evaluateLoop,
@@ -26,7 +28,7 @@ import {
   type LoggedEntry,
 } from "@custodian/execution-log";
 import { serveCompletion, type CompletionResponse, type ModelProvider } from "@custodian/gateway";
-import { railRetrieved, type Classifier } from "@custodian/guardrails";
+import { railRetrieved, type BlockedChunk, type Classifier } from "@custodian/guardrails";
 import { parseRequestHash, type IdempotencyStore } from "@custodian/idempotency";
 import { namespaceFor, type VerifiedTenantClaim } from "@custodian/knowledge-base";
 import { bucketFor } from "@custodian/retention";
@@ -34,7 +36,7 @@ import type { ProviderProfile } from "@custodian/routing";
 import type { TaskClass, ToolCatalogue, ToolSummary } from "@custodian/tool-registry";
 import type { PromptSnapshot } from "@custodian/config-registry";
 import { parseStep, type AgentStep } from "../domain/step";
-import type { Tool } from "../domain/tool";
+import type { RetrievedRecord, Tool } from "../domain/tool";
 import { advance, type StepEffect } from "./progress";
 
 export type AgentRunRequest = {
@@ -148,7 +150,11 @@ export async function runAgent(
 
     const step = parseStep(served.value.text);
     if (!step.ok) {
-      context.corrections.push(CORRECTION);
+      // One sticky correction, not one per failure: N malformed replies would otherwise stack N
+      // identical lines into every subsequent prompt.
+      if (!context.corrections.includes(CORRECTION)) {
+        context.corrections.push(CORRECTION);
+      }
       context.state = advance(context.state, { kind: "step-unparseable" }, stepCost);
       const persisted = await persist(context, request, deps);
       if (!persisted.ok) {
@@ -222,7 +228,11 @@ async function serveTurn(
 
   if (!served.ok) {
     context.log = served.error.log;
-    await persist(context, request, deps);
+    // A refusal is the event most in need of evidence; losing its record outranks the nicer copy.
+    const persisted = await persist(context, request, deps);
+    if (!persisted.ok) {
+      return persisted;
+    }
     const kind = served.error.rejection.kind;
     if (kind === "refused") {
       return err({ kind: "refused", publicReason: REFUSED_COPY });
@@ -258,20 +268,14 @@ async function applyToolStep(
     plaintext: step.argumentsJson,
   });
   if (!sealedArgs.ok) {
-    await persist(context, request, deps);
-    return err({ kind: "failed", publicReason: FAILED_COPY });
+    const persisted = await persist(context, request, deps);
+    return persisted.ok ? err({ kind: "failed", publicReason: FAILED_COPY }) : persisted;
   }
 
   const executed = await tool.execute(step.argumentsJson, namespaceFor(request.claim));
   if (!executed.ok) {
-    const appended = appendEvent(
-      {
-        kind: "tool-called",
-        tool: tool.name,
-        arguments: sealedArgs.value,
-        status: "failed",
-        sideEffectsCommitted: [],
-      },
+    const appended = appendEvents(
+      [toolCalled(tool.name, sealedArgs.value, "failed")],
       context,
       request,
       deps,
@@ -287,50 +291,11 @@ async function applyToolStep(
     executed.value.retrieved.map((record) => ({ documentId: record.recordId, text: record.text })),
     deps.classifiers,
   );
-  for (const blockedChunk of railed.blocked) {
-    const appended = appendEvent(
-      {
-        kind: "guardrail-evaluated",
-        policy: blockedChunk.verdict.policy,
-        rule: blockedChunk.verdict.rule,
-        outcome: "blocked",
-      },
-      context,
-      request,
-      deps,
-    );
-    if (!appended.ok) {
-      return appended;
-    }
-  }
+  const admittedIds = new Set(railed.admitted.map((chunk) => chunk.documentId));
+  const admitted = executed.value.retrieved.filter((record) => admittedIds.has(record.recordId));
 
-  const admitted = executed.value.retrieved.filter((record) =>
-    railed.admitted.some((chunk) => chunk.documentId === record.recordId),
-  );
-  for (const record of admitted) {
-    const appended = appendEvent(
-      {
-        kind: "record-retrieved",
-        recordId: record.recordId,
-        classification: record.classification,
-        provenance: record.provenance,
-      },
-      context,
-      request,
-      deps,
-    );
-    if (!appended.ok) {
-      return appended;
-    }
-  }
-  const appended = appendEvent(
-    {
-      kind: "tool-called",
-      tool: tool.name,
-      arguments: sealedArgs.value,
-      status: "succeeded",
-      sideEffectsCommitted: [],
-    },
+  const appended = appendEvents(
+    retrievalEvents(tool.name, sealedArgs.value, railed.blocked, admitted),
     context,
     request,
     deps,
@@ -339,7 +304,7 @@ async function applyToolStep(
     return appended;
   }
 
-  const fresh = admitted.filter((record) => !context.seen.has(record.recordId));
+  const hasNewEvidence = admitted.some((record) => !context.seen.has(record.recordId));
   for (const record of admitted) {
     context.seen.add(record.recordId);
   }
@@ -350,9 +315,48 @@ async function applyToolStep(
       ? admitted.map((record) => record.text).join("\n")
       : executed.value.observation;
   context.observations.push(capToolOutput(String(tool.name), contextText));
-  return ok(
-    fresh.length > 0 ? { kind: "observed-new-evidence" } : { kind: "observed-nothing-new" },
-  );
+  return ok({ kind: hasNewEvidence ? "observed-new-evidence" : "observed-nothing-new" });
+}
+
+function toolCalled(
+  tool: ToolName,
+  sealedArguments: SealedContent,
+  status: "succeeded" | "failed",
+): ExecutionEvent {
+  return {
+    kind: "tool-called",
+    tool,
+    arguments: sealedArguments,
+    status,
+    sideEffectsCommitted: [],
+  };
+}
+
+/**
+ * A successful tool call as log events, in the order the run performed them: every policy that
+ * fired, every record that survived it, then the call itself.
+ */
+function retrievalEvents(
+  tool: ToolName,
+  sealedArguments: SealedContent,
+  blocked: readonly BlockedChunk[],
+  admitted: readonly RetrievedRecord[],
+): readonly ExecutionEvent[] {
+  return [
+    ...blocked.map((blockedChunk): ExecutionEvent => ({
+      kind: "guardrail-evaluated",
+      policy: blockedChunk.verdict.policy,
+      rule: blockedChunk.verdict.rule,
+      outcome: "blocked",
+    })),
+    ...admitted.map((record): ExecutionEvent => ({
+      kind: "record-retrieved",
+      recordId: record.recordId,
+      classification: record.classification,
+      provenance: record.provenance,
+    })),
+    toolCalled(tool, sealedArguments, "succeeded"),
+  ];
 }
 
 function transcript(
@@ -376,21 +380,23 @@ function transcript(
   ].join("\n\n");
 }
 
-function appendEvent(
-  event: ExecutionEvent,
+function appendEvents(
+  events: readonly ExecutionEvent[],
   context: LoopContext,
   request: AgentRunRequest,
   deps: AgentRunDeps,
 ): Result<void, AgentRunFailure> {
-  const appended = appendEntry(context.log, event, {
-    runId: request.runId,
-    at: request.at(),
-    hasher: deps.hasher,
-  });
-  if (!appended.ok) {
-    return err({ kind: "failed", publicReason: FAILED_COPY });
+  for (const event of events) {
+    const appended = appendEntry(context.log, event, {
+      runId: request.runId,
+      at: request.at(),
+      hasher: deps.hasher,
+    });
+    if (!appended.ok) {
+      return err({ kind: "failed", publicReason: FAILED_COPY });
+    }
+    context.log = appended.value;
   }
-  context.log = appended.value;
   return ok(undefined);
 }
 
@@ -413,7 +419,7 @@ async function finishRun(
   request: AgentRunRequest,
   deps: AgentRunDeps,
 ): Promise<Result<void, AgentRunFailure>> {
-  const appended = appendEvent({ kind: "run-finished", outcome }, context, request, deps);
+  const appended = appendEvents([{ kind: "run-finished", outcome }], context, request, deps);
   if (!appended.ok) {
     return appended;
   }

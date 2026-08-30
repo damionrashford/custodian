@@ -10,4 +10,15 @@ import type { SubjectId } from "../identity/subject-id";
 export type KeyStoreFailure =
   | { readonly kind: "subject-erased"; readonly subject: SubjectId }
   | { readonly kind: "bucket-expired"; readonly bucket: RetentionBucket }
-  | { readonly kind: "ciphertext-corrupt" };
+  | { readonly kind: "ciphertext-corrupt" }
+  /** The key-encryption key is gone from the KMS, so nothing wrapped under it can be opened. */
+  | { readonly kind: "key-destroyed"; readonly name: string }
+  /**
+   * The KMS accepted a destroy request and the key is still readable afterwards. Distinct from a
+   * refused destroy, and far more dangerous: the caller believes an erasure happened. It is a
+   * failure rather than a proof precisely so nobody records evidence of a destruction this platform
+   * never observed.
+   */
+  | { readonly kind: "destruction-unconfirmed"; readonly name: string }
+  /** The KMS could not be reached or answered unintelligibly. Transient; the workflow retries. */
+  | { readonly kind: "custodian-unreachable"; readonly detail: string };

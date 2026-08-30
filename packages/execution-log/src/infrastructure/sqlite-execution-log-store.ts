@@ -194,14 +194,20 @@ export class SqliteExecutionLogStore implements ExecutionLogStore {
         "SELECT entry FROM entries WHERE namespace = ? AND run_id = ? ORDER BY seq ASC",
       )
       .all(namespace, runId);
-    let last: string | undefined;
+    const entries: LoggedEntry[] = [];
     for (const row of rows) {
       const parsed = parseStoredEntry(row.entry, this.#hasher);
       if (parsed === undefined) {
         return undefined;
       }
-      last = parsed.at;
+      entries.push(parsed);
     }
-    return last;
+    // Chain verification, same strength as the read path: per-row hashes alone miss a deleted
+    // middle row (every survivor still verifies individually), and disposing such a run would
+    // destroy the remaining evidence and bury the tampering under a lawful-looking tombstone.
+    if (!verifyRunLog(entries, this.#hasher).ok) {
+      return undefined;
+    }
+    return entries.at(-1)?.at;
   }
 }

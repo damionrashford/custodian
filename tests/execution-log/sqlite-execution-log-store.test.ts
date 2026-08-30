@@ -228,6 +228,27 @@ test("a disposed run cannot be resurrected by replaying its own log", async () =
   });
 });
 
+test("a run with a deleted middle row is never disposed of — tampering is not buried", async () => {
+  const path = storePath();
+  const store = new SqliteExecutionLogStore(path, hasher);
+  const oldAt = "2024-08-01T00:00:00.000Z";
+  await store.append(ACME, runId(), logOf(3, oldAt));
+
+  // Each surviving row's own hash still verifies after a deletion; only chain verification sees
+  // the excision. Disposing this run would destroy the remaining evidence and tombstone the run,
+  // hiding the tamper behind an apparently lawful retention sweep.
+  const db = new Database(path);
+  db.run("DELETE FROM entries WHERE seq = 1");
+  db.close();
+
+  const reopened = new SqliteExecutionLogStore(path, hasher);
+  expect(await reopened.disposeExpiredRuns("2026-08-30T00:00:00.000Z")).toBe(0);
+  const read = await reopened.read(ACME, runId());
+  expect(read.ok).toBe(false);
+  if (read.ok) return;
+  expect(read.error.kind).toBe("corrupt-entry");
+});
+
 test("a run whose timestamps cannot be verified is never disposed of", async () => {
   const path = storePath();
   const store = new SqliteExecutionLogStore(path, hasher);

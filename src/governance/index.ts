@@ -16,3 +16,11 @@ export { LANE_POLICIES, laneFor, resolveReview, seekApproval } from "./domain/de
 export type { ApprovalGate } from "./domain/decision-lane";
 export type { OversightHealth } from "./domain/rubber-stamp";
 export { assessOversight } from "./domain/rubber-stamp";
+export type { InvalidReviewId, ReviewId } from "./domain/review-id";
+export { generateReviewId, parseReviewId } from "./domain/review-id";
+export type { PendingReview, ReviewState } from "./domain/pending-review";
+export { byUrgency, deadlineFor } from "./domain/pending-review";
+export type { ReviewBrief } from "./domain/review-brief";
+export { briefFor } from "./domain/review-brief";
+export type { DecisionRefusal } from "./domain/review-decision";
+export { SqliteApprovalGate } from "./infrastructure/sqlite-approval-gate";

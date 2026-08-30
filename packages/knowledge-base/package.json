@@ -1,0 +1,12 @@
+{
+  "name": "@custodian/knowledge-base",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@custodian/domain-primitives": "workspace:*"
+  }
+}

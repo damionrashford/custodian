@@ -1,10 +1,12 @@
 # Custodian
 
-Enterprise-grade autonomous AI agent platform — currently in the **research/planning phase**. No implementation code exists yet. `.research/` is the source of truth (search it with the `research` skill/subagent rather than reading this file for what it says); this file and `.claude/` are the scaffolding for building it.
+Enterprise-grade autonomous AI agent platform. `.research/` holds the spec corpus and is the source of truth for *what to build* (search it with the `research` skill/subagent rather than reading this file for what it says); this file and `.claude/` are the scaffolding.
+
+**Implementation status.** Stages 0–3 are built: toolchain gates, foundations F1–F3, serving core (C1, C2, C3, C4, C21) and knowledge/context (C5, C6, C7, C8). Fourteen packages under `packages/`, 104 tests, seven CI gates plus a standing erasure gate, all behind `bun run verify`. Stage plans live in `.research/superpowers/plans/` (git-ignored) and each carries an execution status header. Architectural decisions the spec left open are recorded in `.claude/rules/locked-decisions.md` — **read that before re-deciding anything**, because the reasoning is not obvious from the code.
 
 ## Non-negotiables
 
-Findings that override intuition — check before designing around them:
+Findings that override intuition — check before designing around them. Decisions resolved *during* implementation, with what would reopen them, are in `.claude/rules/locked-decisions.md`.
 
 - **Foundation F3 (execution log) is the single highest-leverage component**, not a line item. It's the one artefact that satisfies GDPR erasure evidence, Art. 73 incident reporting, SOC 2 evidence, and memory provenance simultaneously. Build it properly in Phase 1, not iteratively.
 - **Routing is a learned system** (C18), not a failover rule table. Needs its own eval/replay pipeline before it's "done."

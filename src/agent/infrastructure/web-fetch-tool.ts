@@ -1,6 +1,19 @@
 import { dns } from "bun";
-import { err, isRecord, ok, type Result, type ToolName } from "@custodian/primitives";
-import { permitHost, permitUrl, type EgressPolicy, type UrlRejection } from "../domain/url-policy";
+import {
+  err,
+  isRecord,
+  ok,
+  type Namespace,
+  type Result,
+  type ToolName,
+} from "@custodian/primitives";
+import {
+  egressFor,
+  permitHost,
+  permitUrl,
+  type EgressPolicy,
+  type UrlRejection,
+} from "../domain/url-policy";
 import type { Tool, ToolFailure, ToolObservation } from "../domain/tool";
 
 /** Enough for a page, small enough that one fetch cannot fill the model's context. */
@@ -11,7 +24,12 @@ const MAX_REDIRECTS = 3;
 
 export type WebFetchOptions = {
   readonly name: ToolName;
-  readonly policy: EgressPolicy;
+  /**
+   * One allowlist per tenant, and a tenant with no entry reaches nothing. A single shared policy
+   * would make one tenant's approved destination every tenant's, which is the same class of mistake
+   * as a shared workspace root and just as invisible in a diff.
+   */
+  readonly policies: ReadonlyMap<Namespace, EgressPolicy>;
 };
 
 /**
@@ -29,22 +47,28 @@ export type WebFetchOptions = {
 export class WebFetchTool implements Tool {
   readonly name: ToolName;
   readonly actionClass = "sensitive-data-access" as const;
-  readonly #policy: EgressPolicy;
+  readonly #policies: ReadonlyMap<Namespace, EgressPolicy>;
 
   constructor(options: WebFetchOptions) {
     this.name = options.name;
-    this.#policy = options.policy;
+    this.#policies = options.policies;
   }
 
-  async execute(argumentsJson: string): Promise<Result<ToolObservation, ToolFailure>> {
+  async execute(
+    argumentsJson: string,
+    namespace: Namespace,
+  ): Promise<Result<ToolObservation, ToolFailure>> {
     const parsed = parseUrl(argumentsJson);
     if (!parsed.ok) {
       return err(parsed.error);
     }
+    // Resolved once per call, not per hop: a redirect must be judged against the policy the caller
+    // arrived with, and re-reading it mid-chain would be a place for it to change under the loop.
+    const policy = egressFor(this.#policies, namespace);
 
     let target = parsed.value.url;
     for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-      const checked = await this.#permit(target);
+      const checked = await this.#permit(target, policy);
       if (!checked.ok) {
         return err(checked.error);
       }
@@ -88,10 +112,10 @@ export class WebFetchTool implements Tool {
    * Resolves the host first, then decides. Checking the hostname alone would pass any name whose
    * owner points it at a private address, which is the ordinary shape of an SSRF.
    */
-  async #permit(target: string): Promise<Result<string, ToolFailure>> {
+  async #permit(target: string, policy: EgressPolicy): Promise<Result<string, ToolFailure>> {
     // Allowlist before DNS: a lookup for a host that was never going to be allowed still tells a
     // DNS server whatever the model encoded in the name.
-    const allowed = permitHost(target, this.#policy);
+    const allowed = permitHost(target, policy);
     if (!allowed.ok) {
       return err(refused(allowed.error));
     }
@@ -108,7 +132,7 @@ export class WebFetchTool implements Tool {
       return err({ kind: "execution-failed", reason: "host did not resolve" });
     }
 
-    const permitted = permitUrl(target, address, this.#policy);
+    const permitted = permitUrl(target, address, policy);
     return permitted.ok ? ok(String(permitted.value)) : err(refused(permitted.error));
   }
 }

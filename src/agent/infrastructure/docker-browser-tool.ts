@@ -1,6 +1,13 @@
 import { dns } from "bun";
-import { err, isRecord, ok, type Result, type ToolName } from "@custodian/primitives";
-import { permitUrl, type EgressPolicy } from "../domain/url-policy";
+import {
+  err,
+  isRecord,
+  ok,
+  type Namespace,
+  type Result,
+  type ToolName,
+} from "@custodian/primitives";
+import { egressFor, permitHost, permitUrl, type EgressPolicy } from "../domain/url-policy";
 import type { Tool, ToolFailure, ToolObservation } from "../domain/tool";
 import { EgressProxy } from "./egress-proxy";
 
@@ -34,36 +41,50 @@ export class DockerBrowserTool implements Tool {
   /** It fetches and it executes someone else's code; the page decides what else it reaches. */
   readonly actionClass = "sensitive-data-access" as const;
   readonly #image: string;
-  readonly #policy: EgressPolicy;
+  readonly #policies: ReadonlyMap<Namespace, EgressPolicy>;
 
   constructor(options: {
     readonly name: ToolName;
     readonly image: string;
-    readonly policy: EgressPolicy;
+    /** Per tenant, and empty for a tenant nobody granted egress to — see `WebFetchOptions`. */
+    readonly policies: ReadonlyMap<Namespace, EgressPolicy>;
   }) {
     this.name = options.name;
     this.#image = options.image;
-    this.#policy = options.policy;
+    this.#policies = options.policies;
   }
 
-  async execute(argumentsJson: string): Promise<Result<ToolObservation, ToolFailure>> {
+  async execute(
+    argumentsJson: string,
+    namespace: Namespace,
+  ): Promise<Result<ToolObservation, ToolFailure>> {
     const parsed = parseUrl(argumentsJson);
     if (!parsed.ok) {
       return err(parsed.error);
     }
+    const policy = egressFor(this.#policies, namespace);
 
     // The requested URL is checked before a browser is started, so a refused target costs nothing.
     // The proxy then re-checks it, and checks everything the page asks for afterwards.
+    //
+    // Allowlist before DNS, matching the plain fetch: resolving first would hand a DNS server
+    // whatever the model encoded in a hostname, and refusing the render afterwards does not take
+    // that back. With deny-by-default the common case is a refusal, so this is the ordinary path
+    // rather than an edge.
+    const allowed = permitHost(parsed.value.url, policy);
+    if (!allowed.ok) {
+      return err({ kind: "invalid-arguments", reason: allowed.error.kind });
+    }
     const address = await resolve(parsed.value.url);
     if (address === undefined) {
       return err({ kind: "execution-failed", reason: "host did not resolve" });
     }
-    const permitted = permitUrl(parsed.value.url, address, this.#policy);
+    const permitted = permitUrl(parsed.value.url, address, policy);
     if (!permitted.ok) {
       return err({ kind: "invalid-arguments", reason: permitted.error.kind });
     }
 
-    const proxy = new EgressProxy({ policy: this.#policy });
+    const proxy = new EgressProxy({ policy });
     try {
       const rendered = await this.#render(String(permitted.value), proxy.port);
       if (!rendered.ok) {

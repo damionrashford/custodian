@@ -1,7 +1,14 @@
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
-import { err, isRecord, ok, type Result, type ToolName } from "@custodian/primitives";
-import { safePath, type PathRejection } from "../domain/workspace-path";
+import {
+  err,
+  isRecord,
+  ok,
+  type Namespace,
+  type Result,
+  type ToolName,
+} from "@custodian/primitives";
+import { safePath, workspaceRoot, type PathRejection } from "../domain/workspace-path";
 import type { Tool, ToolFailure, ToolObservation } from "../domain/tool";
 
 /** A file the model reads is content it did not write; the cap keeps one from filling the context. */
@@ -11,8 +18,16 @@ const MAX_WRITE_BYTES = 256 * 1024;
 
 export type WorkspaceOptions = {
   readonly name: ToolName;
-  /** Absolute path the workspace is rooted at. Nothing outside it is reachable. */
-  readonly root: string;
+  /**
+   * Absolute path holding one directory per tenant — never a tenant's own directory.
+   *
+   * The tool is deliberately given no way to be handed a ready-made root. A root arrives only from
+   * `workspaceRoot(base, namespace)`, and the namespace arrives from the caller on every call,
+   * derived from that run's verified claim. Taking the root directly would have let one composition
+   * serve every tenant out of one directory, which type-checks, reads correctly, and is a
+   * cross-tenant read.
+   */
+  readonly base: string;
 };
 
 /**
@@ -25,19 +40,22 @@ export type WorkspaceOptions = {
 export class ReadFileTool implements Tool {
   readonly name: ToolName;
   readonly actionClass = "sensitive-data-access" as const;
-  readonly #root: string;
+  readonly #base: string;
 
   constructor(options: WorkspaceOptions) {
     this.name = options.name;
-    this.#root = options.root;
+    this.#base = options.base;
   }
 
-  async execute(argumentsJson: string): Promise<Result<ToolObservation, ToolFailure>> {
+  async execute(
+    argumentsJson: string,
+    namespace: Namespace,
+  ): Promise<Result<ToolObservation, ToolFailure>> {
     const parsed = parsePath(argumentsJson);
     if (!parsed.ok) {
       return err(parsed.error);
     }
-    const resolved = safePath(this.#root, parsed.value.path);
+    const resolved = safePath(workspaceRoot(this.#base, namespace), parsed.value.path);
     if (!resolved.ok) {
       return err(rejected(resolved.error));
     }
@@ -80,19 +98,22 @@ export class ReadFileTool implements Tool {
 export class WriteFileTool implements Tool {
   readonly name: ToolName;
   readonly actionClass = "financial-or-irreversible" as const;
-  readonly #root: string;
+  readonly #base: string;
 
   constructor(options: WorkspaceOptions) {
     this.name = options.name;
-    this.#root = options.root;
+    this.#base = options.base;
   }
 
-  async execute(argumentsJson: string): Promise<Result<ToolObservation, ToolFailure>> {
+  async execute(
+    argumentsJson: string,
+    namespace: Namespace,
+  ): Promise<Result<ToolObservation, ToolFailure>> {
     const parsed = parseWrite(argumentsJson);
     if (!parsed.ok) {
       return err(parsed.error);
     }
-    const resolved = safePath(this.#root, parsed.value.path);
+    const resolved = safePath(workspaceRoot(this.#base, namespace), parsed.value.path);
     if (!resolved.ok) {
       return err(rejected(resolved.error));
     }

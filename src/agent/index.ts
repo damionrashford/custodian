@@ -48,8 +48,14 @@ export { PhraseInjectionClassifier } from "./infrastructure/phrase-injection-cla
 export { ShellTool } from "./infrastructure/shell-tool";
 export { ReadFileTool, WriteFileTool, type WorkspaceOptions } from "./infrastructure/file-tools";
 export { WebFetchTool, type WebFetchOptions } from "./infrastructure/web-fetch-tool";
-export { safePath, type PathRejection, type SafePath } from "./domain/workspace-path";
 export {
+  safePath,
+  workspaceRoot,
+  type PathRejection,
+  type SafePath,
+} from "./domain/workspace-path";
+export {
+  egressFor,
   permitHost,
   permitUrl,
   type EgressPolicy,
@@ -59,3 +65,10 @@ export {
 export type { ActionReceipt } from "./domain/tool";
 export { EgressProxy } from "./infrastructure/egress-proxy";
 export { DockerBrowserTool } from "./infrastructure/docker-browser-tool";
+export {
+  agentToolset,
+  type AgentToolset,
+  type ToolEntry,
+  type ToolsetSettings,
+  type WithheldTool,
+} from "./infrastructure/agent-toolset";

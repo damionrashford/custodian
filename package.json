@@ -22,6 +22,7 @@
     "@custodian/crypto-shred": "workspace:*",
     "@custodian/domain-primitives": "workspace:*",
     "@custodian/execution-log": "workspace:*",
+    "@custodian/gateway": "workspace:*",
     "@custodian/idempotency": "workspace:*",
     "@custodian/identity": "workspace:*",
     "@custodian/routing": "workspace:*",

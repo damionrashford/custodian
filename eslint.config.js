@@ -81,6 +81,7 @@ export default defineConfig(
       "packages/*/src/domain/request-hash.ts",
       "packages/*/src/domain/tool-name.ts",
       "packages/*/src/domain/region.ts",
+      "packages/*/src/domain/model-provider.ts",
     ],
     rules: { "@typescript-eslint/consistent-type-assertions": "off" },
   },

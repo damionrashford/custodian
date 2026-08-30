@@ -7,6 +7,7 @@
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/execution-log": "workspace:*",
+        "@custodian/gateway": "workspace:*",
         "@custodian/idempotency": "workspace:*",
         "@custodian/identity": "workspace:*",
         "@custodian/routing": "workspace:*",
@@ -40,6 +41,16 @@
       "dependencies": {
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
+      },
+    },
+    "packages/gateway": {
+      "name": "@custodian/gateway",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+        "@custodian/execution-log": "workspace:*",
+        "@custodian/idempotency": "workspace:*",
+        "@custodian/routing": "workspace:*",
       },
     },
     "packages/idempotency": {
@@ -77,6 +88,8 @@
     "@custodian/domain-primitives": ["@custodian/domain-primitives@workspace:packages/domain-primitives"],
 
     "@custodian/execution-log": ["@custodian/execution-log@workspace:packages/execution-log"],
+
+    "@custodian/gateway": ["@custodian/gateway@workspace:packages/gateway"],
 
     "@custodian/idempotency": ["@custodian/idempotency@workspace:packages/idempotency"],
 

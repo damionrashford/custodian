@@ -22,3 +22,20 @@ export type KeyStoreFailure =
   | { readonly kind: "destruction-unconfirmed"; readonly name: string }
   /** The KMS could not be reached or answered unintelligibly. Transient; the workflow retries. */
   | { readonly kind: "custodian-unreachable"; readonly detail: string };
+
+/**
+ * Whether a failure means the content is gone for good, or merely that the custodian could not be
+ * reached.
+ *
+ * Only the first justifies discarding what could not be opened. The second is a fault that passes,
+ * and a caller that deletes on it turns a brief outage into permanent data loss — which is exactly
+ * what the discriminant above exists to prevent, and exactly what happens when every failure is
+ * flattened into "erased".
+ */
+export function isTerminalFailure(failure: KeyStoreFailure): boolean {
+  return (
+    failure.kind === "subject-erased" ||
+    failure.kind === "bucket-expired" ||
+    failure.kind === "ciphertext-corrupt"
+  );
+}

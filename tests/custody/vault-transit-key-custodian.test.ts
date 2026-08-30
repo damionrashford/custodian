@@ -227,3 +227,30 @@ test("destroying a key lets a later seal create it again", async () => {
   expect(reissued.ok).toBe(true);
   expect(transport.keys.has(`subject-${SUBJECT}`)).toBe(true);
 });
+
+test("a Vault fault is never reported as a destroyed key", async () => {
+  // The bug this guards: every non-200 collapsed into key-destroyed, so a rotated policy, a rate
+  // limit or a sealed Vault read as "this person has been erased" — and callers delete what they
+  // cannot unseal, so a brief outage became permanent data loss.
+  for (const status of [403, 429, 500, 502, 503]) {
+    class Faulting extends FakeTransitTransport {
+      override send(
+        method: "GET" | "POST" | "DELETE",
+        path: string,
+        body?: unknown,
+      ): Promise<VaultResponse> {
+        return path.startsWith("/v1/transit/decrypt/")
+          ? Promise.resolve({ status, body: { errors: ["upstream"] } })
+          : super.send(method, path, body);
+      }
+    }
+    const custodian = custodianOver(new Faulting());
+    await custodian.issueDataKey(name());
+
+    const unwrapped = await custodian.unwrapDataKey(name(), "vault:v1:0");
+    expect([status, unwrapped.ok ? "unwrapped" : unwrapped.error.kind]).toEqual([
+      status,
+      "custodian-unreachable",
+    ]);
+  }
+});

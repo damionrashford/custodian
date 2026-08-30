@@ -12,6 +12,14 @@ import type { VaultResponse, VaultTransport } from "./vault-transport";
 const DATA_KEY_BITS = 256;
 
 /**
+ * The statuses that mean the ciphertext genuinely cannot be opened, rather than that Vault could
+ * not be asked. Transit answers 400 both for a key that no longer exists and for ciphertext it
+ * cannot decrypt; either way the wrapped key is unrecoverable, which is what the caller needs to
+ * know. 404 is included because a key read after deletion answers with it.
+ */
+const NOT_DECRYPTABLE: ReadonlySet<number> = new Set([400, 404]);
+
+/**
  * Key-encryption keys held in HashiCorp Vault's Transit engine.
  *
  * Transit was chosen over AWS KMS, GCP Cloud KMS and Azure Managed HSM on one property: its delete
@@ -71,9 +79,12 @@ export class VaultTransitKeyCustodian implements KeyCustodian {
       `/v1/transit/decrypt/${encodeURIComponent(name)}`,
       { ciphertext: wrapped },
     );
-    if (response.status === 0) {
-      // A network fault is not an erasure. Reporting it as one would tell the caller a person had
-      // been erased because a socket timed out.
+    // Only Transit's own "I cannot open this" answer means the key is gone. Everything else — a
+    // socket that never connected, a 403 from a rotated policy, a 429, a 500 from a sealed or
+    // mid-election Vault — is infrastructure, and saying "erased" there is the failure this union
+    // exists to prevent: a person reported as erased because a server was briefly unwell. The
+    // damage is not theoretical, because callers drop what they cannot unseal.
+    if (response.status !== 200 && !NOT_DECRYPTABLE.has(response.status)) {
       return err(unreachable(name, "decrypt", response));
     }
     if (response.status !== 200) {

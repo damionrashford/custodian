@@ -32,6 +32,7 @@ export { parseToolName } from "./domain/identity/tool-name";
 export type { InvalidRegion, Region } from "./domain/custody/region";
 export { parseRegion } from "./domain/custody/region";
 export type { KeyStoreFailure } from "./domain/custody/key-store-failure";
+export { isTerminalFailure } from "./domain/custody/key-store-failure";
 export type { DurationClass, RetentionClass, RetentionRule } from "./domain/retention-schedule";
 export {
   expiresAt,

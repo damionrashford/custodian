@@ -1,6 +1,8 @@
 import { Database } from "bun:sqlite";
 import type { SubjectKeyStore } from "@custodian/custody";
 import {
+  err,
+  isTerminalFailure,
   isRecord,
   ok,
   parseRetentionBucket,
@@ -72,7 +74,22 @@ export class SqliteVectorIndex implements VectorIndex {
     const unreadable: string[] = [];
     for (const row of rows) {
       const sealed = parseSealed(row.sealed);
-      const embedding = sealed === undefined ? undefined : await this.#embeddingOf(sealed);
+      if (sealed === undefined) {
+        unreadable.push(row.documentId);
+        continue;
+      }
+      const opened = await this.#keys.unseal(sealed);
+      if (!opened.ok) {
+        // A custodian we could not reach is not an erasure, and this store deletes what it cannot
+        // read. Dropping here would turn a brief Vault outage into permanent, silent data loss, so
+        // the query refuses instead.
+        if (!isTerminalFailure(opened.error)) {
+          return err({ kind: "index-unavailable", reason: opened.error.kind });
+        }
+        unreadable.push(row.documentId);
+        continue;
+      }
+      const embedding = decodeEmbedding(opened.value);
       if (embedding === undefined) {
         unreadable.push(row.documentId);
         continue;
@@ -112,11 +129,6 @@ export class SqliteVectorIndex implements VectorIndex {
 
   close(): void {
     this.#db.close();
-  }
-
-  async #embeddingOf(sealed: SealedContent): Promise<readonly number[] | undefined> {
-    const opened = await this.#keys.unseal(sealed);
-    return opened.ok ? decodeEmbedding(opened.value) : undefined;
   }
 }
 

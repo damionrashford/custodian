@@ -16,6 +16,7 @@ import {
 const SUBJECT = "s_01jd7k9h2m4n6p8r0s2t4v6x8z";
 const BUCKET = "prompts-2026-08";
 const AT = "2026-08-30T00:00:00.000Z";
+const OUTAGE = { kind: "custodian-unreachable", detail: "vault 503" } as const;
 
 function fixtures(): {
   readonly store: EnvelopeSubjectKeyStore;
@@ -109,4 +110,30 @@ test("the in-memory custodian does not claim external attestation", async () => 
   // The process that destroyed the key is the one writing the record of it. Naming that is what
   // stops the release gate passing against a proof with no independent custodian behind it.
   expect(proof.value.attestation).toBe("self");
+});
+
+test("an unreachable custodian is not translated into an erasure", async () => {
+  const { subject, bucket } = fixtures();
+  const reachable = new InMemoryKeyCustodian({ now: () => new Date(AT) });
+  const sealed = await new EnvelopeSubjectKeyStore({
+    custodian: reachable,
+    registry: new SqliteDeletionRegistry(":memory:"),
+  }).seal({ subject, bucket, plaintext: "personal data" });
+  if (!sealed.ok) {
+    throw new Error("seal failed");
+  }
+
+  const unreachable = new EnvelopeSubjectKeyStore({
+    custodian: {
+      issueDataKey: () => Promise.resolve({ ok: false as const, error: OUTAGE }),
+      unwrapDataKey: () => Promise.resolve({ ok: false as const, error: OUTAGE }),
+      destroyKey: () => Promise.resolve({ ok: false as const, error: OUTAGE }),
+    },
+    registry: new SqliteDeletionRegistry(":memory:"),
+  });
+
+  // Flattening this into subject-erased would undo the custodian's work of separating an
+  // infrastructure fault from a destroyed key, and the vector index deletes what it cannot unseal.
+  const opened = await unreachable.unseal(sealed.value);
+  expect(opened.ok ? "opened" : opened.error.kind).toBe("custodian-unreachable");
 });

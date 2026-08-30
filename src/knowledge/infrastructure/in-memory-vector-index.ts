@@ -1,6 +1,8 @@
 import type { SubjectKeyStore } from "@custodian/custody";
 import {
+  err,
   ok,
+  isTerminalFailure,
   type KeyStoreFailure,
   type Namespace,
   type Result,
@@ -61,7 +63,18 @@ export class InMemoryVectorIndex implements VectorIndex {
     const scored: Match[] = [];
     const unreadable = new Set<IndexedDocument>();
     for (const document of candidates) {
-      const embedding = await this.#embeddingOf(document);
+      const opened = await this.#keys.unseal(document.embedding);
+      if (!opened.ok) {
+        // A custodian we could not reach is not an erasure. Refusing the whole query is the honest
+        // answer — quietly returning the documents that happened to unseal would hand the caller a
+        // silently short result set and call it a search.
+        if (!isTerminalFailure(opened.error)) {
+          return err({ kind: "index-unavailable", reason: opened.error.kind });
+        }
+        unreadable.add(document);
+        continue;
+      }
+      const embedding = decodeEmbedding(opened.value);
       if (embedding === undefined) {
         unreadable.add(document);
         continue;
@@ -86,10 +99,5 @@ export class InMemoryVectorIndex implements VectorIndex {
 
   size(): number {
     return this.#documents.length;
-  }
-
-  async #embeddingOf(document: IndexedDocument): Promise<readonly number[] | undefined> {
-    const opened = await this.#keys.unseal(document.embedding);
-    return opened.ok ? decodeEmbedding(opened.value) : undefined;
   }
 }

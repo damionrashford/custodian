@@ -140,3 +140,36 @@ test("offboarding a tenant drops its namespace", async () => {
   expect(index.size()).toBe(1);
   index.close();
 });
+
+test("a query refuses rather than deleting rows it merely could not reach", async () => {
+  const keys = keyStore();
+  const file = path();
+  const index = new SqliteVectorIndex({ path: file, keys });
+  await seed(index, keys, [[ACME, "acme-1", [1, 0, 0]]]);
+  index.close();
+
+  const outage = {
+    seal: () => Promise.reject(new Error("unused")),
+    unseal: () =>
+      Promise.resolve({
+        ok: false as const,
+        error: { kind: "custodian-unreachable" as const, detail: "vault 503" },
+      }),
+    destroySubjectKey: () => Promise.reject(new Error("unused")),
+    expireBucket: () => Promise.reject(new Error("unused")),
+  };
+  const during = new SqliteVectorIndex({ path: file, keys: outage });
+
+  // This store deletes what it cannot read, so mistaking an outage for an erasure is permanent,
+  // silent data loss. The query fails instead, and the row is still there when Vault returns.
+  const refused = await during.query({ namespace: ACME, embedding: [1, 0, 0], topK: 4 });
+  expect(refused.ok ? "returned" : refused.error.kind).toBe("index-unavailable");
+  expect(during.size()).toBe(1);
+  during.close();
+
+  const recovered = new SqliteVectorIndex({ path: file, keys });
+  const matches = await recovered.query({ namespace: ACME, embedding: [1, 0, 0], topK: 4 });
+  if (!matches.ok) throw new Error("query failed after recovery");
+  expect(matches.value.map((match) => match.documentId)).toEqual(["acme-1"]);
+  recovered.close();
+});

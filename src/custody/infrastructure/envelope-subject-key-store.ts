@@ -80,19 +80,32 @@ export class EnvelopeSubjectKeyStore implements SubjectKeyStore {
     // Bucket first, mirroring the seal order. Reporting the subject failure for a bucket-expired
     // entry would tell a caller that a person had been erased when a retention period had merely
     // run — two facts with entirely different consequences.
+    //
+    // A failure that is not `key-destroyed` is passed through untouched. Translating every failure
+    // into "erased" would undo the custodian's work of separating an infrastructure fault from a
+    // destroyed key, and callers act on that difference: the vector index drops what it cannot
+    // unseal, so a mistranslated Vault outage becomes permanent data loss.
     const bucketKey = await this.#custodian.unwrapDataKey(
       bucketKeyName(sealed.bucket),
       sealed.wrappedBucketKey,
     );
     if (!bucketKey.ok) {
-      return err({ kind: "bucket-expired", bucket: sealed.bucket });
+      return err(
+        bucketKey.error.kind === "key-destroyed"
+          ? { kind: "bucket-expired", bucket: sealed.bucket }
+          : bucketKey.error,
+      );
     }
     const subjectKey = await this.#custodian.unwrapDataKey(
       subjectKeyName(sealed.subject),
       sealed.wrappedSubjectKey,
     );
     if (!subjectKey.ok) {
-      return err({ kind: "subject-erased", subject: sealed.subject });
+      return err(
+        subjectKey.error.kind === "key-destroyed"
+          ? { kind: "subject-erased", subject: sealed.subject }
+          : subjectKey.error,
+      );
     }
 
     try {

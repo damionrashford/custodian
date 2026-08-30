@@ -208,6 +208,22 @@ const logStore = new SqliteExecutionLogStore(
  * stays in-process until that adapter exists: a restart is still a key destruction nobody
  * requested, and no tenant traffic may run against it.
  */
+/**
+ * The in-process key store is only safe to pair with durable content stores in development, and a
+ * comment saying so is not a control. Durable ciphertext with ephemeral keys is worse than either
+ * alone: a restart leaves rows on disk that nothing can ever decrypt, with no erasure request, no
+ * proof and no registry entry recording that they became unrecoverable — and a later erasure would
+ * mint a proof truthful in outcome but false about when. Until the KEK-backed store lands, booting
+ * that combination takes a deliberate acknowledgement.
+ */
+if (Bun.env["CUSTODIAN_DEV_MODE"] !== "1") {
+  console.error(
+    "This build keeps subject keys in memory while writing sealed content to disk, which is " +
+      "development-only. Set CUSTODIAN_DEV_MODE=1 to acknowledge, or compose a durable key store.",
+  );
+  process.exit(1);
+}
+
 const keys = new AesGcmSubjectKeyStore({ now: () => new Date() });
 const idempotency = new SqliteIdempotencyStore(
   Bun.env["CUSTODIAN_CLAIMS_DB"] ?? "custodian-claims.sqlite",
@@ -293,7 +309,20 @@ async function main(): Promise<void> {
   // In-flight runs finish first, then the evidence store's handle is released — closing the log
   // out from under a run still writing to it would lose the tail of exactly the record that run
   // exists to leave behind.
+  // Retention is disposal on a schedule, a different obligation from erasure on request (LD-9):
+  // sealing made these rows erasable, it did nothing about the ones nobody asks about. Hourly is
+  // an operational cadence, not a retention period — the periods live in the schedule.
+  const sweep = setInterval(
+    () => {
+      const now = new Date().toISOString();
+      idempotency.sweepExpired(now);
+      void logStore.disposeExpiredRuns(now);
+    },
+    60 * 60 * 1000,
+  );
+
   const shutdown = (): void => {
+    clearInterval(sweep);
     void server.stop().then(() => {
       logStore.close();
       idempotency.close();

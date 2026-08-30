@@ -1,4 +1,7 @@
 import { expect, test } from "bun:test";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   parsePrincipalId,
   parseRegion,
@@ -23,7 +26,7 @@ import {
   type LoggedEntry,
 } from "@custodian/execution-log";
 import { serveCompletion } from "@custodian/gateway";
-import { InMemoryIdempotencyStore, parseRequestHash } from "@custodian/idempotency";
+import { parseRequestHash, SqliteIdempotencyStore } from "@custodian/idempotency";
 
 function principal(tenant: TenantId): Principal {
   const id = parsePrincipalId("p_operator");
@@ -59,6 +62,11 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
   const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "tenant");
   const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
+
+  // The claim ledger is durable, so the gate must exercise it as one: rows written here outlive
+  // the process, which is precisely the case an in-memory store cannot put under test.
+  const claimsPath = join(mkdtempSync(join(tmpdir(), "custodian-gate-")), "claims.sqlite");
+  const claims = new SqliteIdempotencyStore(claimsPath);
 
   const claimVerifier: ClaimVerifier = {
     verify: () => ({
@@ -122,7 +130,7 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
           }),
       },
     ],
-    idempotency: new InMemoryIdempotencyStore({ onWrite: () => undefined }),
+    idempotency: claims,
     hasher,
     at: "2026-08-29T00:00:00.000Z",
     jitter: 0,
@@ -209,6 +217,29 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   expect(backup).not.toContain("jane@example.test");
   expect(backup).not.toContain("Jane Doe");
   expect(backup).not.toContain("4187");
+
+  // 4e. Recovery attempt from the durable claim ledger, reopened as a restart would open it. The
+  // completion is sealed under the same subject key, so destroying that key has to reach rows this
+  // process did not write — the case the in-memory store could never exercise.
+  claims.close();
+  const reopened = new SqliteIdempotencyStore(claimsPath);
+  const replayed = await reopened.claim(
+    namespaceFor(tenantClaim),
+    parsedOrThrow(parseRequestHash("b".repeat(64)), "hash"),
+    "2026-08-29T00:00:00.000Z",
+  );
+  if (!replayed.ok || replayed.value.kind !== "already-claimed")
+    throw new Error("the ledger lost the claim across the reopen");
+  const recorded = replayed.value.claim.outcome;
+  if (recorded === undefined) throw new Error("the ledger lost the outcome across the reopen");
+  expect(await store.unseal(recorded.body)).toEqual({
+    ok: false,
+    error: { kind: "subject-erased", subject },
+  });
+
+  // And no fragment survives in the file's raw bytes either.
+  expect(await Bun.file(claimsPath).text()).not.toContain("jane@example.test");
+  reopened.close();
 
   // 5. The log is still evidence: erasure destroyed content, not integrity.
   expect(verifyRunLog(log, hasher).ok).toBe(true);

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Database } from "bun:sqlite";
 import { parseSubjectId, parseTenantId, type Namespace } from "@custodian/domain-primitives";
 import { bucketFor } from "@custodian/retention";
 import {
@@ -107,6 +108,40 @@ test("completing a claim that was never made is refused", async () => {
     ok: false,
     error: { kind: "unknown-claim", request: HASH },
   });
+});
+
+test("the sweep drops claims past their TTL and leaves live ones alone", async () => {
+  const store = new SqliteIdempotencyStore(storePath());
+  await store.claim(ACME, HASH, AT);
+  await store.claim(OTHER, HASH, AT);
+
+  const withinTtl = new Date(Date.parse(AT) + CLAIM_TTL_MS - 1).toISOString();
+  expect(store.sweepExpired(withinTtl)).toBe(0);
+  expect(store.sweepExpired(new Date(Date.parse(AT) + CLAIM_TTL_MS).toISOString())).toBe(2);
+
+  // A swept claim is gone, not remembered as expired: the same request is new work again.
+  const again = await store.claim(ACME, HASH, AT);
+  if (!again.ok) throw new Error("claim failed");
+  expect(again.value.kind).toBe("claimed");
+});
+
+test("a stored outcome that no longer parses reads back as in-flight, never as a result", async () => {
+  const path = storePath();
+  const store = new SqliteIdempotencyStore(path);
+  await store.claim(ACME, HASH, AT);
+  await store.complete(ACME, HASH, outcome);
+  store.close();
+
+  // A hand-edited or half-migrated row is untrusted input like any other. Handing its remains back
+  // as a completed result would answer a redelivery with a body no key can open.
+  const raw = new Database(path, { strict: true });
+  raw.run("UPDATE claims SET outcome = ?", ['{"status":"succeeded","body":{"iv":"aXY="}}']);
+  raw.close();
+
+  const reopened = new SqliteIdempotencyStore(path);
+  const again = await reopened.claim(ACME, HASH, AT);
+  if (!again.ok || again.value.kind !== "already-claimed") throw new Error("claim lost");
+  expect(again.value.claim.outcome).toBeUndefined();
 });
 
 test("a claim is recorded before any outcome, so a crash mid-flight still dedupes", async () => {

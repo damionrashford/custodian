@@ -75,6 +75,8 @@ function baseRequest(providers: readonly ModelProvider[], candidates: readonly P
     keys: new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
     subject,
     bucket,
+    costMicros: (usage: { inputTokens: number; outputTokens: number }) =>
+      usage.inputTokens * 3 + usage.outputTokens * 15,
   };
 }
 
@@ -94,6 +96,10 @@ test("a forced failover moves to the next in-region provider and logs both attem
   // Every provider call appears in the log with the router decision that produced it.
   const invocations = served.value.log.filter((entry) => entry.event.kind === "model-invoked");
   expect(invocations).toHaveLength(2);
+
+  // Field group 8: the served call carries a usage record, or reconciliation cannot close.
+  const usage = served.value.log.filter((entry) => entry.event.kind === "usage-recorded");
+  expect(usage).toHaveLength(1);
   for (const entry of invocations) {
     if (entry.event.kind !== "model-invoked") continue;
     expect(entry.event.routerRationale.length).toBeGreaterThan(0);

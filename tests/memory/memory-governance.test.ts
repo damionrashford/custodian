@@ -5,12 +5,12 @@ import {
   isStale,
   mayPersist,
   scoreRecall,
-  type MemoryEntry,
+  type MemoryCandidate,
 } from "@custodian/memory";
 
 const NOW = "2026-08-29T00:00:00.000Z";
 
-function entry(overrides: Partial<MemoryEntry> = {}): MemoryEntry {
+function entry(overrides: Partial<MemoryCandidate> = {}): MemoryCandidate {
   return {
     category: "preference",
     text: "prefers concise answers",
@@ -56,7 +56,7 @@ test("a contradicting write is flagged rather than silently layered on the old f
 test("provenance demotes at retrieval, not only at write", () => {
   const trusted = entry({ provenance: "authenticated-user" });
   const untrusted = entry({ provenance: "external-untrusted" });
-  const score = (e: MemoryEntry) =>
+  const score = (e: MemoryCandidate) =>
     scoreRecall({ entry: e, relevance: 0.9, now: NOW, weights: DEFAULT_RECALL_WEIGHTS });
 
   expect(score(trusted)).toBeGreaterThan(score(untrusted));
@@ -65,7 +65,7 @@ test("provenance demotes at retrieval, not only at write", () => {
 test("recall is not similarity alone — a stale entry loses to a fresh one at equal relevance", () => {
   const fresh = entry({ writtenAt: NOW });
   const old = entry({ writtenAt: "2026-02-01T00:00:00.000Z" });
-  const score = (e: MemoryEntry) =>
+  const score = (e: MemoryCandidate) =>
     scoreRecall({ entry: e, relevance: 0.9, now: NOW, weights: DEFAULT_RECALL_WEIGHTS });
 
   expect(score(fresh)).toBeGreaterThan(score(old));

@@ -14,6 +14,7 @@ export const DATA_MAP = [
   "experience-store",
   "execution-log",
   "idempotency-store",
+  "stream-journal",
   "backups",
   "routing-memory",
 ] as const;

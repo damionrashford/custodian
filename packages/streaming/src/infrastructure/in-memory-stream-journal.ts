@@ -1,11 +1,11 @@
-import { err, ok, type Result } from "@custodian/domain-primitives";
+import { err, ok, type Result, type SealedContent } from "@custodian/domain-primitives";
 import type { RunId } from "@custodian/execution-log";
 import type { JournalFailure, StreamJournal } from "../domain/stream-journal";
 
 export class InMemoryStreamJournal implements StreamJournal {
-  readonly #chunks = new Map<string, string[]>();
+  readonly #chunks = new Map<string, SealedContent[]>();
 
-  append(runId: RunId, chunk: string): Promise<Result<number, JournalFailure>> {
+  append(runId: RunId, chunk: SealedContent): Promise<Result<number, JournalFailure>> {
     const existing = this.#chunks.get(runId);
     if (existing === undefined) {
       this.#chunks.set(runId, [chunk]);
@@ -15,7 +15,7 @@ export class InMemoryStreamJournal implements StreamJournal {
     return Promise.resolve(ok(existing.length - 1));
   }
 
-  since(runId: RunId, offset: number): Promise<Result<readonly string[], JournalFailure>> {
+  since(runId: RunId, offset: number): Promise<Result<readonly SealedContent[], JournalFailure>> {
     const existing = this.#chunks.get(runId);
     return Promise.resolve(
       existing === undefined ? err({ kind: "unknown-run", runId }) : ok(existing.slice(offset)),

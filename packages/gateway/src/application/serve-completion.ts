@@ -19,6 +19,7 @@ import {
 import type {
   CompletionRequest,
   CompletionResponse,
+  CompletionUsage,
   ModelProvider,
 } from "../domain/model-provider";
 import { DEFAULT_RETRY_POLICY, nextRetry } from "../domain/retry-policy";
@@ -40,6 +41,8 @@ export type ServeRequest = {
   readonly keys: SubjectKeyStore;
   readonly subject: SubjectId;
   readonly bucket: RetentionBucket;
+  /** Cost stays a pure function of usage and the price table — see @custodian/metering. */
+  readonly costMicros: (usage: CompletionUsage) => number;
 };
 
 export type ServedCompletion = {
@@ -147,6 +150,24 @@ export async function serveCompletion(
       if (!sealed.ok) {
         return err({ kind: "provider-failed", reason: "seal-failed" });
       }
+      // Required field group 8: token counts and cost, reconcilable to the billing ledger
+      // (Compliance_and_Certification.txt:58). Without this entry the log has no usage record for a
+      // call the provider did bill, so reconcile() can never close cleanly on gateway traffic.
+      const recorded = appendEntry(
+        state.log,
+        {
+          kind: "usage-recorded",
+          inputTokens: outcome.response.usage.inputTokens,
+          outputTokens: outcome.response.usage.outputTokens,
+          costMicros: serve.costMicros(outcome.response.usage),
+        },
+        { runId: serve.runId, at: serve.at, hasher: serve.hasher },
+      );
+      if (!recorded.ok) {
+        return err({ kind: "provider-failed", reason: recorded.error.kind });
+      }
+      state.log = recorded.value;
+
       await serve.idempotency.complete(serve.requestHash, {
         status: "succeeded",
         body: sealed.value,

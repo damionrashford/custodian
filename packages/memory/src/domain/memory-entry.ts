@@ -1,4 +1,4 @@
-import type { SubjectId } from "@custodian/domain-primitives";
+import type { SealedContent, SubjectId } from "@custodian/domain-primitives";
 
 /**
  * Provenance is recorded at write time so retrieval can demote untrusted origins. Memory poisoning
@@ -12,14 +12,35 @@ export type Provenance = "authenticated-user" | "tenant-authored" | "external-un
 /** Factual memory is preferences and policies; experience memory is past actions and outcomes. */
 export type MemoryCategory = "preference" | "policy" | "fact" | "experience";
 
-export type MemoryEntry = {
+type MemoryMetadata = {
   readonly category: MemoryCategory;
-  readonly text: string;
   readonly provenance: Provenance;
   readonly subject: SubjectId | undefined;
   readonly writtenAt: string;
   /** Self-assessed, 0..1. One of the four recall terms. */
   readonly importance: number;
+};
+
+/**
+ * A proposed memory, in the clear and never persisted. The write decision — allowlist, source
+ * isolation, contradiction checking — needs to read the text, so it runs on this before anything
+ * reaches storage.
+ */
+export type MemoryCandidate = MemoryMetadata & {
+  readonly text: string;
+};
+
+/**
+ * A persisted memory. The text is SealedContent because `agent-memory` is in the erasure data map
+ * and the spec promises "key destruction + provenance-indexed purge" for it
+ * (Data_Protection_and_Retention.txt:55-57) — a plaintext entry would make `runErasure` report that
+ * location invalidated while nothing was actually shredded, which is a false erasure claim on the
+ * platform's own evidentiary artefact.
+ *
+ * Recall scoring and staleness read metadata only, so neither needs the key.
+ */
+export type MemoryEntry = MemoryMetadata & {
+  readonly text: SealedContent;
 };
 
 export type WritePolicy = {
@@ -48,14 +69,14 @@ export type WriteVerdict =
  * retrievable.
  */
 export function mayPersist(
-  entry: MemoryEntry,
+  candidate: MemoryCandidate,
   policy: WritePolicy,
-  existing: readonly MemoryEntry[],
+  existing: readonly MemoryCandidate[],
 ): WriteVerdict {
-  if (entry.provenance === "external-untrusted") {
+  if (candidate.provenance === "external-untrusted") {
     return { kind: "quarantine", reason: "untrusted-origin-write" };
   }
-  if (!policy.persistableCategories.includes(entry.category)) {
+  if (!policy.persistableCategories.includes(candidate.category)) {
     return { kind: "session-only", reason: "category-not-allowlisted" };
   }
 
@@ -63,7 +84,7 @@ export function mayPersist(
   // has become false — the canonical case being a stored employer after a job change
   // (Agent_Architecture_Addendum.txt:153).
   const conflict = existing.find(
-    (other) => other.category === entry.category && contradicts(other.text, entry.text),
+    (other) => other.category === candidate.category && contradicts(other.text, candidate.text),
   );
   return conflict === undefined
     ? { kind: "persist" }

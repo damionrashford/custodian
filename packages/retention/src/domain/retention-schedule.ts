@@ -49,8 +49,11 @@ export const RETENTION_SCHEDULE: Readonly<Record<RetentionClass, RetentionRule>>
   "execution-log-content": {
     kind: "duration",
     days: 30,
+    // NOT tenant-configurable. The spec grants that only to "prompts and completions"
+    // (Data_Protection_and_Retention.txt:120-122); this class's basis is minimisation with
+    // metadata retained, and zeroing it would remove the window Art.73 investigation reads.
     basis: "Minimisation - content redacted, metadata retained",
-    tenantConfigurableToZero: true,
+    tenantConfigurableToZero: false,
   },
   "vector-index": {
     kind: "tenant-lifetime",

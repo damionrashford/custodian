@@ -1,4 +1,5 @@
 export type {
+  MemoryCandidate,
   MemoryCategory,
   MemoryEntry,
   Provenance,

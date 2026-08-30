@@ -1,5 +1,8 @@
 import { isDueForDisposal } from "@custodian/retention";
-import type { MemoryEntry, Provenance } from "./memory-entry";
+import type { MemoryCandidate, MemoryEntry, Provenance } from "./memory-entry";
+
+/** Scoring and staleness read metadata only, so neither needs the key to unseal the text. */
+type Scorable = Omit<MemoryEntry, "text"> | Omit<MemoryCandidate, "text">;
 
 /**
  * Do not score recall on embedding similarity alone. The influential design weighs recency
@@ -43,7 +46,7 @@ function provenanceScore(provenance: Provenance): number {
 }
 
 export type RecallInput = {
-  readonly entry: MemoryEntry;
+  readonly entry: Scorable;
   readonly relevance: number;
   readonly now: string;
   readonly weights: RecallWeights;
@@ -71,7 +74,7 @@ export function scoreRecall(input: RecallInput): number {
  */
 export const FACT_EXPIRY_DAYS = 90;
 
-export function isStale(entry: MemoryEntry, now: string): boolean {
+export function isStale(entry: Scorable, now: string): boolean {
   if (isDueForDisposal("agent-memory", entry.writtenAt, now)) {
     return true;
   }

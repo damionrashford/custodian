@@ -19,7 +19,7 @@ const MAX_DEPTH_FROM_SRC = 5;
 const violations: string[] = [];
 const folderCounts = new Map<string, number>();
 
-for await (const file of new Bun.Glob("packages/*/src/**/*.ts").scan(".")) {
+for await (const file of new Bun.Glob("src/*/**/*.ts").scan(".")) {
   const segments = file.split("/");
   const folder = segments.slice(0, -1).join("/");
   folderCounts.set(folder, (folderCounts.get(folder) ?? 0) + 1);
@@ -31,8 +31,7 @@ for await (const file of new Bun.Glob("packages/*/src/**/*.ts").scan(".")) {
     }
   }
 
-  const srcIndex = segments.indexOf("src");
-  const depth = segments.length - srcIndex - 2;
+  const depth = segments.length - 3;
   if (depth > MAX_DEPTH_FROM_SRC) {
     violations.push(
       `${file}: folder depth ${String(depth)} exceeds ${String(MAX_DEPTH_FROM_SRC)}.`,
@@ -49,11 +48,11 @@ for await (const file of new Bun.Glob("packages/*/src/**/*.ts").scan(".")) {
 const PURE_VOCABULARY_PACKAGES: readonly string[] = ["domain-primitives", "retention"];
 
 for (const name of PURE_VOCABULARY_PACKAGES) {
-  const barrel = Bun.file(`packages/${name}/src/index.ts`);
+  const barrel = Bun.file(`src/${name}/index.ts`);
   const source = await barrel.text();
   if (/from "\.\/(infrastructure|application)\//.test(source)) {
     violations.push(
-      `packages/${name}/src/index.ts: listed as pure vocabulary in .dependency-cruiser.cjs but ` +
+      `src/${name}/index.ts: listed as pure vocabulary in .dependency-cruiser.cjs but ` +
         `exports from infrastructure/ or application/. Either remove that export or drop the ` +
         `package from the exemption — domain files are allowed to import this barrel.`,
     );

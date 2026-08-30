@@ -17,10 +17,10 @@ module.exports = {
         "infrastructure alongside domain). Every type two domains both need lives in " +
         "domain-primitives, which keeps this rule self-maintaining rather than a list to update.",
       severity: "error",
-      from: { path: "^packages/[^/]+/src/domain/", pathNot: "\\.test\\.ts$" },
+      from: { path: "^src/[^/]+/domain/", pathNot: "\\.test\\.ts$" },
       to: {
         dependencyTypes: ["core", "npm", "npm-dev", "npm-optional", "npm-peer", "npm-bundled"],
-        pathNot: "^packages/(domain-primitives/src/index\\.ts$|[^/]+/src/domain/)",
+        pathNot: "^src/(domain-primitives/index\\.ts$|[^/]+/domain/)",
       },
     },
     {
@@ -33,51 +33,59 @@ module.exports = {
         "because dependencyTypes never matches a workspace import — which is why domain-is-pure " +
         "silently passed these for the whole build.",
       severity: "error",
-      from: { path: "^packages/[^/]+/src/domain/", pathNot: "\\.test\\.ts$" },
-      // Matched against the bare specifier, not a resolved path: Bun's isolated linker leaves
-      // workspace packages unresolvable to dependency-cruiser (couldNotResolve=true,
-      // dependencyTypes=unknown), so every path-based or dependencyTypes-based rule silently
-      // passes every cross-package import. Keying on the specifier is what actually fires.
+      from: { path: "^src/[^/]+/domain/", pathNot: "\\.test\\.ts$" },
+      // Keyed on the resolved path. When each component was a workspace package this had to match
+      // the bare specifier, because Bun's isolated linker left workspace imports unresolvable to
+      // dependency-cruiser (couldNotResolve, dependencyTypes=unknown) and every path-based rule
+      // silently passed them. Under tsconfig `paths` they resolve to real files, so the ordinary
+      // form works and the special case is gone.
       to: {
-        path: "^@custodian/",
-        // The pure-vocabulary packages: barrels that export domain only. scripts/check-structure.ts
+        path: "^src/[^/]+/index\\.ts$",
+        // The pure-vocabulary components: barrels exporting domain only. scripts/check-structure.ts
         // fails the build if either ever exports from infrastructure/ or application/, so this list
         // cannot silently rot into the hole it was written to close.
-        pathNot: "^@custodian/(domain-primitives|retention)$",
+        pathNot: "^src/(domain-primitives|retention)/index\\.ts$",
       },
     },
     {
       name: "domain-imports-domain-only",
       severity: "error",
-      from: { path: "^packages/[^/]+/src/domain/", pathNot: "\\.test\\.ts$" },
-      to: { path: "^packages/[^/]+/src/(application|infrastructure|interface)/" },
+      from: { path: "^src/[^/]+/domain/", pathNot: "\\.test\\.ts$" },
+      to: { path: "^src/[^/]+/(application|infrastructure|interface)/" },
     },
     {
       name: "application-imports-domain-only",
       severity: "error",
-      from: { path: "^packages/[^/]+/src/application/", pathNot: "\\.test\\.ts$" },
-      to: { path: "^packages/[^/]+/src/(infrastructure|interface)/" },
+      from: { path: "^src/[^/]+/application/", pathNot: "\\.test\\.ts$" },
+      to: { path: "^src/[^/]+/(infrastructure|interface)/" },
     },
     {
       name: "infrastructure-may-not-import-interface",
       severity: "error",
-      from: { path: "^packages/[^/]+/src/infrastructure/", pathNot: "\\.test\\.ts$" },
-      to: { path: "^packages/[^/]+/src/interface/" },
+      from: { path: "^src/[^/]+/infrastructure/", pathNot: "\\.test\\.ts$" },
+      to: { path: "^src/[^/]+/interface/" },
     },
     {
       name: "interface-may-not-import-infrastructure",
       comment:
         "Only the composition root (src/main.ts) wires adapters — program plan §Composition roots.",
       severity: "error",
-      from: { path: "^packages/[^/]+/src/interface/", pathNot: "\\.test\\.ts$" },
-      to: { path: "^packages/[^/]+/src/infrastructure/" },
+      from: { path: "^src/[^/]+/interface/", pathNot: "\\.test\\.ts$" },
+      to: { path: "^src/[^/]+/infrastructure/" },
     },
     {
-      name: "no-barrel-inside-package",
-      comment: "One barrel per package root; internal code imports by direct path.",
+      name: "no-barrel-inside-component",
+      comment:
+        "One barrel per component, and its own code never routes through it — internal imports go " +
+        "by direct path. The back-reference is what makes this correct: `$1` pins the `to` barrel " +
+        "to the SAME component the importer lives in, so importing another component's barrel " +
+        "stays legal, because that barrel is exactly the public surface a component is meant to " +
+        "offer. Before the packages were collapsed this rule could not tell the two apart, and " +
+        "never had to: cross-package imports were unresolvable to dependency-cruiser, so it only " +
+        "ever saw the intra-package case. Once they resolved, it flagged 113 legitimate imports.",
       severity: "error",
-      from: { path: "^packages/[^/]+/src/.+/" },
-      to: { path: "^packages/[^/]+/src/index\\.ts$" },
+      from: { path: "^src/([^/]+)/.+/" },
+      to: { path: "^src/$1/index\\.ts$" },
     },
   ],
   options: {
@@ -88,9 +96,8 @@ module.exports = {
     // type-only. The layering rules below would then pass a domain file importing an infrastructure
     // package's types, which is the exact violation they exist to catch.
     tsPreCompilationDeps: true,
-    // Bun's isolated linker symlinks workspace deps into node_modules. Resolving to the realpath
-    // keeps cross-package imports on their true `packages/...` paths, which is what the `from`
-    // and `to` patterns above match against.
+    // Components resolve through tsconfig `paths` to real files under src/, so the patterns above
+    // match resolved paths directly. No symlink indirection remains to unwind.
     preserveSymlinks: false,
   },
 };

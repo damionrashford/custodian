@@ -112,59 +112,145 @@ test("the layering gate sees type-only imports", async () => {
 });
 
 /**
- * Every workspace import a package makes must be declared in that package's own `package.json`.
+ * Which component may depend on which. This table *is* the coupling graph — there is nowhere else
+ * it is written down.
  *
- * Nothing else checks this, which was a surprise worth recording. `bunfig.toml` sets
- * `linker = "isolated"` specifically to prevent phantom dependencies, and it does scope
- * `packages/<name>/node_modules` correctly — `routing`'s holds only `domain-primitives`. But module
- * resolution walks *up*, and the root `node_modules` holds all 27 packages, because LD-3 requires
- * every one of them in the root `devDependencies` so `tests/` can import them. The upward walk
- * defeats the isolation.
+ * It used to live across 27 `package.json` manifests, and it was never enforced there. Under Bun's
+ * isolated linker `packages/<name>/node_modules` really did hold only that package's declared deps,
+ * but module resolution walks *upward*, and the root `node_modules` held all 27 because LD-3 needs
+ * them in the root `devDependencies` for `tests/` to import. Two sound decisions, one hole between
+ * them: `gateway/infrastructure` importing `@custodian/oversight`, absent from gateway's manifest,
+ * passed tsc, dependency-cruiser, knip and ESLint together, and ran.
  *
- * Demonstrated rather than assumed: `gateway/infrastructure` importing `@custodian/oversight`, a
- * package absent from gateway's manifest, passed tsc, dependency-cruiser, knip and ESLint together.
- * dependency-cruiser catches the `domain` case only because a *layering* rule happens to fire there;
- * between any other two layers it sees nothing, since a workspace import arrives with
- * `dependencyTypes: unknown` (the reason `.dependency-cruiser.cjs` uses path-based rules at all).
+ * dependency-cruiser catches the `domain` case only because a *layering* rule fires there by
+ * coincidence; a workspace import reaches it as `dependencyTypes: unknown`, which is the documented
+ * reason `.dependency-cruiser.cjs` keys on paths at all.
  *
- * This is LD-11's shape a third time: a gate believed to enforce something, never shown to reject
- * the idiomatic violation.
+ * So the manifests were documentation that could drift from the truth in silence. This table cannot:
+ * it is checked in both directions, so an undeclared import fails, and an entry nothing imports any
+ * more fails too rather than rotting into a permission nobody meant to grant.
  */
-test("every workspace import is declared by the package that makes it", async () => {
-  const importPattern = /from\s+"(@custodian\/[a-z-]+)"/g;
+const COMPONENT_DEPENDENCIES: Readonly<Record<string, readonly string[]>> = {
+  "agent-loop": [],
+  "agent-runtime": [
+    "agent-loop",
+    "config-registry",
+    "context-assembly",
+    "crypto-shred",
+    "domain-primitives",
+    "execution-log",
+    "gateway",
+    "guardrails",
+    "idempotency",
+    "knowledge-base",
+    "metering",
+    "retention",
+    "retrieval",
+    "routing",
+    "tool-registry",
+  ],
+  "config-registry": ["domain-primitives"],
+  "context-assembly": ["domain-primitives"],
+  "crypto-shred": ["domain-primitives"],
+  "domain-primitives": [],
+  "durable-execution": ["domain-primitives"],
+  erasure: ["domain-primitives"],
+  eval: [],
+  "event-delivery": ["domain-primitives"],
+  "execution-log": ["crypto-shred", "domain-primitives", "retention"],
+  gateway: [
+    "config-registry",
+    "crypto-shred",
+    "domain-primitives",
+    "execution-log",
+    "idempotency",
+    "knowledge-base",
+    "retention",
+    "routing",
+  ],
+  guardrails: [],
+  idempotency: ["domain-primitives"],
+  identity: ["domain-primitives"],
+  "knowledge-base": ["crypto-shred", "domain-primitives"],
+  memory: ["domain-primitives", "retention"],
+  metering: ["domain-primitives"],
+  observability: ["domain-primitives", "execution-log", "reconciliation"],
+  oversight: [],
+  reconciliation: [],
+  "response-cache": ["domain-primitives", "retention"],
+  retention: ["domain-primitives"],
+  retrieval: ["domain-primitives"],
+  routing: ["domain-primitives"],
+  streaming: ["domain-primitives"],
+  "tool-registry": ["domain-primitives"],
+};
+
+async function importsByComponent(): Promise<Map<string, Set<string>>> {
+  const pattern = /from\s+"@custodian\/([a-z-]+)"/g;
+  const found = new Map<string, Set<string>>();
+
+  for await (const path of new Bun.Glob("src/*/**/*.ts").scan(".")) {
+    const component = path.split("/")[1] ?? "";
+    const text = await readRepoFile(path);
+    for (const [, imported] of text.matchAll(pattern)) {
+      if (imported !== undefined && imported !== component) {
+        const existing = found.get(component) ?? new Set<string>();
+        existing.add(imported);
+        found.set(component, existing);
+      }
+    }
+  }
+  return found;
+}
+
+test("the component list matches the components on disk", async () => {
+  const onDisk: string[] = [];
+  for await (const path of new Bun.Glob("src/*/index.ts").scan(".")) {
+    onDisk.push(path.split("/")[1] ?? "");
+  }
+
+  // A component with no entry would be silently exempt from the rule below, which is the failure
+  // mode of every allowlist that is not itself checked against reality.
+  expect(onDisk.sort()).toEqual(Object.keys(COMPONENT_DEPENDENCIES).sort());
+});
+
+test("no component imports another it has not declared", async () => {
+  const actual = await importsByComponent();
   const undeclared: string[] = [];
 
-  for await (const manifestPath of new Bun.Glob("packages/*/package.json").scan(".")) {
-    const directory = manifestPath.slice(0, manifestPath.lastIndexOf("/"));
-    const manifest: unknown = await Bun.file(manifestPath).json();
-    const dependencies = readProperty(
-      typeof manifest === "object" && manifest !== null ? manifest : {},
-      "dependencies",
-    );
-    const declared = new Set(
-      typeof dependencies === "object" && dependencies !== null ? Object.keys(dependencies) : [],
-    );
-    const own = readProperty(
-      typeof manifest === "object" && manifest !== null ? manifest : {},
-      "name",
-    );
-
-    for await (const source of new Bun.Glob(`${directory}/src/**/*.ts`).scan(".")) {
-      const text = await readRepoFile(source);
-      for (const [, imported] of text.matchAll(importPattern)) {
-        if (imported !== undefined && imported !== own && !declared.has(imported)) {
-          undeclared.push(`${source} → ${imported}`);
-        }
+  for (const [component, imports] of actual) {
+    const declared = new Set(COMPONENT_DEPENDENCIES[component] ?? []);
+    for (const imported of imports) {
+      if (!declared.has(imported)) {
+        undeclared.push(`${component} → ${imported}`);
       }
     }
   }
 
-  expect(undeclared).toEqual([]);
+  expect(undeclared.sort()).toEqual([]);
+});
+
+test("no component declares a dependency it does not use", async () => {
+  const actual = await importsByComponent();
+  const unused: string[] = [];
+
+  for (const [component, declared] of Object.entries(COMPONENT_DEPENDENCIES)) {
+    const imports = actual.get(component) ?? new Set<string>();
+    for (const dependency of declared) {
+      if (!imports.has(dependency)) {
+        unused.push(`${component} → ${dependency}`);
+      }
+    }
+  }
+
+  // Without this half the table only ever grows, and a stale entry is a standing permission to
+  // couple two components that no longer have anything to do with each other.
+  expect(unused.sort()).toEqual([]);
 });
 
 test("no subject key store holds its own keys", async () => {
   const offenders: string[] = [];
-  for await (const path of new Bun.Glob("packages/**/src/**/*.ts").scan(".")) {
+  for await (const path of new Bun.Glob("src/**/*.ts").scan(".")) {
     const source = await readRepoFile(path);
     if (/implements SubjectKeyStore/.test(source) && !/KeyCustodian/.test(source)) {
       offenders.push(path);
@@ -178,9 +264,7 @@ test("no subject key store holds its own keys", async () => {
 });
 
 test("the vector index stores sealed embeddings, never bare vectors", async () => {
-  const source = await readRepoFile(
-    "packages/knowledge-base/src/infrastructure/in-memory-vector-index.ts",
-  );
+  const source = await readRepoFile("src/knowledge-base/infrastructure/in-memory-vector-index.ts");
 
   // Scoped to the stored type, not the whole file. `sealEmbedding` legitimately *takes* a bare
   // vector — it is the thing being sealed — so a file-wide match would fail on correct code, and a
@@ -200,17 +284,17 @@ test("the vector index stores sealed embeddings, never bare vectors", async () =
 test("type assertions are exempt in exactly the two pinned source files", async () => {
   const config = await Bun.file("eslint.config.js").text();
   const block = config.slice(config.indexOf("Two exceptions the standard names"));
-  const exempt = [...block.slice(0, block.indexOf("],")).matchAll(/"(packages\/[^"]+)"/g)];
+  const exempt = [...block.slice(0, block.indexOf("],")).matchAll(/"(src\/[^"]+)"/g)];
 
   // A path list of individual parsers used to hold this exemption, and six files silently lost it
   // by moving one folder deeper. Every brand is now built through `brand()`, so the list is one
   // entry — and growing it back is a decision someone has to make in this test first.
   expect(exempt.map((m) => m[1])).toEqual([
-    "packages/domain-primitives/src/domain/language/brand.ts",
+    "src/domain-primitives/domain/language/brand.ts",
     // A single-purpose row parser whose one assertion is hash-verified before anything returns —
     // a parser exemption in the standard's own sense, made deliberately here (LD-11: growing this
     // list is a decision, not a drive-by), and scoped to the parser file so the sqlite adapter
     // itself stays under the assertion ban.
-    "packages/execution-log/src/infrastructure/parse-stored-entry.ts",
+    "src/execution-log/infrastructure/parse-stored-entry.ts",
   ]);
 });

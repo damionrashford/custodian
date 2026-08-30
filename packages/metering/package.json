@@ -1,0 +1,13 @@
+{
+  "name": "@custodian/metering",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@custodian/domain-primitives": "workspace:*",
+    "@custodian/gateway": "workspace:*"
+  }
+}

@@ -18,11 +18,10 @@ import { XaiModelProvider } from "@custodian/gateway";
 import { PhraseInjectionClassifier } from "@custodian/guardrails";
 import { SqliteIdempotencyStore } from "@custodian/idempotency";
 import {
-  MAX_CLAIM_LIFETIME_MS,
+  Ed25519ClaimVerifier,
   InMemoryVectorIndex,
   namespaceFor,
   verifyTenantClaim,
-  type ClaimVerifier,
   type IndexedDocument,
 } from "@custodian/knowledge-base";
 import { priceCompletion, type PriceTable } from "@custodian/metering";
@@ -145,32 +144,15 @@ const SEED_DOCUMENTS: readonly (readonly [string, KbDocument])[] = [
 
 const embedder = new HashEmbedder();
 
-const devClaimSecret = required("CUSTODIAN_DEV_CLAIM_SECRET");
-
 /**
- * Local single-tenant development only, and it must not outlive that: the secret is a bearer
- * string with no signature and no expiry of its own, so every presentation mints a fresh window
- * and a leaked secret is an unexpiring credential — the shape LD-7 exists to refuse. What applies
- * here is the lifetime bound (derived below from the locked constant, never re-declared); what
- * does not yet apply is the signature, and that is the gap. Replace with an asymmetric verifier
- * that carries the tenant inside the signed payload before a second tenant exists.
+ * The claim is a signed JWT and the server holds only the public key, so it can check tenant
+ * identity and cannot mint it. The shared secret this replaces made every party that could verify
+ * a claim able to forge one, and a leak of it was an unexpiring credential — the shape LD-7 names.
+ * The corpus specifies "a signed JWT claim carrying the tenant ID"
+ * (AI_Agent_Implementation_Plan_v2.txt:156) but no algorithm or key distribution, so Ed25519 and
+ * an issuer-held private key are decisions taken here. `scripts/mint-dev-claim.ts` mints both.
  */
-const verifier: ClaimVerifier = {
-  verify: (token: string) => {
-    if (token !== devClaimSecret) {
-      return { ok: false, error: { kind: "signature-invalid" } };
-    }
-    const now = Date.now();
-    return {
-      ok: true,
-      value: {
-        tenant,
-        issuedAt: new Date(now).toISOString(),
-        expiresAt: new Date(now + MAX_CLAIM_LIFETIME_MS / 2).toISOString(),
-      },
-    };
-  },
-};
+const verifier = new Ed25519ClaimVerifier(required("CUSTODIAN_CLAIM_PUBLIC_KEY"));
 
 const subject = must(
   parseSubjectId(Bun.env["CUSTODIAN_DEV_SUBJECT"] ?? "s_01jd7k9h2m4n6p8r0s2t4v6x8z"),
@@ -231,13 +213,16 @@ const idempotency = new SqliteIdempotencyStore(
 
 async function main(): Promise<void> {
   // The seed namespace is derived exactly the way every query derives it: verify the dev claim,
-  // then namespaceFor — there is no other constructor, and that is the point.
-  const bootClaim = verifyTenantClaim(devClaimSecret, {
+  // then namespaceFor — there is no other constructor, and that is the point. The consequence is
+  // deliberate and worth knowing: a claim expires, so a restart more than its lifetime after
+  // minting fails here rather than seeding from an unchecked identity. A production entry point
+  // needs a boot path that mints its own, not a longer-lived token.
+  const bootClaim = verifyTenantClaim(required("CUSTODIAN_DEV_CLAIM"), {
     verifier,
     now: new Date(),
   });
   if (!bootClaim.ok) {
-    console.error("The dev claim secret did not verify at boot.");
+    console.error("CUSTODIAN_DEV_CLAIM did not verify. Mint one with scripts/mint-dev-claim.ts.");
     process.exit(1);
   }
   const seedNamespace = namespaceFor(bootClaim.value);

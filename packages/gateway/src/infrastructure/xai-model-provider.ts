@@ -89,9 +89,7 @@ export class XaiModelProvider implements ModelProvider {
     this.#config = config;
   }
 
-  async complete(
-    request: CompletionRequest,
-  ): Promise<Result<CompletionResponse, ProviderFailure>> {
+  async complete(request: CompletionRequest): Promise<Result<CompletionResponse, ProviderFailure>> {
     const built = buildXaiRequest(request, this.#config);
     let response: Response;
     try {

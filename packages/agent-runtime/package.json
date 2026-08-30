@@ -18,7 +18,6 @@
     "@custodian/idempotency": "workspace:*",
     "@custodian/knowledge-base": "workspace:*",
     "@custodian/retention": "workspace:*",
-    "@custodian/retrieval": "workspace:*",
     "@custodian/routing": "workspace:*",
     "@custodian/tool-registry": "workspace:*"
   }

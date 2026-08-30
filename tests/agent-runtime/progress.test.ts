@@ -4,7 +4,12 @@ import { advance } from "@custodian/agent-runtime";
 const fresh = { iteration: 0, stepsWithoutStateChange: 0, costMicros: 0, lastActionVerified: true };
 
 test("new evidence resets stagnation and verifies the action", () => {
-  const worn = { iteration: 3, stepsWithoutStateChange: 2, costMicros: 100, lastActionVerified: true };
+  const worn = {
+    iteration: 3,
+    stepsWithoutStateChange: 2,
+    costMicros: 100,
+    lastActionVerified: true,
+  };
   expect(advance(worn, { kind: "observed-new-evidence" }, 50)).toEqual({
     iteration: 4,
     stepsWithoutStateChange: 0,

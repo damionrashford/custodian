@@ -61,6 +61,9 @@ test("a malformed response is unavailable, and no provider text leaks into the f
 });
 
 test("an empty choices array is unavailable, not a crash", () => {
-  const parsed = parseXaiResponse({ choices: [], usage: { prompt_tokens: 1, completion_tokens: 1 } });
+  const parsed = parseXaiResponse({
+    choices: [],
+    usage: { prompt_tokens: 1, completion_tokens: 1 },
+  });
   expect(parsed.ok).toBe(false);
 });

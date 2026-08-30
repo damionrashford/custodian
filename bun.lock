@@ -15,12 +15,14 @@
         "@custodian/event-delivery": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/gateway": "workspace:*",
+        "@custodian/guardrails": "workspace:*",
         "@custodian/idempotency": "workspace:*",
         "@custodian/identity": "workspace:*",
         "@custodian/knowledge-base": "workspace:*",
         "@custodian/memory": "workspace:*",
         "@custodian/metering": "workspace:*",
         "@custodian/oversight": "workspace:*",
+        "@custodian/reconciliation": "workspace:*",
         "@custodian/response-cache": "workspace:*",
         "@custodian/retention": "workspace:*",
         "@custodian/retrieval": "workspace:*",
@@ -113,6 +115,10 @@
         "@custodian/routing": "workspace:*",
       },
     },
+    "packages/guardrails": {
+      "name": "@custodian/guardrails",
+      "version": "0.0.0",
+    },
     "packages/idempotency": {
       "name": "@custodian/idempotency",
       "version": "0.0.0",
@@ -152,6 +158,10 @@
     },
     "packages/oversight": {
       "name": "@custodian/oversight",
+      "version": "0.0.0",
+    },
+    "packages/reconciliation": {
+      "name": "@custodian/reconciliation",
       "version": "0.0.0",
     },
     "packages/response-cache": {
@@ -220,6 +230,8 @@
 
     "@custodian/gateway": ["@custodian/gateway@workspace:packages/gateway"],
 
+    "@custodian/guardrails": ["@custodian/guardrails@workspace:packages/guardrails"],
+
     "@custodian/idempotency": ["@custodian/idempotency@workspace:packages/idempotency"],
 
     "@custodian/identity": ["@custodian/identity@workspace:packages/identity"],
@@ -231,6 +243,8 @@
     "@custodian/metering": ["@custodian/metering@workspace:packages/metering"],
 
     "@custodian/oversight": ["@custodian/oversight@workspace:packages/oversight"],
+
+    "@custodian/reconciliation": ["@custodian/reconciliation@workspace:packages/reconciliation"],
 
     "@custodian/response-cache": ["@custodian/response-cache@workspace:packages/response-cache"],
 

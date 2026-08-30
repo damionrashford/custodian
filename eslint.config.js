@@ -80,6 +80,7 @@ export default defineConfig(
       "packages/*/src/domain/retention-bucket.ts",
       "packages/*/src/domain/request-hash.ts",
       "packages/*/src/domain/tool-name.ts",
+      "packages/*/src/domain/region.ts",
     ],
     rules: { "@typescript-eslint/consistent-type-assertions": "off" },
   },

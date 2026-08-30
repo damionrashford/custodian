@@ -198,3 +198,32 @@ test("an unreachable custodian is not reported as an erased subject", async () =
   const unwrapped = await custodianOver(new Unreachable()).unwrapDataKey(name(), "vault:v1:0");
   expect(unwrapped.ok ? "unwrapped" : unwrapped.error.kind).toBe("custodian-unreachable");
 });
+
+test("a second seal for the same subject does not re-create its key", async () => {
+  const transport = new FakeTransitTransport();
+  const custodian = custodianOver(transport);
+
+  await custodian.issueDataKey(name());
+  const afterFirst = transport.requests.length;
+  await custodian.issueDataKey(name());
+
+  // Re-POSTing create and /config on every seal is two extra round trips on the hot path, and the
+  // repeat-create pattern — the normal case for any subject with more than one record — has never
+  // been exercised against a real Vault. One datakey call is all the second seal should cost.
+  expect(transport.requests.slice(afterFirst)).toEqual([
+    `POST /v1/transit/datakey/plaintext/subject-${SUBJECT}`,
+  ]);
+});
+
+test("destroying a key lets a later seal create it again", async () => {
+  const transport = new FakeTransitTransport();
+  const custodian = custodianOver(transport);
+  await custodian.issueDataKey(name());
+  await custodian.destroyKey(name());
+
+  // The cache is an optimisation, never a source of truth. Left stale, the next seal would skip the
+  // create and ask Vault for a data key under a key it no longer holds.
+  const reissued = await custodian.issueDataKey(name());
+  expect(reissued.ok).toBe(true);
+  expect(transport.keys.has(`subject-${SUBJECT}`)).toBe(true);
+});

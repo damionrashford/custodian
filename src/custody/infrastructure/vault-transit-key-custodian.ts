@@ -24,6 +24,15 @@ const DATA_KEY_BITS = 256;
 export class VaultTransitKeyCustodian implements KeyCustodian {
   readonly #transport: VaultTransport;
   readonly #now: () => Date;
+  /**
+   * Key names this process has already created and configured for deletion.
+   *
+   * Without it every seal re-POSTs create and `/config` — two extra round trips on the hot path for
+   * a key that has existed since the subject's first record, and a repeat-create call pattern that
+   * is the normal case yet was never exercised against a real Vault. Purely an optimisation: a
+   * restart empties it and the next seal simply ensures again, which is idempotent.
+   */
+  readonly #ensured = new Set<string>();
 
   constructor(options: { readonly transport: VaultTransport; readonly now: () => Date }) {
     this.#transport = options.transport;
@@ -102,6 +111,7 @@ export class VaultTransitKeyCustodian implements KeyCustodian {
       return err({ kind: "destruction-unconfirmed", name });
     }
 
+    this.#ensured.delete(name);
     return ok({
       target: name,
       destroyedAt: this.#now().toISOString(),
@@ -118,6 +128,9 @@ export class VaultTransitKeyCustodian implements KeyCustodian {
    * one moment when there is a statutory clock running.
    */
   async #ensureKey(name: CustodyKeyName): Promise<Result<null, KeyStoreFailure>> {
+    if (this.#ensured.has(name)) {
+      return ok(null);
+    }
     const created = await this.#transport.send(
       "POST",
       `/v1/transit/keys/${encodeURIComponent(name)}`,
@@ -134,6 +147,9 @@ export class VaultTransitKeyCustodian implements KeyCustodian {
     if (configured.status !== 204 && configured.status !== 200) {
       return err(unreachable(name, "config", configured));
     }
+    // Recorded only after both calls succeeded. Marking it earlier would cache a key that exists
+    // but cannot be deleted, which is a subject who cannot be erased.
+    this.#ensured.add(name);
     return ok(null);
   }
 }

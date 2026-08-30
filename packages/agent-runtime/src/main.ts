@@ -99,6 +99,7 @@ const provider = new XaiModelProvider({
   id: profile.id,
   baseUrl: "https://api.x.ai/v1",
   apiKey: required("XAI_API_KEY"),
+  modelIds: new Map([[model, "grok-4.6"]]),
   reasoningEffort: "low",
 });
 

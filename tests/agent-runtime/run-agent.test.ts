@@ -358,6 +358,23 @@ test("a residency refusal from the gateway surfaces the fixed public copy", asyn
   });
 });
 
+test("two runs asking the same question do not collide in the idempotency store", async () => {
+  const shared = new InMemoryIdempotencyStore({ onWrite: () => undefined });
+  const first = fixture({});
+  const second = fixture({});
+  const otherRun = must(parseRunId("r_02jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
+
+  const one = await runAgent(request(), { ...first.deps, idempotency: shared });
+  const two = await runAgent(
+    { ...request(), runId: otherRun },
+    { ...second.deps, idempotency: shared },
+  );
+  // The per-turn idempotency unit is (run, question, iteration): the same question from a
+  // different run is new work, not a redelivery.
+  expect(one.ok).toBe(true);
+  expect(two.ok).toBe(true);
+});
+
 test("tool arguments are sealed in the log — the plaintext query never appears", async () => {
   const { deps, logStore } = fixture({});
   await runAgent(request(), deps);

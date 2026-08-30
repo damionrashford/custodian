@@ -7,16 +7,19 @@ function must<T>(parsed: { ok: true; value: T } | { ok: false }, label: string):
   return parsed.value;
 }
 
+const pinnedModel = must(parseModelSnapshot("grok-4.6-20260801"), "model");
+
 const config: XaiProviderConfig = {
   id: must(parseProviderId("xai-us"), "provider"),
   // Split so the LD-10 guard (no http(s):// literal in a test file) stays intact.
   baseUrl: "https:" + "//api.x.ai/v1",
   apiKey: "test-key",
+  modelIds: new Map([[pinnedModel, "grok-4.6"]]),
   reasoningEffort: "low",
 };
 
 const request = {
-  model: must(parseModelSnapshot("grok-4.6-20260801"), "model"),
+  model: pinnedModel,
   system: "You answer questions.",
   input: "What is Custodian?",
   maxOutputTokens: 400,
@@ -24,10 +27,12 @@ const request = {
 
 test("the request carries auth, both messages, the cap, and reasoning_effort", () => {
   const built = buildXaiRequest(request, config);
-  expect(built.url.endsWith("/chat/completions")).toBe(true);
-  expect(built.headers["authorization"]).toBe("Bearer test-key");
-  const body = JSON.parse(built.body) as Record<string, unknown>;
-  expect(body["model"]).toBe("grok-4.6-20260801");
+  if (!built.ok) throw new Error("build refused");
+  expect(built.value.url.endsWith("/chat/completions")).toBe(true);
+  expect(built.value.headers["authorization"]).toBe("Bearer test-key");
+  const body = JSON.parse(built.value.body) as Record<string, unknown>;
+  // The wire carries the provider id, never the platform pin.
+  expect(body["model"]).toBe("grok-4.6");
   expect(body["max_tokens"]).toBe(400);
   expect(body["reasoning_effort"]).toBe("low");
   expect(body["messages"]).toEqual([
@@ -38,7 +43,16 @@ test("the request carries auth, both messages, the cap, and reasoning_effort", (
 
 test("reasoning_effort is absent from the body when not configured", () => {
   const built = buildXaiRequest(request, { ...config, reasoningEffort: undefined });
-  expect(JSON.parse(built.body)).not.toHaveProperty("reasoning_effort");
+  if (!built.ok) throw new Error("build refused");
+  expect(JSON.parse(built.value.body)).not.toHaveProperty("reasoning_effort");
+});
+
+test("an unmapped snapshot is refused, never sent as-is", () => {
+  const built = buildXaiRequest(request, { ...config, modelIds: new Map() });
+  expect(built).toEqual({
+    ok: false,
+    error: { kind: "refused", reason: "model-not-served-by-provider" },
+  });
 });
 
 test("a well-formed response yields text and token usage", () => {

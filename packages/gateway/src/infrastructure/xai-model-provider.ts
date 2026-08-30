@@ -1,4 +1,10 @@
-import { err, ok, type ProviderId, type Result } from "@custodian/domain-primitives";
+import {
+  err,
+  ok,
+  type ModelSnapshot,
+  type ProviderId,
+  type Result,
+} from "@custodian/domain-primitives";
 import type {
   CompletionRequest,
   CompletionResponse,
@@ -10,6 +16,12 @@ export type XaiProviderConfig = {
   readonly id: ProviderId;
   readonly baseUrl: string;
   readonly apiKey: string;
+  /**
+   * Platform snapshots are pinned (grok-4.6-20260801); xAI serves undated ids (grok-4.6). The
+   * adapter owns that translation, so the log records the pin while the wire carries the id the
+   * provider actually understands. An unmapped snapshot is refused, never sent as-is.
+   */
+  readonly modelIds: ReadonlyMap<ModelSnapshot, string>;
   /** Works on grok-4.6 despite the docs scoping it to 4.3, and roughly halves cost. */
   readonly reasoningEffort: "low" | "high" | undefined;
 };
@@ -23,9 +35,13 @@ export type BuiltRequest = {
 export function buildXaiRequest(
   request: CompletionRequest,
   config: XaiProviderConfig,
-): BuiltRequest {
+): Result<BuiltRequest, ProviderFailure> {
+  const modelId = config.modelIds.get(request.model);
+  if (modelId === undefined) {
+    return err({ kind: "refused", reason: "model-not-served-by-provider" });
+  }
   const body: Record<string, unknown> = {
-    model: request.model,
+    model: modelId,
     messages: [
       { role: "system", content: request.system },
       { role: "user", content: request.input },
@@ -35,14 +51,14 @@ export function buildXaiRequest(
   if (config.reasoningEffort !== undefined) {
     body["reasoning_effort"] = config.reasoningEffort;
   }
-  return {
+  return ok({
     url: `${config.baseUrl}/chat/completions`,
     headers: {
       authorization: `Bearer ${config.apiKey}`,
       "content-type": "application/json",
     },
     body: JSON.stringify(body),
-  };
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -91,12 +107,15 @@ export class XaiModelProvider implements ModelProvider {
 
   async complete(request: CompletionRequest): Promise<Result<CompletionResponse, ProviderFailure>> {
     const built = buildXaiRequest(request, this.#config);
+    if (!built.ok) {
+      return built;
+    }
     let response: Response;
     try {
-      response = await fetch(built.url, {
+      response = await fetch(built.value.url, {
         method: "POST",
-        headers: built.headers,
-        body: built.body,
+        headers: built.value.headers,
+        body: built.value.body,
       });
     } catch {
       return err({ kind: "unavailable" });

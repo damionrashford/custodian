@@ -186,7 +186,11 @@ async function serveTurn(
 ): Promise<Result<CompletionResponse, AgentRunFailure>> {
   const hashed = parseRequestHash(
     deps.hasher.hash(
-      canonicalJson({ question: request.question, iteration: context.state.iteration }),
+      canonicalJson({
+        runId: request.runId,
+        question: request.question,
+        iteration: context.state.iteration,
+      }),
     ),
   );
   if (!hashed.ok) {

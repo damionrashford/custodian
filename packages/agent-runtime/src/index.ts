@@ -10,3 +10,5 @@ export type {
   AgentRunRequest,
 } from "./application/run-agent";
 export { runAgent } from "./application/run-agent";
+export type { KbDocument, KbSearchToolDeps } from "./infrastructure/kb-search-tool";
+export { KbSearchTool } from "./infrastructure/kb-search-tool";

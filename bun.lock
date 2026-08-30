@@ -21,6 +21,7 @@
         "@custodian/knowledge-base": "workspace:*",
         "@custodian/memory": "workspace:*",
         "@custodian/metering": "workspace:*",
+        "@custodian/observability": "workspace:*",
         "@custodian/oversight": "workspace:*",
         "@custodian/reconciliation": "workspace:*",
         "@custodian/response-cache": "workspace:*",
@@ -158,6 +159,15 @@
         "@custodian/domain-primitives": "workspace:*",
       },
     },
+    "packages/observability": {
+      "name": "@custodian/observability",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+        "@custodian/execution-log": "workspace:*",
+        "@custodian/reconciliation": "workspace:*",
+      },
+    },
     "packages/oversight": {
       "name": "@custodian/oversight",
       "version": "0.0.0",
@@ -241,6 +251,8 @@
     "@custodian/memory": ["@custodian/memory@workspace:packages/memory"],
 
     "@custodian/metering": ["@custodian/metering@workspace:packages/metering"],
+
+    "@custodian/observability": ["@custodian/observability@workspace:packages/observability"],
 
     "@custodian/oversight": ["@custodian/oversight@workspace:packages/oversight"],
 

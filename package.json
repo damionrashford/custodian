@@ -35,6 +35,7 @@
     "@custodian/identity": "workspace:*",
     "@custodian/knowledge-base": "workspace:*",
     "@custodian/memory": "workspace:*",
+    "@custodian/observability": "workspace:*",
     "@custodian/metering": "workspace:*",
     "@custodian/oversight": "workspace:*",
     "@custodian/reconciliation": "workspace:*",

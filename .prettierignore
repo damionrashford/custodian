@@ -1,0 +1,7 @@
+node_modules
+coverage
+bun.lock
+
+# Markdown is prose, not code. Reflowing it produces diff churn unrelated to the change under
+# review, which is the opposite of what "never discussed in review" is meant to achieve.
+*.md

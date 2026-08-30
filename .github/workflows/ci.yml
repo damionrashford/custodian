@@ -25,6 +25,21 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      - name: Lint
+        run: bun run lint
+
+      - name: Layering
+        run: bun run layers
+
+      - name: Dead code
+        run: bun run deadcode
+
+      - name: Structure budgets
+        run: bun run structure
+
+      - name: Format
+        run: bun run format
+
       # Bun.WebView drives an installed Chrome-family browser via CDP on Linux.
       # ubuntu-latest ships google-chrome-stable pre-installed; if that ever
       # changes, add an explicit browser-install step here.

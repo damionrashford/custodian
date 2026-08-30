@@ -204,6 +204,7 @@ const COMPONENT_DEPENDENCIES: Readonly<Record<string, readonly string[]>> = {
   knowledge: ["custody", "primitives"],
   primitives: [],
   serving: ["custody", "evidence", "governance", "knowledge", "primitives"],
+  surfaces: ["primitives"],
 };
 
 async function importsByComponent(): Promise<Map<string, Set<string>>> {

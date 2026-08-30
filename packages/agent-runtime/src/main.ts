@@ -16,7 +16,7 @@ import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import { Sha256ContentHasher, SqliteExecutionLogStore } from "@custodian/execution-log";
 import { XaiModelProvider } from "@custodian/gateway";
 import { PhraseInjectionClassifier } from "@custodian/guardrails";
-import { InMemoryIdempotencyStore } from "@custodian/idempotency";
+import { SqliteIdempotencyStore } from "@custodian/idempotency";
 import {
   MAX_CLAIM_LIFETIME_MS,
   InMemoryVectorIndex,
@@ -196,14 +196,38 @@ const logStore = new SqliteExecutionLogStore(
 
 /**
  * Process-scoped, beside the durable log — never per request. Built inside the request closure,
- * the key store's DEKs died with the request that made them, leaving sealed content on disk that
- * no erasure could prove destroyed and no investigation could ever read; and a fresh claims map
- * per delivery made the redelivery defence unable to see a redelivery. Both are still in-memory,
- * so both still end at process exit — durable adapters are the next increment, and until then a
- * restart is a key destruction that no one requested.
+ * the key store's DEKs died with the request that made them and the claims map could not see a
+ * redelivery.
+ *
+ * The claim ledger is now durable, which is what the spec asks for outright: the request-hash key
+ * is "persisted before any provider call" and is chaos-tested under forced worker restart
+ * (AI_Agent_Implementation_Plan_v2.txt:65, :280). The key store is not, and persisting it is not
+ * the same job — the spec's shape is a per-subject DEK wrapped by a KEK in a KMS, with the KMS
+ * destruction record as the erasure proof (Data_Protection_and_Retention.txt:74). Raw keys in a
+ * file beside their own ciphertext would be a different design wearing durability's name, so this
+ * stays in-process until that adapter exists: a restart is still a key destruction nobody
+ * requested, and no tenant traffic may run against it.
  */
+/**
+ * The in-process key store is only safe to pair with durable content stores in development, and a
+ * comment saying so is not a control. Durable ciphertext with ephemeral keys is worse than either
+ * alone: a restart leaves rows on disk that nothing can ever decrypt, with no erasure request, no
+ * proof and no registry entry recording that they became unrecoverable — and a later erasure would
+ * mint a proof truthful in outcome but false about when. Until the KEK-backed store lands, booting
+ * that combination takes a deliberate acknowledgement.
+ */
+if (Bun.env["CUSTODIAN_DEV_MODE"] !== "1") {
+  console.error(
+    "This build keeps subject keys in memory while writing sealed content to disk, which is " +
+      "development-only. Set CUSTODIAN_DEV_MODE=1 to acknowledge, or compose a durable key store.",
+  );
+  process.exit(1);
+}
+
 const keys = new AesGcmSubjectKeyStore({ now: () => new Date() });
-const idempotency = new InMemoryIdempotencyStore({ onWrite: () => undefined });
+const idempotency = new SqliteIdempotencyStore(
+  Bun.env["CUSTODIAN_CLAIMS_DB"] ?? "custodian-claims.sqlite",
+);
 
 async function main(): Promise<void> {
   // The seed namespace is derived exactly the way every query derives it: verify the dev claim,
@@ -285,9 +309,23 @@ async function main(): Promise<void> {
   // In-flight runs finish first, then the evidence store's handle is released — closing the log
   // out from under a run still writing to it would lose the tail of exactly the record that run
   // exists to leave behind.
+  // Retention is disposal on a schedule, a different obligation from erasure on request (LD-9):
+  // sealing made these rows erasable, it did nothing about the ones nobody asks about. Hourly is
+  // an operational cadence, not a retention period — the periods live in the schedule.
+  const sweep = setInterval(
+    () => {
+      const now = new Date().toISOString();
+      idempotency.sweepExpired(now);
+      void logStore.disposeExpiredRuns(now);
+    },
+    60 * 60 * 1000,
+  );
+
   const shutdown = (): void => {
+    clearInterval(sweep);
     void server.stop().then(() => {
       logStore.close();
+      idempotency.close();
       process.exit(0);
     });
   };

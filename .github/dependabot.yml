@@ -4,6 +4,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # LD-5: pinned to 6.x until the TypeScript 7 compiler API leaves "not ready" and
+    # typescript-eslint supports it. Typed linting is what enforces the banned-construct
+    # table, and losing it for compile speed is the wrong trade.
+    ignore:
+      - dependency-name: "typescript"
+        versions: ["7.x"]
 
   - package-ecosystem: "github-actions"
     directory: "/"

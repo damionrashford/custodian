@@ -112,7 +112,7 @@ test("the in-memory custodian does not claim external attestation", async () => 
   expect(proof.value.attestation).toBe("self");
 });
 
-test("an unreachable custodian is not translated into an erasure", async () => {
+test("an unreachable custodian is not translated into an erasure, on either envelope", async () => {
   const { subject, bucket } = fixtures();
   const reachable = new InMemoryKeyCustodian({ now: () => new Date(AT) });
   const sealed = await new EnvelopeSubjectKeyStore({
@@ -123,17 +123,28 @@ test("an unreachable custodian is not translated into an erasure", async () => {
     throw new Error("seal failed");
   }
 
-  const unreachable = new EnvelopeSubjectKeyStore({
-    custodian: {
-      issueDataKey: () => Promise.resolve({ ok: false as const, error: OUTAGE }),
-      unwrapDataKey: () => Promise.resolve({ ok: false as const, error: OUTAGE }),
-      destroyKey: () => Promise.resolve({ ok: false as const, error: OUTAGE }),
-    },
-    registry: new SqliteDeletionRegistry(":memory:"),
-  });
+  // Both envelopes, separately. The bucket is unwrapped first, so a custodian that fails everything
+  // only ever exercises that branch — the subject branch stayed untested and a planted regression
+  // in it passed the whole suite.
+  for (const failing of ["bucket-", "subject-"] as const) {
+    const store = new EnvelopeSubjectKeyStore({
+      custodian: {
+        issueDataKey: (name) => reachable.issueDataKey(name),
+        unwrapDataKey: (name, wrapped) =>
+          String(name).startsWith(failing)
+            ? Promise.resolve({ ok: false as const, error: OUTAGE })
+            : reachable.unwrapDataKey(name, wrapped),
+        destroyKey: (name) => reachable.destroyKey(name),
+      },
+      registry: new SqliteDeletionRegistry(":memory:"),
+    });
 
-  // Flattening this into subject-erased would undo the custodian's work of separating an
-  // infrastructure fault from a destroyed key, and the vector index deletes what it cannot unseal.
-  const opened = await unreachable.unseal(sealed.value);
-  expect(opened.ok ? "opened" : opened.error.kind).toBe("custodian-unreachable");
+    // Flattening this into erased would undo the custodian's work of separating an infrastructure
+    // fault from a destroyed key, and the vector index deletes what it cannot unseal.
+    const opened = await store.unseal(sealed.value);
+    expect([failing, opened.ok ? "opened" : opened.error.kind]).toEqual([
+      failing,
+      "custodian-unreachable",
+    ]);
+  }
 });

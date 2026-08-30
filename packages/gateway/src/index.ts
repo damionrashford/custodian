@@ -15,3 +15,5 @@ export type {
   ServeRequest,
 } from "./application/serve-completion";
 export { serveCompletion } from "./application/serve-completion";
+export type { BuiltRequest, XaiProviderConfig } from "./infrastructure/xai-model-provider";
+export { buildXaiRequest, parseXaiResponse, XaiModelProvider } from "./infrastructure/xai-model-provider";

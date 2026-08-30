@@ -5,6 +5,7 @@
     "": {
       "devDependencies": {
         "@custodian/agent-loop": "workspace:*",
+        "@custodian/agent-runtime": "workspace:*",
         "@custodian/config-registry": "workspace:*",
         "@custodian/context-assembly": "workspace:*",
         "@custodian/crypto-shred": "workspace:*",
@@ -45,6 +46,26 @@
     "packages/agent-loop": {
       "name": "@custodian/agent-loop",
       "version": "0.0.0",
+    },
+    "packages/agent-runtime": {
+      "name": "@custodian/agent-runtime",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/agent-loop": "workspace:*",
+        "@custodian/config-registry": "workspace:*",
+        "@custodian/context-assembly": "workspace:*",
+        "@custodian/crypto-shred": "workspace:*",
+        "@custodian/domain-primitives": "workspace:*",
+        "@custodian/execution-log": "workspace:*",
+        "@custodian/gateway": "workspace:*",
+        "@custodian/guardrails": "workspace:*",
+        "@custodian/idempotency": "workspace:*",
+        "@custodian/knowledge-base": "workspace:*",
+        "@custodian/retention": "workspace:*",
+        "@custodian/retrieval": "workspace:*",
+        "@custodian/routing": "workspace:*",
+        "@custodian/tool-registry": "workspace:*",
+      },
     },
     "packages/config-registry": {
       "name": "@custodian/config-registry",
@@ -219,6 +240,8 @@
   },
   "packages": {
     "@custodian/agent-loop": ["@custodian/agent-loop@workspace:packages/agent-loop"],
+
+    "@custodian/agent-runtime": ["@custodian/agent-runtime@workspace:packages/agent-runtime"],
 
     "@custodian/config-registry": ["@custodian/config-registry@workspace:packages/config-registry"],
 

@@ -1,0 +1,25 @@
+{
+  "name": "@custodian/agent-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@custodian/agent-loop": "workspace:*",
+    "@custodian/config-registry": "workspace:*",
+    "@custodian/context-assembly": "workspace:*",
+    "@custodian/crypto-shred": "workspace:*",
+    "@custodian/domain-primitives": "workspace:*",
+    "@custodian/execution-log": "workspace:*",
+    "@custodian/gateway": "workspace:*",
+    "@custodian/guardrails": "workspace:*",
+    "@custodian/idempotency": "workspace:*",
+    "@custodian/knowledge-base": "workspace:*",
+    "@custodian/retention": "workspace:*",
+    "@custodian/retrieval": "workspace:*",
+    "@custodian/routing": "workspace:*",
+    "@custodian/tool-registry": "workspace:*"
+  }
+}

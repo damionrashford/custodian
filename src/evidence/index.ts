@@ -23,6 +23,18 @@ export type {
   SourceTotal,
 } from "./domain/reconcile";
 export { DEFAULT_TOLERANCE, reconcile } from "./domain/reconcile";
+export type {
+  AgentState,
+  ChainIntegrity,
+  InvocationCost,
+  RunCost,
+  RunTimeline,
+  SealedContentRef,
+  StateSpan,
+  StepDetail,
+  TimelineStep,
+} from "./domain/run-timeline";
+export { projectRunTimeline } from "./application/project-run-timeline";
 export type { ModelPrice, PriceTable } from "./domain/price-table";
 export type { UnpricedModel, UsageRecord } from "./domain/price-completion";
 export { priceCompletion, replayUsageLog } from "./domain/price-completion";

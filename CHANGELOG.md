@@ -69,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Requests deduplicate across restarts. The record that a request was already claimed now survives
   a crash or a deploy, so a retry that arrives afterwards is answered from the first outcome
   instead of running the work — and being billed for it — a second time.
+- Workspace credentials are signed. The platform verifies which workspace a request belongs to using
+  a public key and cannot mint a credential itself, so a leaked verification key no longer lets
+  anyone issue one — and a credential still expires, and still cannot be issued with an unbounded
+  lifetime.
 - The first real model provider (xAI). Platform model pins translate to provider model ids at the
   adapter, an unmapped pin is refused rather than sent as-is, and raw provider errors never leave
   the adapter.

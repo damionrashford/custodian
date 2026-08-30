@@ -91,6 +91,7 @@
       "name": "@custodian/gateway",
       "version": "0.0.0",
       "dependencies": {
+        "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/idempotency": "workspace:*",

@@ -13,6 +13,7 @@ export type ErasureLocation =
   | "agent-memory"
   | "experience-store"
   | "execution-log"
+  | "idempotency-store"
   | "backups"
   | "routing-memory";
 
@@ -23,6 +24,7 @@ export const DATA_MAP: readonly ErasureLocation[] = [
   "agent-memory",
   "experience-store",
   "execution-log",
+  "idempotency-store",
   "backups",
   "routing-memory",
 ];

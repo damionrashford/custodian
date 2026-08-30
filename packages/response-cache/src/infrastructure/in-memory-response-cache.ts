@@ -1,17 +1,18 @@
+import type { SealedContent } from "@custodian/domain-primitives";
 import type { Namespace } from "@custodian/knowledge-base";
 import type { CacheKey } from "../domain/cache-key";
 import type { ResponseCache } from "../domain/response-cache";
 
-type Entry = { readonly namespace: Namespace; readonly value: string };
+type Entry = { readonly namespace: Namespace; readonly value: SealedContent };
 
 export class InMemoryResponseCache implements ResponseCache {
   readonly #entries = new Map<string, Entry>();
 
-  get(key: CacheKey): string | undefined {
+  get(key: CacheKey): SealedContent | undefined {
     return this.#entries.get(key)?.value;
   }
 
-  set(key: CacheKey, namespace: Namespace, value: string): void {
+  set(key: CacheKey, namespace: Namespace, value: SealedContent): void {
     this.#entries.set(key, { namespace, value });
   }
 

@@ -7,6 +7,7 @@ export type {
   IdempotencyStore,
   RecordedOutcome,
 } from "./domain/idempotency-store";
+export { CLAIM_TTL_MS, isExpired } from "./domain/idempotency-store";
 export type { ExecuteOnceRequest } from "./application/execute-once";
 export { executeOnce } from "./application/execute-once";
 export { InMemoryIdempotencyStore } from "./infrastructure/in-memory-idempotency-store";

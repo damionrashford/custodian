@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { parseTenantId } from "@custodian/domain-primitives";
+import { parseRetentionBucket, parseSubjectId, parseTenantId } from "@custodian/domain-primitives";
+import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import {
   parseModelSnapshot,
   serveCompletion,
@@ -22,6 +23,8 @@ const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "ten
 const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
 const requestHash = parsedOrThrow(parseRequestHash("b".repeat(64)), "hash");
 const euWest = parsedOrThrow(parseRegion("eu-west-1"), "region");
+const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
+const bucket = parsedOrThrow(parseRetentionBucket("content-2026-08"), "bucket");
 const usEast = parsedOrThrow(parseRegion("us-east-1"), "region");
 
 function profile(id: string, region = euWest): ProviderProfile {
@@ -69,6 +72,9 @@ function baseRequest(providers: readonly ModelProvider[], candidates: readonly P
     hasher,
     at: "2026-08-29T00:00:00.000Z",
     jitter: 0,
+    keys: new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
+    subject,
+    bucket,
   };
 }
 

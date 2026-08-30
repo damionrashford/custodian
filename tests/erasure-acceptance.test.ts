@@ -2,6 +2,8 @@ import { expect, test } from "bun:test";
 import { parseRetentionBucket, parseSubjectId, parseTenantId } from "@custodian/domain-primitives";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import { DATA_MAP, runErasure } from "@custodian/erasure";
+import { cacheKeyFor, InMemoryResponseCache, Sha256KeyDigest } from "@custodian/response-cache";
+import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
 import {
   appendEntry,
   parseRunId,
@@ -59,8 +61,40 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   if (first === undefined) throw new Error("log is empty");
   expect(subjectsIn(first.event)).toEqual([subject]);
 
+  // 1b. The same personal data also reaches the response cache and the idempotency store. Both
+  // hold SealedContent, so one key destruction has to reach all three.
+  const claimVerifier: ClaimVerifier = {
+    verify: () => ({
+      ok: true,
+      value: {
+        tenant,
+        issuedAt: "2026-08-28T23:45:00.000Z",
+        expiresAt: "2026-08-29T00:15:00.000Z",
+      },
+    }),
+  };
+  const claim = verifyTenantClaim("signed", {
+    verifier: claimVerifier,
+    now: new Date("2026-08-29T00:00:00.000Z"),
+  });
+  if (!claim.ok) throw new Error("fixture: claim rejected");
+
+  const digest = new Sha256KeyDigest();
+  const cache = new InMemoryResponseCache();
+  const key = cacheKeyFor(
+    namespaceFor(claim.value),
+    "frontier-1.5-20260801",
+    PERSONAL_DATA,
+    digest,
+  );
+  cache.set(key, namespaceFor(claim.value), sealed.value);
+
+  // The cache key is a digest, so the question is not readable from the index either.
+  expect(String(key)).not.toContain("jane@example.test");
+
   // 2. Backup: a snapshot taken BEFORE the erasure request, serialised as bytes on disk would be.
   const backup = JSON.stringify(log);
+  const cacheBackup = JSON.stringify(cache.get(key));
 
   // 3. Erase — through the workflow, not by calling the key store directly, so the gate exercises
   // the identity, legal-hold and data-map steps that guard the destruction.
@@ -94,7 +128,16 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
     error: { kind: "subject-erased", subject },
   });
 
-  // 4c. Recovery attempt from raw bytes — no fragment of the plaintext survives anywhere.
+  // 4c. Recovery attempt from the response cache — the same destroyed key covers it.
+  const cached = cache.get(key);
+  if (cached === undefined) throw new Error("cache lost the entry");
+  expect(await store.unseal(cached)).toEqual({
+    ok: false,
+    error: { kind: "subject-erased", subject },
+  });
+  expect(cacheBackup).not.toContain("jane@example.test");
+
+  // 4d. Recovery attempt from raw bytes — no fragment of the plaintext survives anywhere.
   expect(backup).not.toContain("jane@example.test");
   expect(backup).not.toContain("Jane Doe");
   expect(backup).not.toContain("4187");

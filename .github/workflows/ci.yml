@@ -9,6 +9,9 @@ on:
 
 permissions:
   contents: read
+  # Read-only, and only so the stacked-PR guard below can ask whether this branch is another PR's
+  # base. Nothing in CI writes to a pull request.
+  pull-requests: read
 
 jobs:
   test:
@@ -16,6 +19,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      # Merging a PR that is the base of another closes the child irrecoverably — GitHub refuses to
+      # reopen a pull request whose base branch is gone. That is documented in
+      # .claude/rules/stacked-pr-workflow.md because it already happened here once, by hand, with
+      # someone watching. Auto-merge fires the same thing unattended, so the check moves from a rule
+      # somebody remembers into a gate that blocks.
+      #
+      # The fix when this fails is to retarget the children to main first, which takes one command
+      # and is the ordering that rule already prescribes.
+      - name: Refuse to merge a branch another PR is stacked on
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          children=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+            --base "${{ github.event.pull_request.head.ref }}" --json number --jq 'length')
+          if [ "$children" != "0" ]; then
+            echo "::error::$children open PR(s) target this branch. Retarget them to main first:"
+            gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+              --base "${{ github.event.pull_request.head.ref }}" --json number,title
+            exit 1
+          fi
 
       - name: Install bun
         uses: oven-sh/setup-bun@v2

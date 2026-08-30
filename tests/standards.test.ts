@@ -106,6 +106,23 @@ test("no test reaches the network", async () => {
   expect(offenders).toEqual([]);
 });
 
+test("the job main is protected on is still called test", async () => {
+  const workflow = await readRepoFile(".github/workflows/ci.yml");
+
+  // Branch protection requires a status check named "test", matched by string. Rename the job and
+  // every merge blocks forever waiting for a check that will never report — it fails closed, which
+  // is the right direction and an afternoon to diagnose. The coupling is invisible from either side
+  // on its own, so it is pinned from the side that lives in the repo.
+  expect(workflow).toContain("\n  test:\n");
+
+  // And the stacked-PR guard lives in that job, so it cannot be skipped by moving it elsewhere.
+  const testJob = workflow.slice(
+    workflow.indexOf("\n  test:\n"),
+    workflow.indexOf("\n  sandbox:\n"),
+  );
+  expect(testJob).toContain("Refuse to merge a branch another PR is stacked on");
+});
+
 test("nothing that needs a container runs in the merge-blocking suite", async () => {
   const manifest: unknown = await Bun.file(new URL("../package.json", import.meta.url)).json();
   const scripts = readProperty(

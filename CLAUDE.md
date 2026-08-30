@@ -57,7 +57,7 @@ invoked the skill in the right column this session, you are doing it wrong. Stop
 | Write or run anything under `tests/` | `testing` |
 | Drive a browser, fetch a page, or search the web | `bun-webview` — `WebFetch`/`WebSearch`/`curl` are denied on purpose; this is the one path |
 | Answer a Bun / TypeScript-7 / React-Router / `gh` question | `bun-docs` / `typescript-7` / `react-router` / `gh` — never from training memory |
-| Ask how parts of this codebase relate | `graphify` first, when `graphify-out/` exists |
+| Ask how parts of this codebase relate | `graphify` first — the graph is at `.graphify/`, per `GRAPHIFY_OUT` |
 | Build any UI surface | `studio` (design system) with `frontend-design` |
 
 ### Review pipeline — every component, in this order, before merge
@@ -76,7 +76,7 @@ lists the full collision set.
 ## Working in this repo
 
 - New research drops land as `.docx` in `.research/` — run the `research` skill (or the `research` subagent for a heavier pass, which can also chase down external prior art the corpus doesn't cover) to convert and verify.
-- Before answering "what does the spec say about X" or before implementing anything, use the `research` skill/subagent rather than guessing — the corpus is large (11 docs, ~2,500 lines) and has already resolved most open questions. If `graphify-out/` exists once real code lands, check it first for "how does X relate to Y" architecture questions — it's a standing knowledge graph of this repo, cheaper than re-exploring.
+- Before answering "what does the spec say about X" or before implementing anything, use the `research` skill/subagent rather than guessing — the corpus is large (11 docs, ~2,500 lines) and has already resolved most open questions. For "how does X relate to Y" architecture questions, query the standing knowledge graph first — it is cheaper than re-exploring. It lives at **`.graphify/`**, the path `GRAPHIFY_OUT` in `.claude/settings.json` sets, **not** `graphify-out/`. Gating on `graphify-out/` made the skill unreachable for an entire build, because that directory never exists under this configuration.
 - **Superpowers writes every document it produces under `.research/superpowers/`**, never `docs/superpowers/`. Same subfolders and filename convention as the plugin's own layout, different root: `superpowers:brainstorming` → `.research/superpowers/specs/YYYY-MM-DD-<topic>-design.md`, `superpowers:writing-plans` → `.research/superpowers/plans/YYYY-MM-DD-<feature>.md`. Every downstream reference (SDD plan paths, `requesting-code-review` `PLAN_OR_REQUIREMENTS`) uses the `.research/superpowers/` path. This is not the spec corpus: the corpus is `.research/*.txt` at top level only. All of `.research/` is git-ignored on purpose, so **skip the "and commit" step** both skills end with — the artefact is the file on disk, and reporting a commit that git ignored is a false completion claim. Three superpowers outputs stay outside `.research/` because the plugin hardcodes their paths in scripts, not prose: the SDD workspace (`.superpowers/sdd/<plan-slug>/` — ledger, briefs, reports), the visual-companion session dir (`.superpowers/brainstorm/<id>/` — mockups; pass `--project-dir` at the *repo root* so they persist past `/tmp`), and worktrees (`.worktrees/`). All three are git-ignored.
 - Before scaffolding anything, use the `superpowers:writing-plans` skill to turn the spec section into a concrete plan — `scaffold-component` lays out folders, it doesn't replace planning. For any *new* architectural decision not already resolved in `Gap_Register_v2.txt` (a routing-model choice, a caching strategy), run the `adversaria:devils-advocate` skill against it before it becomes a locked entry in Non-negotiables above.
 - Scaffolding a new platform component (Phase 1–5 or the addendum's C18–C23): use the `scaffold-component` skill — it lays out the 4-layer folders and stub port/adapter per Engineering Standards.
@@ -86,3 +86,13 @@ lists the full collision set.
 ## Definition of done (per plan v2, §10)
 
 All 17 components + F1–F3 deployed and passing their eval gate; idempotency/auth verified under chaos testing; workflow replay verified across a deployment boundary; cost dashboard reconciles to zero variance for two billing cycles; sandbox escape review signed off; constraint pinning verified to survive compaction; guardrail FP/FN rates measured; prompt rollback rehearsed under 60s; Article 50 + logging retention signed off by Legal.
+
+## graphify
+
+This project has a knowledge graph at `.graphify/` (the `GRAPHIFY_OUT` path, **not** `graphify-out/`) with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` — the graph is at `.graphify/graph.json` and `GRAPHIFY_OUT` in `.claude/settings.json` points every graphify command at it. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If `.graphify/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
+- Read `.graphify/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

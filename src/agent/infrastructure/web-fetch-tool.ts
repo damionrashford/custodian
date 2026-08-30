@@ -101,6 +101,10 @@ export class WebFetchTool implements Tool {
           // Content someone else wrote, which is the definition of the indirect-injection channel
           // (AI_Agent_Implementation_Plan_v2.txt:229). The runtime rails it before the model sees it.
           output: body.text,
+          // A fetch is not read-only from outside: the request left the building and is in the
+          // target's access log, along with whatever the model put in the path or query string.
+          // That is the exfiltration channel the allowlist bounds, so it belongs in the record.
+          committed: [`requested ${new URL(checked.value).hostname}`],
         },
       });
     }

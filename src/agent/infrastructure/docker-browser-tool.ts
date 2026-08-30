@@ -102,6 +102,15 @@ export class DockerBrowserTool implements Tool {
           // A rendered page is the least trustworthy text this platform handles: someone else wrote
           // it and their JavaScript chose it. The runtime rails it.
           output: dom,
+          // The page's own requests are effects too, and the refused ones are the interesting half:
+          // a page reaching for hosts nobody allowlisted is what an exfiltration attempt looks like
+          // from here, and a count of them in the record is what makes it reviewable afterwards.
+          committed: [
+            `rendered ${new URL(String(permitted.value)).hostname}`,
+            ...(blocked.length === 0
+              ? []
+              : [`refused ${String(blocked.length)} off-allowlist request(s) from the page`]),
+          ],
         },
       });
     } finally {

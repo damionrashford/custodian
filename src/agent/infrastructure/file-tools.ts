@@ -64,7 +64,7 @@ export class ReadFileTool implements Tool {
     if (!(await file.exists())) {
       return ok({
         kind: "acted",
-        receipt: { summary: `No file at ${parsed.value.path}.`, output: "" },
+        receipt: { summary: `No file at ${parsed.value.path}.`, output: "", committed: [] },
       });
     }
 
@@ -84,6 +84,9 @@ export class ReadFileTool implements Tool {
         // Untrusted: the agent may have written this file from a web fetch, so its own earlier
         // output comes back as content someone else authored. The runtime rails it.
         output: text,
+        // A read changes nothing. Listing it as a committed effect would pad the log's answer to
+        // "what already happened" with things that did not.
+        committed: [],
       },
     });
   }
@@ -136,6 +139,9 @@ export class WriteFileTool implements Tool {
         // Nothing is echoed back. Returning the content the model just supplied would spend context
         // restating what it already knows, and would launder model text through a tool result.
         output: "",
+        // The path, not the bytes: this line goes into the execution log, and the log is not where
+        // the content belongs — that is the workspace's job, and the log records that it happened.
+        committed: [`wrote ${parsed.value.path}`],
       },
     });
   }

@@ -89,10 +89,10 @@ All 17 components + F1–F3 deployed and passing their eval gate; idempotency/au
 
 ## graphify
 
-This project has a knowledge graph at `.graphify/` (the `GRAPHIFY_OUT` path, **not** `graphify-out/`) with god nodes, community structure, and cross-file relationships.
+This project has a knowledge graph at **`.graphify/`** — the path `GRAPHIFY_OUT` in `.claude/settings.json` sets, **not** `graphify-out/`. Every `graphify` command inherits that variable and resolves it automatically; you never pass a path. It holds god nodes, community structure and cross-file relationships for all 25 packages.
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` — the graph is at `.graphify/graph.json` and `GRAPHIFY_OUT` in `.claude/settings.json` points every graphify command at it. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- For codebase questions, run `graphify query "<question>"` **first**, before grepping. A PreToolUse hook enforces this. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - If `.graphify/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
 - Read `.graphify/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- After modifying code, run `graphify update .` (AST-only, no API cost). The post-commit hook does this automatically; both hooks pin `GRAPHIFY_OUT` because they run outside the Claude session, where `.claude/settings.json` env does not apply.

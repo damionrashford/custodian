@@ -103,6 +103,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Subject keys are held by a key custodian outside the process, so a restart no longer destroys
+  every key. Content is sealed under a single-use key wrapped by a key-encryption key in HashiCorp
+  Vault's Transit engine; erasing a subject destroys that key, and both the wrapped keys and the
+  ciphertext are stored together because neither is of any use without it. The Vault HTTP path has
+  not yet been exercised against a live server — `scripts/verify-vault-custody.ts` is the check, and
+  it has not been run.
+- The service refuses to start when a key custodian is half-configured — a Vault address with no
+  token, or the reverse — even when the development-mode acknowledgement is also set. It previously
+  had no such path to configure at all.
+- An erasure proof names the key that was destroyed rather than the data subject, because a proof is
+  evidence of a key destruction. The subject is recorded alongside it on the erasure outcome.
 - A completion's prompt text and model now come from the prompt registry rather than the caller, so
   the version that produced an output is always recordable. The log previously stored the literal
   string `unversioned` for every call.
@@ -112,6 +123,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Erasing a data subject now reaches their embeddings. The vector index held plaintext vectors, so
+  destroying a subject's key removed the documents and left the embeddings intact — and an embedding
+  can be inverted far enough to recover source text, which makes it a surviving fragment rather than
+  a harmless derivative. Embeddings are sealed under the subject's key, and an entry that can no
+  longer be opened is dropped from the index.
+- A key destruction is only recorded as externally attested once the key is confirmed absent. A
+  custodian that accepted the destroy request but left the key in place would previously have
+  produced a proof of a destruction that never happened.
+- A repeat erasure request returns the original proof after a restart. The proof is written to a
+  durable deletion registry, so a second request can no longer mint a fresh record carrying a
+  timestamp the destruction did not happen at.
 - Idempotency claims are scoped to the tenant. Keyed by request hash alone, two tenants whose
   requests hashed alike shared one claim and the second was told its work had already been done.
 - The gateway derives the tenant it records and the scope it stores under from a verified claim

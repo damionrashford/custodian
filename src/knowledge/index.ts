@@ -22,6 +22,7 @@ export type { Match, RetrievalFailure, ScopedQuery, VectorIndex } from "./domain
 export { scopedQuery } from "./domain/scoped-query";
 export type { IndexedDocument } from "./infrastructure/in-memory-vector-index";
 export { InMemoryVectorIndex, sealEmbedding } from "./infrastructure/in-memory-vector-index";
+export { SqliteVectorIndex } from "./infrastructure/sqlite-vector-index";
 export type { Chunk } from "./domain/chunk";
 export type { TokenCounter } from "@custodian/primitives";
 export type { ChunkingOptions } from "./domain/chunk-recursive";

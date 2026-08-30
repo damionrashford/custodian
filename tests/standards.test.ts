@@ -219,6 +219,7 @@ const DURABLE_STORE_LOCATIONS: Readonly<Record<string, string>> = {
   SqliteExecutionLogStore: "execution-log",
   SqliteIdempotencyStore: "idempotency-store",
   SqliteDeletionRegistry: "deletion-registry",
+  SqliteVectorIndex: "vector-index",
 };
 
 test("every durable store is classified in the erasure data map", async () => {

@@ -9,6 +9,8 @@ import {
   type SubjectId,
 } from "@custodian/primitives";
 import type { Match, RetrievalFailure, ScopedQuery, VectorIndex } from "../domain/scoped-query";
+import { cosine } from "../domain/cosine";
+import { decodeEmbedding, encodeEmbedding } from "../domain/embedding-payload";
 
 export type IndexedDocument = {
   readonly namespace: Namespace;
@@ -34,7 +36,7 @@ export async function sealEmbedding(
   return keys.seal({
     subject: request.subject,
     bucket: request.bucket,
-    plaintext: JSON.stringify(request.embedding),
+    plaintext: encodeEmbedding(request.embedding),
   });
 }
 
@@ -90,41 +92,4 @@ export class InMemoryVectorIndex implements VectorIndex {
     const opened = await this.#keys.unseal(document.embedding);
     return opened.ok ? decodeEmbedding(opened.value) : undefined;
   }
-}
-
-/** Unsealed bytes are untrusted input like any other row; they cross a parser, not an assertion. */
-function decodeEmbedding(text: string): readonly number[] | undefined {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return undefined;
-  }
-  if (!Array.isArray(parsed)) {
-    return undefined;
-  }
-  const numbers: number[] = [];
-  for (const value of parsed) {
-    if (typeof value !== "number" || !Number.isFinite(value)) {
-      return undefined;
-    }
-    numbers.push(value);
-  }
-  return numbers;
-}
-
-function cosine(left: readonly number[], right: readonly number[]): number {
-  let dot = 0;
-  let leftNorm = 0;
-  let rightNorm = 0;
-  const length = Math.min(left.length, right.length);
-  for (let index = 0; index < length; index += 1) {
-    const a = left[index] ?? 0;
-    const b = right[index] ?? 0;
-    dot += a * b;
-    leftNorm += a * a;
-    rightNorm += b * b;
-  }
-  const norm = Math.sqrt(leftNorm) * Math.sqrt(rightNorm);
-  return norm === 0 ? 0 : dot / norm;
 }

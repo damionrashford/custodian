@@ -26,7 +26,7 @@ import { PhraseInjectionClassifier } from "./infrastructure/phrase-injection-cla
 import { SqliteIdempotencyStore } from "@custodian/serving";
 import {
   Ed25519ClaimVerifier,
-  InMemoryVectorIndex,
+  SqliteVectorIndex,
   parseKeyRing,
   namespaceFor,
   sealEmbedding,
@@ -298,7 +298,16 @@ async function main(): Promise<void> {
     documents.set(kbDocumentKey(seedNamespace, documentId), document);
   }
 
-  const index = new InMemoryVectorIndex({ documents: indexed, keys });
+  // Durable, beside the execution log. In memory the index died with the process while the log did
+  // not, so a run's logged retrieval cited a document nothing could produce again after a restart —
+  // the evidence outliving the thing it points at.
+  const index = new SqliteVectorIndex({
+    path: Bun.env["CUSTODIAN_INDEX_DB"] ?? "custodian-index.sqlite",
+    keys,
+  });
+  for (const document of indexed) {
+    index.upsert(document);
+  }
   const tool = new KbSearchTool({ name: searchKb, embedder, index, documents, topK: 4 });
 
   const handler = runsHandler({
@@ -369,6 +378,7 @@ async function main(): Promise<void> {
       logStore.close();
       idempotency.close();
       deletionRegistry.close();
+      index.close();
       process.exit(0);
     });
   };

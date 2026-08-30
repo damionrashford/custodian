@@ -6,6 +6,7 @@ import {
   Sha256ContentHasher,
   type LoggedEntry,
 } from "@custodian/execution-log";
+import { expiresAtForDuration } from "@custodian/retention";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
 
 const AT = "2026-08-29T00:00:00.000Z";
@@ -38,13 +39,13 @@ function namespaceOf(id: string): Namespace {
 const ACME = namespaceOf("t_01jd7k9h2m4n6p8r0s2t4v6x8z");
 const OTHER = namespaceOf("t_02jd7k9h2m4n6p8r0s2t4v6x8z");
 
-function logOf(count: number): readonly LoggedEntry[] {
+function logOf(count: number, at: string = AT): readonly LoggedEntry[] {
   let log: readonly LoggedEntry[] = [];
   for (let index = 0; index < count; index += 1) {
     const appended = appendEntry(
       log,
       { kind: "guardrail-evaluated", policy: "p", rule: `r${String(index)}`, outcome: "allowed" },
-      { runId: runId(), at: AT, hasher },
+      { runId: runId(), at, hasher },
     );
     if (!appended.ok) throw new Error("fixture: append failed");
     log = appended.value;
@@ -114,4 +115,19 @@ test("the same run id under two namespaces is two runs, not one", async () => {
   if (!acme.ok || !other.ok) throw new Error("read failed");
   expect(acme.value).toHaveLength(3);
   expect(other.value).toHaveLength(1);
+});
+
+test("disposal is part of the port: the in-memory adapter disposes and refuses resurrection too", async () => {
+  const store = new InMemoryExecutionLogStore();
+  const oldAt = "2024-08-01T00:00:00.000Z";
+  const log = logOf(2, oldAt);
+  await store.append(ACME, runId(), log);
+
+  const dueAt = expiresAtForDuration("execution-log-metadata", oldAt);
+  expect(await store.disposeExpiredRuns(dueAt)).toBe(1);
+  expect((await store.read(ACME, runId())).ok).toBe(false);
+  expect(await store.append(ACME, runId(), log)).toEqual({
+    ok: false,
+    error: { kind: "run-disposed", runId: runId() },
+  });
 });

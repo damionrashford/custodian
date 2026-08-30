@@ -48,6 +48,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   proceeding.
 - Cost is reconciled across the provider invoice, metered events and the internal ledger at zero
   tolerance; a mismatched billing period is reported as incomparable rather than as a discrepancy.
+- The execution log survives a restart. Entries persist in a durable store with the same write-time
+  refusals as before, a row edited in the database itself is reported as corrupt rather than
+  returned as evidence, and whole runs are disposed of when the metadata retention period elapses.
+- LLM traffic is described in OpenTelemetry GenAI terms with the convention version pinned: a
+  renamed attribute upstream is a deliberate edit here, never silent drift. Spans carry model,
+  provider, and token counts only — request and response content cannot be represented.
+- Metered usage is derived from the execution log itself, so the cost reconciliation that compares
+  meter events against the provider invoice and internal ledger can now run on gateway traffic —
+  and a usage event missing from the log raises an alert instead of reconciling.
 
 ### Fixed
 

@@ -105,7 +105,12 @@ export type ServeFailure = {
  * dedupe precedes failover rather than racing it.
  */
 type AttemptOutcome =
-  | { readonly kind: "served"; readonly response: CompletionResponse }
+  | {
+      readonly kind: "served";
+      readonly response: CompletionResponse;
+      /** seq of this attempt's model-invoked entry, recorded into usage-recorded at close. */
+      readonly invocationSeq: number;
+    }
   | { readonly kind: "retryable" }
   | { readonly kind: "halted"; readonly rejection: ServeRejection };
 
@@ -154,6 +159,7 @@ async function attemptOnce(
     return { kind: "halted", rejection: { kind: "provider-failed", reason: appended.error.kind } };
   }
   state.log = appended.value;
+  const invocationSeq = appended.value.length - 1;
 
   const provider = serve.providers.find((candidate) => candidate.id === decision.provider);
   if (provider === undefined) {
@@ -164,7 +170,7 @@ async function attemptOnce(
   state.attempted.push(decision.provider);
   const completed = await provider.complete(completionRequestFor(serve));
   if (completed.ok) {
-    return { kind: "served", response: completed.value };
+    return { kind: "served", response: completed.value, invocationSeq };
   }
 
   const retry = nextRetry(completed.error, {
@@ -247,6 +253,7 @@ async function closeRun(
   serve: ServeRequest,
   state: AttemptState,
   response: CompletionResponse,
+  invocationSeq: number,
 ): Promise<Result<ServedCompletion, ServeFailure>> {
   const sealed = await serve.keys.seal({
     subject: serve.subject,
@@ -262,6 +269,7 @@ async function closeRun(
     state.log,
     {
       kind: "usage-recorded",
+      invocationSeq,
       inputTokens: response.usage.inputTokens,
       outputTokens: response.usage.outputTokens,
       costMicros: serve.costMicros(response.usage),
@@ -314,7 +322,7 @@ export async function serveCompletion(
       return failRun(serve, state, outcome.rejection);
     }
     if (outcome.kind === "served") {
-      return closeRun(serve, state, outcome.response);
+      return closeRun(serve, state, outcome.response, outcome.invocationSeq);
     }
   }
 

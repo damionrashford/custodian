@@ -32,7 +32,13 @@ function run() {
 }
 
 function usage(inputTokens: number): ExecutionEvent {
-  return { kind: "usage-recorded", inputTokens, outputTokens: 10, costMicros: 100 };
+  return {
+    kind: "usage-recorded",
+    invocationSeq: 0,
+    inputTokens,
+    outputTokens: 10,
+    costMicros: 100,
+  };
 }
 
 function threeEntryLog(): readonly LoggedEntry[] {

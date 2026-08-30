@@ -111,7 +111,7 @@ test("the layering gate sees type-only imports", async () => {
   expect(config).toContain("tsPreCompilationDeps: true");
 });
 
-test("type assertions are exempt in exactly one source file", async () => {
+test("type assertions are exempt in exactly the two pinned source files", async () => {
   const config = await Bun.file("eslint.config.js").text();
   const block = config.slice(config.indexOf("Two exceptions the standard names"));
   const exempt = [...block.slice(0, block.indexOf("],")).matchAll(/"(packages\/[^"]+)"/g)];
@@ -121,5 +121,10 @@ test("type assertions are exempt in exactly one source file", async () => {
   // entry — and growing it back is a decision someone has to make in this test first.
   expect(exempt.map((m) => m[1])).toEqual([
     "packages/domain-primitives/src/domain/language/brand.ts",
+    // A single-purpose row parser whose one assertion is hash-verified before anything returns —
+    // a parser exemption in the standard's own sense, made deliberately here (LD-11: growing this
+    // list is a decision, not a drive-by), and scoped to the parser file so the sqlite adapter
+    // itself stays under the assertion ban.
+    "packages/execution-log/src/infrastructure/parse-stored-entry.ts",
   ]);
 });

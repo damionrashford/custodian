@@ -1,37 +1,30 @@
 import { err, ok, type Namespace, type Result, type RunId } from "@custodian/domain-primitives";
-import { GENESIS_HASH } from "../domain/append-entry";
+import { isDueForDisposal } from "@custodian/retention";
+import { validateAppend } from "../domain/append-entry";
 import type { ExecutionLogStore, LogStoreFailure } from "../domain/execution-log-store";
 import type { LoggedEntry } from "../domain/logged-entry";
 
 export class InMemoryExecutionLogStore implements ExecutionLogStore {
   readonly #runs = new Map<string, readonly LoggedEntry[]>();
+  readonly #disposed = new Set<string>();
 
   append(
     namespace: Namespace,
     runId: RunId,
     entries: readonly LoggedEntry[],
   ): Promise<Result<void, LogStoreFailure>> {
-    const stored = this.#runs.get(keyFor(namespace, runId)) ?? [];
-
-    // The caller passes the whole run, so a shorter log is a deletion attempt and a diverging
-    // prefix is a rewrite. Both are refused rather than merged.
-    if (entries.length < stored.length) {
-      const tail = stored.length - 1;
-      return Promise.resolve(err({ kind: "sequence-rewind", tail, received: entries.length - 1 }));
+    const key = keyFor(namespace, runId);
+    if (this.#disposed.has(key)) {
+      return Promise.resolve(err({ kind: "run-disposed", runId }));
     }
-
-    const incoming = entries.slice(stored.length);
-    const first = incoming[0];
-    if (first === undefined) {
-      return Promise.resolve(ok(undefined));
+    const stored = this.#runs.get(key) ?? [];
+    const validated = validateAppend(stored.length, stored.at(-1)?.hash, entries);
+    if (!validated.ok) {
+      return Promise.resolve(validated);
     }
-    const expectedPrevious = stored.at(-1)?.hash ?? GENESIS_HASH;
-    if (first.previousHash !== expectedPrevious) {
-      const received = first.previousHash;
-      return Promise.resolve(err({ kind: "chain-diverged", expectedPrevious, received }));
+    if (validated.value.length > 0) {
+      this.#runs.set(key, [...stored, ...validated.value]);
     }
-
-    this.#runs.set(keyFor(namespace, runId), [...stored, ...incoming]);
     return Promise.resolve(ok(undefined));
   }
 
@@ -41,6 +34,19 @@ export class InMemoryExecutionLogStore implements ExecutionLogStore {
   ): Promise<Result<readonly LoggedEntry[], LogStoreFailure>> {
     const stored = this.#runs.get(keyFor(namespace, runId));
     return Promise.resolve(stored === undefined ? err({ kind: "unknown-run", runId }) : ok(stored));
+  }
+
+  disposeExpiredRuns(now: string): Promise<number> {
+    let disposed = 0;
+    for (const [key, stored] of this.#runs) {
+      const lastAt = stored.at(-1)?.at;
+      if (lastAt !== undefined && isDueForDisposal("execution-log-metadata", lastAt, now)) {
+        this.#runs.delete(key);
+        this.#disposed.add(key);
+        disposed += 1;
+      }
+    }
+    return Promise.resolve(disposed);
   }
 }
 

@@ -66,6 +66,13 @@ export type ExecutionEvent =
     }
   | {
       readonly kind: "usage-recorded";
+      /**
+       * seq of the model-invoked entry this usage settles. Recorded, never inferred: an
+       * adjacency-based association silently mis-attributes tokens the moment a run bills more
+       * than one attempt, and the divergence between span telemetry and meter events it causes is
+       * exactly the reconciliation drift the meter exists to catch.
+       */
+      readonly invocationSeq: number;
       readonly inputTokens: number;
       readonly outputTokens: number;
       readonly costMicros: number;

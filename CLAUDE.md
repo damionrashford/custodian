@@ -89,6 +89,8 @@ already have?* Only that one waits. Everything else ships now, together.
 | Patching N call sites after a rename | One at a time, typecheck between each | One scripted pass over all N, then **one** typecheck |
 | Running gates | `typecheck`, then `lint`, then `test` | `bun run verify` |
 | Proving several gates non-vacuous | A turn per plant | One block: plant, run, restore, repeat |
+
+A plant pass starts from a **clean tree** — run `bun scripts/plant-guard.ts` first. Restoring a plant with `git checkout <file>` reverts the file to HEAD, so any uncommitted work in it goes too, and the tree stays green while the loss leaves no trace. `tests/plant-guard.test.ts` proves the guard refuses a dirty tree.
 | Two independent reviews | One agent, wait, next agent | Both agents dispatched in one block |
 
 Two rules that make this work in practice:

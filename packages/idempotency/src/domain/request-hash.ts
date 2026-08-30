@@ -1,4 +1,4 @@
-import { type Brand, err, ok, type Result } from "@custodian/domain-primitives";
+import { brand, type Brand, err, ok, type Result } from "@custodian/domain-primitives";
 
 export type RequestHash = Brand<string, "RequestHash">;
 
@@ -11,6 +11,6 @@ const REQUEST_HASH_PATTERN = /^[0-9a-f]{64}$/;
 
 export function parseRequestHash(value: string): Result<RequestHash, InvalidRequestHash> {
   return REQUEST_HASH_PATTERN.test(value)
-    ? ok(value as RequestHash)
+    ? ok(brand<RequestHash>(value))
     : err({ kind: "invalid-request-hash", received: value });
 }

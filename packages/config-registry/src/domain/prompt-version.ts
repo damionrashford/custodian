@@ -1,4 +1,4 @@
-import { type Brand, err, ok, type Result } from "@custodian/domain-primitives";
+import { brand, type Brand, err, ok, type Result } from "@custodian/domain-primitives";
 
 /**
  * A version is a snapshot in history. A deployment is a label declaring what production runs.
@@ -17,7 +17,7 @@ const PROMPT_VERSION_PATTERN = /^pv_[0-9a-z]{26}$/;
 
 export function parsePromptVersion(value: string): Result<PromptVersion, InvalidPromptVersion> {
   return PROMPT_VERSION_PATTERN.test(value)
-    ? ok(value as PromptVersion)
+    ? ok(brand<PromptVersion>(value))
     : err({ kind: "invalid-prompt-version", received: value });
 }
 

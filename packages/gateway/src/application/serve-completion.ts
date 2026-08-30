@@ -12,12 +12,8 @@ import {
 import type { SubjectKeyStore } from "@custodian/crypto-shred";
 import { appendEntry, type LoggedEntry } from "@custodian/execution-log";
 import type { IdempotencyStore, RequestHash } from "@custodian/idempotency";
-import {
-  selectProvider,
-  type ProviderId,
-  type ProviderProfile,
-  type Region,
-} from "@custodian/routing";
+import { selectProvider, type ProviderProfile, type Region } from "@custodian/routing";
+import { type ProviderId } from "@custodian/domain-primitives";
 import type {
   CompletionRequest,
   CompletionResponse,

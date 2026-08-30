@@ -1,5 +1,5 @@
-import type { Brand } from "./brand";
-import { err, ok, type Result } from "./result";
+import { brand, type Brand } from "../language/brand";
+import { err, ok, type Result } from "../language/result";
 
 export type TenantId = Brand<string, "TenantId">;
 
@@ -19,5 +19,5 @@ export function parseTenantId(value: string): Result<TenantId, InvalidTenantId> 
   if (!TENANT_ID_PATTERN.test(value)) {
     return err({ kind: "invalid-tenant-id", received: value });
   }
-  return ok(value as TenantId);
+  return ok(brand<TenantId>(value));
 }

@@ -1,3 +1,4 @@
+import { brand } from "@custodian/domain-primitives";
 import type { Brand } from "@custodian/domain-primitives";
 
 export type UntrustedText = Brand<string, "UntrustedText">;
@@ -39,5 +40,5 @@ export function sanitizeToolOutput(raw: string): ProvenancedContent {
     .replaceAll(ANSI_SEQUENCES, "")
     .replaceAll(CONTROL_CHARACTERS, "")
     .replaceAll(INVISIBLE_CHARACTERS, "");
-  return { provenance: "tool-output", trust: "untrusted", text: stripped as UntrustedText };
+  return { provenance: "tool-output", trust: "untrusted", text: brand<UntrustedText>(stripped) };
 }

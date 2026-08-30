@@ -1,5 +1,5 @@
-import type { Brand } from "./brand";
-import { err, ok, type Result } from "./result";
+import { brand, type Brand } from "../language/brand";
+import { err, ok, type Result } from "../language/result";
 
 /**
  * A time window whose key is destroyed on the retention schedule. Execution-log content sits in a
@@ -21,5 +21,5 @@ export function parseRetentionBucket(
   if (!RETENTION_BUCKET_PATTERN.test(value)) {
     return err({ kind: "invalid-retention-bucket", received: value });
   }
-  return ok(value as RetentionBucket);
+  return ok(brand<RetentionBucket>(value));
 }

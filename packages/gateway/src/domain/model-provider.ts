@@ -1,5 +1,5 @@
 import type { CompletionUsage, ModelSnapshot, Result } from "@custodian/domain-primitives";
-import type { ProviderId } from "@custodian/routing";
+import type { ProviderId } from "@custodian/domain-primitives";
 
 export type CompletionRequest = {
   readonly model: ModelSnapshot;

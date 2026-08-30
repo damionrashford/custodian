@@ -1,5 +1,5 @@
 import type { SealedContent } from "@custodian/domain-primitives";
-import type { Namespace } from "@custodian/knowledge-base";
+import type { Namespace } from "@custodian/domain-primitives";
 import type { CacheKey } from "../domain/cache-key";
 import { cacheEntryFor, type CacheEntry, type ResponseCache } from "../domain/response-cache";
 

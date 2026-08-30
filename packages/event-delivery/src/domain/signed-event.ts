@@ -1,4 +1,11 @@
-import { type Brand, err, ok, REPLAY_WINDOW_MS, type Result } from "@custodian/domain-primitives";
+import {
+  brand,
+  type Brand,
+  err,
+  ok,
+  REPLAY_WINDOW_MS,
+  type Result,
+} from "@custodian/domain-primitives";
 
 /**
  * Every major provider delivers at least once and none delivers exactly once, which makes
@@ -14,7 +21,7 @@ const EVENT_ID_PATTERN = /^e_[0-9a-z]{26}$/;
 
 export function parseEventId(value: string): Result<EventId, InvalidEventId> {
   return EVENT_ID_PATTERN.test(value)
-    ? ok(value as EventId)
+    ? ok(brand<EventId>(value))
     : err({ kind: "invalid-event-id", received: value });
 }
 

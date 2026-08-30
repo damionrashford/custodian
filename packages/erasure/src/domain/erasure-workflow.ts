@@ -1,6 +1,7 @@
 import {
   type ErasureProof,
   err,
+  type KeyStoreFailure,
   ok,
   type Result,
   type SubjectId,
@@ -36,10 +37,20 @@ export type LegalHold = {
   readonly recordedAt: string;
 };
 
+/**
+ * Step 2 of the workflow, as a union rather than a `subject | undefined` plus an
+ * `identityAmbiguous: boolean`. Those two independent fields admitted a request that was
+ * simultaneously ambiguous and resolved, which the old code silently resolved by checking ambiguity
+ * first and discarding the subject — a decision no reader could see and no type prevented.
+ */
+export type SubjectResolution =
+  | { readonly kind: "resolved"; readonly subject: SubjectId }
+  | { readonly kind: "ambiguous"; readonly candidates: number }
+  | { readonly kind: "unresolved" };
+
 export type ErasureRequest = {
-  readonly subject: SubjectId | undefined;
+  readonly identity: SubjectResolution;
   readonly receivedAt: string;
-  readonly identityAmbiguous: boolean;
   readonly legalHold: LegalHold | undefined;
   readonly coveredLocations: readonly ErasureLocation[];
 };
@@ -60,10 +71,18 @@ export type ErasureOutcome =
       readonly missing: readonly ErasureLocation[];
     };
 
-export type ErasureRejection = { readonly kind: "no-subject-resolved" };
+/**
+ * The two failures are distinguished because they call for opposite responses: an unresolved
+ * identity escalates to human review, while a key-destruction fault is transient infrastructure
+ * that the durable workflow should retry. Reporting both as "no-subject-resolved" sent a retryable
+ * KMS fault to a human queue and vice versa.
+ */
+export type ErasureRejection =
+  | { readonly kind: "no-subject-resolved" }
+  | { readonly kind: "key-destruction-failed"; readonly cause: KeyStoreFailure };
 
 export interface SubjectEraser {
-  destroySubjectKey(subject: SubjectId): Promise<Result<ErasureProof, { readonly kind: string }>>;
+  destroySubjectKey(subject: SubjectId): Promise<Result<ErasureProof, KeyStoreFailure>>;
 }
 
 const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
@@ -86,12 +105,13 @@ export async function runErasure(
   eraser: SubjectEraser,
 ): Promise<Result<ErasureOutcome, ErasureRejection>> {
   // Step 2 — ambiguous identity escalates to human review, and does not silently proceed.
-  if (request.identityAmbiguous) {
+  if (request.identity.kind === "ambiguous") {
     return ok({ kind: "awaiting-human-review", reason: "identity-ambiguous" });
   }
-  if (request.subject === undefined) {
+  if (request.identity.kind === "unresolved") {
     return err({ kind: "no-subject-resolved" });
   }
+  const subject = request.identity.subject;
 
   // Step 3 — a hold blocks erasure and must be recorded with its basis.
   if (request.legalHold !== undefined) {
@@ -105,15 +125,15 @@ export async function runErasure(
   }
 
   // Step 5 — destroy the DEK. Idempotent: a repeat request returns the original proof.
-  const destroyed = await eraser.destroySubjectKey(request.subject);
+  const destroyed = await eraser.destroySubjectKey(subject);
   if (!destroyed.ok) {
-    return err({ kind: "no-subject-resolved" });
+    return err({ kind: "key-destruction-failed", cause: destroyed.error });
   }
 
   // Steps 6-9 — invalidate caches and routing memory, emit proof, confirm within the window.
   return ok({
     kind: "erased",
-    subject: request.subject,
+    subject,
     proof: destroyed.value,
     invalidated: DATA_MAP,
     dueBy: new Date(Date.parse(request.receivedAt) + ONE_MONTH_MS).toISOString(),

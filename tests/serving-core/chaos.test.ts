@@ -15,7 +15,8 @@ import {
 } from "@custodian/gateway";
 import { InMemoryIdempotencyStore, parseRequestHash } from "@custodian/idempotency";
 import { Sha256ContentHasher } from "@custodian/execution-log";
-import { parseProviderId, parseRegion, type ProviderProfile } from "@custodian/routing";
+import { parseRegion, type ProviderProfile } from "@custodian/routing";
+import { parseProviderId } from "@custodian/domain-primitives";
 
 function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {
   if (!parsed.ok) throw new Error(`fixture: bad ${label}`);

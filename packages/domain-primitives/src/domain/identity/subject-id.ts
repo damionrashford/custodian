@@ -1,5 +1,5 @@
-import type { Brand } from "./brand";
-import { err, ok, type Result } from "./result";
+import { brand, type Brand } from "../language/brand";
+import { err, ok, type Result } from "../language/result";
 
 /**
  * A data subject under GDPR — the unit that gets its own data-encryption key and whose erasure
@@ -18,5 +18,5 @@ export function parseSubjectId(value: string): Result<SubjectId, InvalidSubjectI
   if (!SUBJECT_ID_PATTERN.test(value)) {
     return err({ kind: "invalid-subject-id", received: value });
   }
-  return ok(value as SubjectId);
+  return ok(brand<SubjectId>(value));
 }

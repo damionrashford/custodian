@@ -1,4 +1,11 @@
-import { type Brand, err, ok, type Result, type SealedContent } from "@custodian/domain-primitives";
+import {
+  brand,
+  type Brand,
+  err,
+  ok,
+  type Result,
+  type SealedContent,
+} from "@custodian/domain-primitives";
 
 export type WorkflowId = Brand<string, "WorkflowId">;
 export type StepName = Brand<string, "StepName">;
@@ -9,7 +16,7 @@ const WORKFLOW_ID_PATTERN = /^w_[0-9a-z]{26}$/;
 
 export function parseWorkflowId(value: string): Result<WorkflowId, InvalidWorkflowId> {
   return WORKFLOW_ID_PATTERN.test(value)
-    ? ok(value as WorkflowId)
+    ? ok(brand<WorkflowId>(value))
     : err({ kind: "invalid-workflow-id", received: value });
 }
 

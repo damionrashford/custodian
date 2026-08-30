@@ -17,9 +17,8 @@ function store() {
 
 function request(overrides: Partial<ErasureRequest> = {}): ErasureRequest {
   return {
-    subject: SUBJECT,
+    identity: { kind: "resolved", subject: SUBJECT },
     receivedAt: "2026-08-29T00:00:00.000Z",
-    identityAmbiguous: false,
     legalHold: undefined,
     coveredLocations: DATA_MAP,
     ...overrides,
@@ -42,7 +41,10 @@ test("the statutory clock starts at receipt, not at completion", async () => {
 
 test("ambiguous identity escalates to human review rather than silently proceeding", async () => {
   const keys = store();
-  const outcome = await runErasure(request({ identityAmbiguous: true }), keys);
+  const outcome = await runErasure(
+    request({ identity: { kind: "ambiguous", candidates: 2 } }),
+    keys,
+  );
   expect(outcome).toEqual({
     ok: true,
     value: { kind: "awaiting-human-review", reason: "identity-ambiguous" },
@@ -104,4 +106,24 @@ test("every location in the data map is invalidated, cache included", async () =
   expect(outcome.value.invalidated).toEqual(DATA_MAP);
   expect(outcome.value.invalidated).toContain("response-cache");
   expect(outcome.value.invalidated).toContain("routing-memory");
+});
+
+test("an unresolved identity is rejected, and is not the same failure as a key-store fault", async () => {
+  const outcome = await runErasure(request({ identity: { kind: "unresolved" } }), store());
+  expect(outcome).toEqual({ ok: false, error: { kind: "no-subject-resolved" } });
+});
+
+test("a key-store fault is reported as retryable infrastructure, not as an identity problem", async () => {
+  const failing = {
+    destroySubjectKey: () =>
+      Promise.resolve({ ok: false as const, error: { kind: "ciphertext-corrupt" as const } }),
+  };
+  const outcome = await runErasure(request(), failing);
+
+  // The durable workflow retries this. Reporting it as no-subject-resolved would route a transient
+  // fault to a human identity-review queue instead.
+  expect(outcome).toEqual({
+    ok: false,
+    error: { kind: "key-destruction-failed", cause: { kind: "ciphertext-corrupt" } },
+  });
 });

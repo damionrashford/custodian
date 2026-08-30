@@ -1,4 +1,4 @@
-import type { Result, SealedContent } from "@custodian/domain-primitives";
+import type { Namespace, Result, SealedContent } from "@custodian/domain-primitives";
 import type { RequestHash } from "./request-hash";
 
 /**
@@ -13,6 +13,7 @@ export type RecordedOutcome = {
 };
 
 export type Claim = {
+  readonly namespace: Namespace;
   readonly request: RequestHash;
   readonly claimedAt: string;
   readonly expiresAt: string;
@@ -34,9 +35,21 @@ export type ClaimResult =
   | { readonly kind: "claimed"; readonly claim: Claim }
   | { readonly kind: "already-claimed"; readonly claim: Claim };
 
+/**
+ * Every operation is scoped by namespace, which can only be derived from a verified tenant claim
+ * (@custodian/knowledge-base `namespaceFor`). A store keyed by request hash alone leaves whether
+ * the tenant is inside the hash as the caller's undocumented responsibility: two tenants whose
+ * requests hash alike share one claim, and the second is told its work was already done. The
+ * response cache reached this shape first (`ResponseCache.set`); this is the same rule.
+ */
 export interface IdempotencyStore {
-  claim(request: RequestHash, at: string): Promise<Result<ClaimResult, IdempotencyFailure>>;
+  claim(
+    namespace: Namespace,
+    request: RequestHash,
+    at: string,
+  ): Promise<Result<ClaimResult, IdempotencyFailure>>;
   complete(
+    namespace: Namespace,
     request: RequestHash,
     outcome: RecordedOutcome,
   ): Promise<Result<Claim, IdempotencyFailure>>;

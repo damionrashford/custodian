@@ -1,3 +1,4 @@
+import { bucketFor } from "@custodian/retention";
 import { expect, test } from "bun:test";
 import {
   parsePrincipalId,
@@ -5,7 +6,6 @@ import {
   type Principal,
   type Region,
   type TenantId,
-  parseRetentionBucket,
   parseRunId,
   parseSubjectId,
   parseTenantId,
@@ -41,7 +41,7 @@ function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label:
 test("expiring a bucket removes the content and leaves the chain verifiable", async () => {
   const store = new AesGcmSubjectKeyStore({ now: () => new Date("2026-09-28T00:00:00.000Z") });
   const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
-  const bucket = parsedOrThrow(parseRetentionBucket("content-2026-08"), "bucket");
+  const bucket = bucketFor("execution-log-content", "2026-08-29T00:00:00.000Z");
   const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "tenant");
   const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
 
@@ -63,7 +63,11 @@ test("expiring a bucket removes the content and leaves the chain verifiable", as
   if (!appended.ok) throw new Error("fixture: append failed");
   const log: readonly LoggedEntry[] = appended.value;
 
-  const proof = await redactExpiredContent({ store, bucket });
+  const proof = await redactExpiredContent({
+    store,
+    writtenAt: "2026-08-29T00:00:00.000Z",
+    now: "2026-10-01T00:00:00.000Z",
+  });
   expect(proof.ok).toBe(true);
 
   expect(await store.unseal(sealed.value)).toEqual({
@@ -74,4 +78,21 @@ test("expiring a bucket removes the content and leaves the chain verifiable", as
   // The record that the action occurred survives; only the content inside it is gone.
   expect(verifyRunLog(log, hasher).ok).toBe(true);
   expect(log[0]?.event.kind).toBe("run-started");
+});
+
+test("redaction before the period elapses is refused, not merely discouraged", async () => {
+  const store = new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") });
+
+  // A caller passing its own bucket could destroy the Article 73 window on day one, and nothing at
+  // the call site would show it. The period is a legal position, not a parameter (LD-9).
+  const early = await redactExpiredContent({
+    store,
+    writtenAt: "2026-08-29T00:00:00.000Z",
+    now: "2026-09-01T00:00:00.000Z",
+  });
+
+  expect(early).toEqual({
+    ok: false,
+    error: { kind: "not-yet-due", dueAt: "2026-09-28T00:00:00.000Z" },
+  });
 });

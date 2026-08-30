@@ -9,9 +9,9 @@ import {
   type Result,
   type RunId,
   type SubjectId,
-  type TenantId,
 } from "@custodian/domain-primitives";
 import type { PromptSnapshot } from "@custodian/config-registry";
+import { namespaceFor, type VerifiedTenantClaim } from "@custodian/knowledge-base";
 import type { SubjectKeyStore } from "@custodian/crypto-shred";
 import { appendEntry, type LoggedEntry } from "@custodian/execution-log";
 import type { IdempotencyStore, RecordedOutcome, RequestHash } from "@custodian/idempotency";
@@ -28,7 +28,12 @@ export type ServeRequest = {
   readonly runId: RunId;
   /** Field group 1 of the execution log: who triggered this, under which tenant policy. */
   readonly principal: Principal;
-  readonly tenant: TenantId;
+  /**
+   * The verified claim, not a tenant id. Both the logged tenant and the namespace every store is
+   * scoped by are derived from it, so neither can be asserted by a caller — the log records a
+   * tenant that was proven rather than one that was passed in.
+   */
+  readonly claim: VerifiedTenantClaim;
   readonly tenantRegion: Region;
   readonly legalBasisPolicy: string;
   readonly requiresZeroRetention: boolean;
@@ -193,7 +198,7 @@ async function openRun(serve: ServeRequest): Promise<Result<readonly LoggedEntry
     {
       kind: "run-started",
       principal: serve.principal,
-      tenant: serve.tenant,
+      tenant: serve.claim.tenant,
       region: serve.tenantRegion,
       legalBasisPolicy: serve.legalBasisPolicy,
       request: sealed.value,
@@ -225,7 +230,10 @@ async function failRun(
     plaintext: JSON.stringify(rejection),
   });
   if (sealed.ok) {
-    await serve.idempotency.complete(serve.requestHash, { status: "failed", body: sealed.value });
+    await serve.idempotency.complete(namespaceFor(serve.claim), serve.requestHash, {
+      status: "failed",
+      body: sealed.value,
+    });
   }
   return err({ rejection, log: state.log });
 }
@@ -265,14 +273,21 @@ async function closeRun(
     return err({ rejection, log: state.log });
   }
 
-  await serve.idempotency.complete(serve.requestHash, { status: "succeeded", body: sealed.value });
+  await serve.idempotency.complete(namespaceFor(serve.claim), serve.requestHash, {
+    status: "succeeded",
+    body: sealed.value,
+  });
   return ok({ response, log: recorded.value });
 }
 
 export async function serveCompletion(
   serve: ServeRequest,
 ): Promise<Result<ServedCompletion, ServeFailure>> {
-  const claimed = await serve.idempotency.claim(serve.requestHash, serve.at);
+  const claimed = await serve.idempotency.claim(
+    namespaceFor(serve.claim),
+    serve.requestHash,
+    serve.at,
+  );
   if (!claimed.ok) {
     const rejection = { kind: "provider-failed", reason: claimed.error.kind } as const;
     return err({ rejection, log: serve.log });

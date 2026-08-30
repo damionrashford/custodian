@@ -12,6 +12,7 @@
     "@custodian/domain-primitives": "workspace:*",
     "@custodian/execution-log": "workspace:*",
     "@custodian/idempotency": "workspace:*",
+    "@custodian/knowledge-base": "workspace:*",
     "@custodian/retention": "workspace:*",
     "@custodian/routing": "workspace:*"
   }

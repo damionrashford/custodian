@@ -60,6 +60,23 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "tenant");
   const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
 
+  const claimVerifier: ClaimVerifier = {
+    verify: () => ({
+      ok: true,
+      value: {
+        tenant,
+        issuedAt: "2026-08-28T23:45:00.000Z",
+        expiresAt: "2026-08-29T00:15:00.000Z",
+      },
+    }),
+  };
+  const verified = verifyTenantClaim("signed", {
+    verifier: claimVerifier,
+    now: new Date("2026-08-29T00:00:00.000Z"),
+  });
+  if (!verified.ok) throw new Error("fixture: claim rejected");
+  const tenantClaim = verified.value;
+
   // 1. Seed through the production writer, not by hand. A hand-built entry proves only that
   // appendEntry seals what it is given; it cannot catch serveCompletion sealing the wrong thing —
   // which is exactly the defect that made this gate pass vacuously while the log held the prompt
@@ -68,7 +85,7 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   const served = await serveCompletion({
     runId,
     principal: principal(tenant),
-    tenant,
+    claim: tenantClaim,
     tenantRegion: region(),
     legalBasisPolicy: "tenant-contract",
     requiresZeroRetention: true,
@@ -130,31 +147,16 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
 
   // 1b. The same personal data also reaches the response cache and the idempotency store. Both
   // hold SealedContent, so one key destruction has to reach all three.
-  const claimVerifier: ClaimVerifier = {
-    verify: () => ({
-      ok: true,
-      value: {
-        tenant,
-        issuedAt: "2026-08-28T23:45:00.000Z",
-        expiresAt: "2026-08-29T00:15:00.000Z",
-      },
-    }),
-  };
-  const claim = verifyTenantClaim("signed", {
-    verifier: claimVerifier,
-    now: new Date("2026-08-29T00:00:00.000Z"),
-  });
-  if (!claim.ok) throw new Error("fixture: claim rejected");
 
   const digest = new Sha256ContentHasher();
   const cache = new InMemoryResponseCache();
   const key = cacheKeyFor(
-    namespaceFor(claim.value),
+    namespaceFor(tenantClaim),
     "frontier-1.5-20260801",
     PERSONAL_DATA,
     digest,
   );
-  cache.set(key, namespaceFor(claim.value), sealed.value, "2026-08-29T00:00:00.000Z");
+  cache.set(key, namespaceFor(tenantClaim), sealed.value, "2026-08-29T00:00:00.000Z");
 
   // The cache key is a digest, so the question is not readable from the index either.
   expect(String(key)).not.toContain("jane@example.test");

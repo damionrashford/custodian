@@ -101,6 +101,7 @@
       "dependencies": {
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
+        "@custodian/retention": "workspace:*",
       },
     },
     "packages/gateway": {
@@ -112,6 +113,7 @@
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/idempotency": "workspace:*",
+        "@custodian/knowledge-base": "workspace:*",
         "@custodian/retention": "workspace:*",
         "@custodian/routing": "workspace:*",
       },

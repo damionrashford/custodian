@@ -112,6 +112,10 @@ export class AesGcmSubjectKeyStore implements SubjectKeyStore {
       destroyedAt: this.#now().toISOString(),
       keyReference: `local:${scope}:${id}`,
       recordId: crypto.randomUUID(),
+      // This store destroyed the key and is now writing the record of having done so. That is
+      // self-attestation, and naming it is what stops it being mistaken for the KMS record the
+      // spec asks for. A KMS-backed adapter is what returns `external`.
+      attestation: "self",
     };
     this.#proofs.set(id, proof);
     return proof;

@@ -61,6 +61,7 @@
         "@custodian/guardrails": "workspace:*",
         "@custodian/idempotency": "workspace:*",
         "@custodian/knowledge-base": "workspace:*",
+        "@custodian/metering": "workspace:*",
         "@custodian/retention": "workspace:*",
         "@custodian/retrieval": "workspace:*",
         "@custodian/routing": "workspace:*",

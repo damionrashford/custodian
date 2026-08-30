@@ -16,7 +16,7 @@ import {
   parseTenantId,
 } from "@custodian/domain-primitives";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
-import { DATA_MAP, runErasure } from "@custodian/erasure";
+import { admissibleProof, DATA_MAP, runErasure } from "@custodian/erasure";
 import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
 import {
@@ -243,6 +243,14 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
 
   // 5. The log is still evidence: erasure destroyed content, not integrity.
   expect(verifyRunLog(log, hasher).ok).toBe(true);
+
+  // 5b. The gate asks what a regulator would ask: is this proof evidence, or the erasing party's
+  // own account of itself? This composition self-attests, so the gate refuses it — and will keep
+  // refusing until a KMS-backed store returns a record someone outside this process issued.
+  expect(admissibleProof(erased.value.proof)).toEqual({
+    ok: false,
+    error: { kind: "self-attested", target: String(subject) },
+  });
 
   // 6. Erasure is idempotent — a repeat request returns the original proof.
   expect(await store.destroySubjectKey(subject)).toEqual(proof);

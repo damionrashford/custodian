@@ -139,3 +139,20 @@ export async function runErasure(
     dueBy: new Date(Date.parse(request.receivedAt) + ONE_MONTH_MS).toISOString(),
   });
 }
+
+export type InadmissibleProof = { readonly kind: "self-attested"; readonly target: string };
+
+/**
+ * A proof fit to show someone who was not present at the erasure.
+ *
+ * The corpus names the artefact "independently verifiable"
+ * (Data_Protection_and_Retention.txt:74) without ever stating that the erasing party must be unable
+ * to forge it. That step is ours, and it is what this function encodes: a record the destroyer
+ * wrote about its own destruction may be perfectly true and is still not evidence, so the release
+ * gate refuses it rather than passing against a path whose defining property is absent.
+ */
+export function admissibleProof(proof: ErasureProof): Result<ErasureProof, InadmissibleProof> {
+  return proof.attestation === "external"
+    ? ok(proof)
+    : err({ kind: "self-attested", target: proof.target });
+}

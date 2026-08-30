@@ -5,19 +5,24 @@
     "": {
       "devDependencies": {
         "@custodian/agent-loop": "workspace:*",
+        "@custodian/config-registry": "workspace:*",
         "@custodian/context-assembly": "workspace:*",
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/durable-execution": "workspace:*",
         "@custodian/erasure": "workspace:*",
+        "@custodian/eval": "workspace:*",
         "@custodian/event-delivery": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/gateway": "workspace:*",
+        "@custodian/guardrails": "workspace:*",
         "@custodian/idempotency": "workspace:*",
         "@custodian/identity": "workspace:*",
         "@custodian/knowledge-base": "workspace:*",
         "@custodian/memory": "workspace:*",
         "@custodian/metering": "workspace:*",
+        "@custodian/oversight": "workspace:*",
+        "@custodian/reconciliation": "workspace:*",
         "@custodian/response-cache": "workspace:*",
         "@custodian/retention": "workspace:*",
         "@custodian/retrieval": "workspace:*",
@@ -39,6 +44,13 @@
     "packages/agent-loop": {
       "name": "@custodian/agent-loop",
       "version": "0.0.0",
+    },
+    "packages/config-registry": {
+      "name": "@custodian/config-registry",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+      },
     },
     "packages/context-assembly": {
       "name": "@custodian/context-assembly",
@@ -73,6 +85,10 @@
         "@custodian/domain-primitives": "workspace:*",
       },
     },
+    "packages/eval": {
+      "name": "@custodian/eval",
+      "version": "0.0.0",
+    },
     "packages/event-delivery": {
       "name": "@custodian/event-delivery",
       "version": "0.0.0",
@@ -98,6 +114,10 @@
         "@custodian/idempotency": "workspace:*",
         "@custodian/routing": "workspace:*",
       },
+    },
+    "packages/guardrails": {
+      "name": "@custodian/guardrails",
+      "version": "0.0.0",
     },
     "packages/idempotency": {
       "name": "@custodian/idempotency",
@@ -135,6 +155,14 @@
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/gateway": "workspace:*",
       },
+    },
+    "packages/oversight": {
+      "name": "@custodian/oversight",
+      "version": "0.0.0",
+    },
+    "packages/reconciliation": {
+      "name": "@custodian/reconciliation",
+      "version": "0.0.0",
     },
     "packages/response-cache": {
       "name": "@custodian/response-cache",
@@ -182,6 +210,8 @@
   "packages": {
     "@custodian/agent-loop": ["@custodian/agent-loop@workspace:packages/agent-loop"],
 
+    "@custodian/config-registry": ["@custodian/config-registry@workspace:packages/config-registry"],
+
     "@custodian/context-assembly": ["@custodian/context-assembly@workspace:packages/context-assembly"],
 
     "@custodian/crypto-shred": ["@custodian/crypto-shred@workspace:packages/crypto-shred"],
@@ -192,11 +222,15 @@
 
     "@custodian/erasure": ["@custodian/erasure@workspace:packages/erasure"],
 
+    "@custodian/eval": ["@custodian/eval@workspace:packages/eval"],
+
     "@custodian/event-delivery": ["@custodian/event-delivery@workspace:packages/event-delivery"],
 
     "@custodian/execution-log": ["@custodian/execution-log@workspace:packages/execution-log"],
 
     "@custodian/gateway": ["@custodian/gateway@workspace:packages/gateway"],
+
+    "@custodian/guardrails": ["@custodian/guardrails@workspace:packages/guardrails"],
 
     "@custodian/idempotency": ["@custodian/idempotency@workspace:packages/idempotency"],
 
@@ -207,6 +241,10 @@
     "@custodian/memory": ["@custodian/memory@workspace:packages/memory"],
 
     "@custodian/metering": ["@custodian/metering@workspace:packages/metering"],
+
+    "@custodian/oversight": ["@custodian/oversight@workspace:packages/oversight"],
+
+    "@custodian/reconciliation": ["@custodian/reconciliation@workspace:packages/reconciliation"],
 
     "@custodian/response-cache": ["@custodian/response-cache@workspace:packages/response-cache"],
 

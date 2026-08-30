@@ -86,6 +86,7 @@ export default defineConfig(
       "packages/*/src/domain/cache-key.ts",
       "packages/*/src/domain/workflow.ts",
       "packages/*/src/domain/signed-event.ts",
+      "packages/*/src/domain/prompt-version.ts",
       "packages/*/src/domain/tenant-claim.ts",
     ],
     rules: { "@typescript-eslint/consistent-type-assertions": "off" },

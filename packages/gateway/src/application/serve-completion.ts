@@ -1,4 +1,12 @@
-import { err, ok, type Result, type TenantId } from "@custodian/domain-primitives";
+import {
+  err,
+  ok,
+  type RetentionBucket,
+  type Result,
+  type SubjectId,
+  type TenantId,
+} from "@custodian/domain-primitives";
+import type { SubjectKeyStore } from "@custodian/crypto-shred";
 import {
   appendEntry,
   type EntryHasher,
@@ -32,6 +40,10 @@ export type ServeRequest = {
   readonly hasher: EntryHasher;
   readonly at: string;
   readonly jitter: number;
+  /** The completion is personal data, so it is sealed before it reaches the idempotency store. */
+  readonly keys: SubjectKeyStore;
+  readonly subject: SubjectId;
+  readonly bucket: RetentionBucket;
 };
 
 export type ServedCompletion = {
@@ -131,9 +143,17 @@ export async function serveCompletion(
       return err(outcome.failure);
     }
     if (outcome.kind === "served") {
+      const sealed = await serve.keys.seal({
+        subject: serve.subject,
+        bucket: serve.bucket,
+        plaintext: outcome.response.text,
+      });
+      if (!sealed.ok) {
+        return err({ kind: "provider-failed", reason: "seal-failed" });
+      }
       await serve.idempotency.complete(serve.requestHash, {
         status: "succeeded",
-        body: outcome.response.text,
+        body: sealed.value,
       });
       return ok({ response: outcome.response, log: state.log });
     }

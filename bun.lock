@@ -4,16 +4,22 @@
   "workspaces": {
     "": {
       "devDependencies": {
+        "@custodian/agent-loop": "workspace:*",
         "@custodian/context-assembly": "workspace:*",
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
+        "@custodian/durable-execution": "workspace:*",
+        "@custodian/erasure": "workspace:*",
+        "@custodian/event-delivery": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/gateway": "workspace:*",
         "@custodian/idempotency": "workspace:*",
         "@custodian/identity": "workspace:*",
         "@custodian/knowledge-base": "workspace:*",
+        "@custodian/memory": "workspace:*",
         "@custodian/metering": "workspace:*",
         "@custodian/response-cache": "workspace:*",
+        "@custodian/retention": "workspace:*",
         "@custodian/retrieval": "workspace:*",
         "@custodian/routing": "workspace:*",
         "@custodian/streaming": "workspace:*",
@@ -29,6 +35,10 @@
         "typescript": "6.0.3",
         "typescript-eslint": "^8.68.0",
       },
+    },
+    "packages/agent-loop": {
+      "name": "@custodian/agent-loop",
+      "version": "0.0.0",
     },
     "packages/context-assembly": {
       "name": "@custodian/context-assembly",
@@ -48,6 +58,28 @@
       "name": "@custodian/domain-primitives",
       "version": "0.0.0",
     },
+    "packages/durable-execution": {
+      "name": "@custodian/durable-execution",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+      },
+    },
+    "packages/erasure": {
+      "name": "@custodian/erasure",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/crypto-shred": "workspace:*",
+        "@custodian/domain-primitives": "workspace:*",
+      },
+    },
+    "packages/event-delivery": {
+      "name": "@custodian/event-delivery",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+      },
+    },
     "packages/execution-log": {
       "name": "@custodian/execution-log",
       "version": "0.0.0",
@@ -60,6 +92,7 @@
       "name": "@custodian/gateway",
       "version": "0.0.0",
       "dependencies": {
+        "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/idempotency": "workspace:*",
@@ -87,6 +120,14 @@
         "@custodian/domain-primitives": "workspace:*",
       },
     },
+    "packages/memory": {
+      "name": "@custodian/memory",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+        "@custodian/retention": "workspace:*",
+      },
+    },
     "packages/metering": {
       "name": "@custodian/metering",
       "version": "0.0.0",
@@ -101,7 +142,12 @@
       "dependencies": {
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/knowledge-base": "workspace:*",
+        "@custodian/retention": "workspace:*",
       },
+    },
+    "packages/retention": {
+      "name": "@custodian/retention",
+      "version": "0.0.0",
     },
     "packages/retrieval": {
       "name": "@custodian/retrieval",
@@ -134,11 +180,19 @@
     },
   },
   "packages": {
+    "@custodian/agent-loop": ["@custodian/agent-loop@workspace:packages/agent-loop"],
+
     "@custodian/context-assembly": ["@custodian/context-assembly@workspace:packages/context-assembly"],
 
     "@custodian/crypto-shred": ["@custodian/crypto-shred@workspace:packages/crypto-shred"],
 
     "@custodian/domain-primitives": ["@custodian/domain-primitives@workspace:packages/domain-primitives"],
+
+    "@custodian/durable-execution": ["@custodian/durable-execution@workspace:packages/durable-execution"],
+
+    "@custodian/erasure": ["@custodian/erasure@workspace:packages/erasure"],
+
+    "@custodian/event-delivery": ["@custodian/event-delivery@workspace:packages/event-delivery"],
 
     "@custodian/execution-log": ["@custodian/execution-log@workspace:packages/execution-log"],
 
@@ -150,9 +204,13 @@
 
     "@custodian/knowledge-base": ["@custodian/knowledge-base@workspace:packages/knowledge-base"],
 
+    "@custodian/memory": ["@custodian/memory@workspace:packages/memory"],
+
     "@custodian/metering": ["@custodian/metering@workspace:packages/metering"],
 
     "@custodian/response-cache": ["@custodian/response-cache@workspace:packages/response-cache"],
+
+    "@custodian/retention": ["@custodian/retention@workspace:packages/retention"],
 
     "@custodian/retrieval": ["@custodian/retrieval@workspace:packages/retrieval"],
 

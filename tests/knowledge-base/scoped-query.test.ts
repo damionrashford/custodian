@@ -10,6 +10,8 @@ import {
 const ACME = "t_01jd7k9h2m4n6p8r0s2t4v6x8z";
 const GLOBEX = "t_02jd7k9h2m4n6p8r0s2t4v6x8z";
 
+const NOW = new Date("2026-08-29T12:00:00.000Z");
+
 /** Accepts a token of the form "signed:<tenantId>" and rejects everything else. */
 const verifier: ClaimVerifier = {
   verify: (token) => {
@@ -18,12 +20,21 @@ const verifier: ClaimVerifier = {
       return { ok: false, error: { kind: "signature-invalid" } };
     }
     const parsed = parseTenantId(id);
-    return parsed.ok ? parsed : { ok: false, error: { kind: "claim-malformed", received: id } };
+    return parsed.ok
+      ? {
+          ok: true,
+          value: {
+            tenant: parsed.value,
+            issuedAt: "2026-08-29T11:45:00.000Z",
+            expiresAt: "2026-08-29T12:15:00.000Z",
+          },
+        }
+      : { ok: false, error: { kind: "claim-malformed", received: id } };
   },
 };
 
 function claimFor(id: string) {
-  const claim = verifyTenantClaim(`signed:${id}`, verifier);
+  const claim = verifyTenantClaim(`signed:${id}`, { verifier, now: NOW });
   if (!claim.ok) throw new Error("fixture: claim rejected");
   return claim.value;
 }
@@ -37,14 +48,14 @@ test("two tenants never derive the same namespace", () => {
 });
 
 test("an unsigned token is rejected, so no namespace can be derived from it", () => {
-  expect(verifyTenantClaim(`forged:${ACME}`, verifier)).toEqual({
+  expect(verifyTenantClaim(`forged:${ACME}`, { verifier, now: NOW })).toEqual({
     ok: false,
     error: { kind: "signature-invalid" },
   });
 });
 
 test("a signed token carrying a malformed tenant is rejected", () => {
-  expect(verifyTenantClaim("signed:acme-corp", verifier)).toEqual({
+  expect(verifyTenantClaim("signed:acme-corp", { verifier, now: NOW })).toEqual({
     ok: false,
     error: { kind: "claim-malformed", received: "acme-corp" },
   });

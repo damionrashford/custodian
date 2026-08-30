@@ -84,6 +84,8 @@ export default defineConfig(
       "packages/*/src/domain/model-provider.ts",
       "packages/*/src/domain/namespace.ts",
       "packages/*/src/domain/cache-key.ts",
+      "packages/*/src/domain/workflow.ts",
+      "packages/*/src/domain/signed-event.ts",
       "packages/*/src/domain/tenant-claim.ts",
     ],
     rules: { "@typescript-eslint/consistent-type-assertions": "off" },

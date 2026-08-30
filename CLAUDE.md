@@ -73,6 +73,36 @@ invoked the skill in the right column this session, you are doing it wrong. Stop
 Do not confuse step 5 with step 2; they share a name. `.research/Plugin_and_MCP_Reference.md` §3
 lists the full collision set.
 
+## Parallelise — this is a MUST, not a preference
+
+**Every tool call that does not consume the output of another goes in the same block as that other
+call.** Serialising independent work is the single largest source of wasted time in this repo, and
+it is invisible in the result: the diff looks identical, the wall-clock is many times worse.
+
+The test before every response: *of the calls I am about to make, which one needs an answer I do not
+already have?* Only that one waits. Everything else ships now, together.
+
+| Situation | Wrong | Right |
+|---|---|---|
+| Need to see four files | Four `Read` turns | One block, four `Read` calls |
+| Editing six unrelated files | Six `Edit` turns | One block, six `Edit`/`Write` calls, or one scripted pass |
+| Patching N call sites after a rename | One at a time, typecheck between each | One scripted pass over all N, then **one** typecheck |
+| Running gates | `typecheck`, then `lint`, then `test` | `bun run verify` |
+| Proving several gates non-vacuous | A turn per plant | One block: plant, run, restore, repeat |
+| Two independent reviews | One agent, wait, next agent | Both agents dispatched in one block |
+
+Two rules that make this work in practice:
+
+- **Let the typechecker batch the errors for you.** Do not fix one compile error, re-run, fix the
+  next. Make the whole change, run `tsc` once, fix every error it lists in one pass. The compiler is
+  already a parallel error report — reading it one line per turn discards that.
+- **Scripted edits beat per-file turns** for anything mechanical (a rename, a moved export, a
+  changed signature). One `python3`/`sed` pass over the whole blast radius, then verify once. This
+  is also what `change-discipline.md` demands anyway — the whole blast radius moves together.
+
+The exception is genuine dependency: you cannot patch call sites before deciding the new signature,
+and you cannot claim a gate passes before running it. Sequence those. Nothing else.
+
 ## Working in this repo
 
 - New research drops land as `.docx` in `.research/` — run the `research` skill (or the `research` subagent for a heavier pass, which can also chase down external prior art the corpus doesn't cover) to convert and verify.

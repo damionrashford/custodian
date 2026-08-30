@@ -28,9 +28,11 @@ import {
   Ed25519ClaimVerifier,
   InMemoryVectorIndex,
   namespaceFor,
+  sealEmbedding,
   verifyTenantClaim,
   type IndexedDocument,
 } from "@custodian/knowledge-base";
+import { bucketFor } from "@custodian/retention";
 import { priceCompletion, type PriceTable } from "@custodian/metering";
 import { HashEmbedder } from "@custodian/retrieval";
 import type { ProviderProfile } from "@custodian/routing";
@@ -265,11 +267,23 @@ async function main(): Promise<void> {
       console.error("Seeding the knowledge base failed. Start again.");
       process.exit(1);
     }
-    indexed.push({ namespace: seedNamespace, documentId, embedding: embedded.value });
+    // The embedding is sealed under the authoring subject's key, because the data map gives the
+    // vector index one erasure mechanism and it is key destruction
+    // (Data_Protection_and_Retention.txt:49-50). A bare vector would survive the subject's erasure.
+    const sealed = await sealEmbedding(keys, {
+      subject,
+      bucket: bucketFor("prompts-and-completions", new Date().toISOString()),
+      embedding: embedded.value,
+    });
+    if (!sealed.ok) {
+      console.error("Sealing the seed embeddings failed. Start again.");
+      process.exit(1);
+    }
+    indexed.push({ namespace: seedNamespace, documentId, embedding: sealed.value });
     documents.set(kbDocumentKey(seedNamespace, documentId), document);
   }
 
-  const index = new InMemoryVectorIndex(indexed);
+  const index = new InMemoryVectorIndex({ documents: indexed, keys });
   const tool = new KbSearchTool({ name: searchKb, embedder, index, documents, topK: 4 });
 
   const handler = runsHandler({

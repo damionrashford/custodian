@@ -111,6 +111,41 @@ test("the layering gate sees type-only imports", async () => {
   expect(config).toContain("tsPreCompilationDeps: true");
 });
 
+test("no subject key store holds its own keys", async () => {
+  const offenders: string[] = [];
+  for await (const path of new Bun.Glob("packages/**/src/**/*.ts").scan(".")) {
+    const source = await readRepoFile(path);
+    if (/implements SubjectKeyStore/.test(source) && !/KeyCustodian/.test(source)) {
+      offenders.push(path);
+    }
+  }
+
+  // The deleted AesGcmSubjectKeyStore generated and held its own keys, so a restart was an Article
+  // 17 erasure of every subject at once. Reintroducing that shape looks like a helpful test double
+  // right up to the moment it is composed in main.ts, and nothing else would catch it.
+  expect(offenders).toEqual([]);
+});
+
+test("the vector index stores sealed embeddings, never bare vectors", async () => {
+  const source = await readRepoFile(
+    "packages/knowledge-base/src/infrastructure/in-memory-vector-index.ts",
+  );
+
+  // Scoped to the stored type, not the whole file. `sealEmbedding` legitimately *takes* a bare
+  // vector — it is the thing being sealed — so a file-wide match would fail on correct code, and a
+  // gate that fires on the right file for the wrong reason teaches people to edit the gate.
+  const declaration = source.slice(
+    source.indexOf("export type IndexedDocument"),
+    source.indexOf("};", source.indexOf("export type IndexedDocument")),
+  );
+
+  // The data map gives the vector index exactly one erasure mechanism: key destruction, because
+  // "soft delete is insufficient" (Data_Protection_and_Retention.txt:49-50). A bare number[] here
+  // is a fragment that survives erasure, which is precisely what the release gate exists to fail.
+  expect(declaration).toContain("readonly embedding: SealedContent");
+  expect(declaration).not.toMatch(/readonly embedding:\s*readonly number\[\]/);
+});
+
 test("type assertions are exempt in exactly the two pinned source files", async () => {
   const config = await Bun.file("eslint.config.js").text();
   const block = config.slice(config.indexOf("Two exceptions the standard names"));

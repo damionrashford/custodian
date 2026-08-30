@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  # No branch filter: stage branches are stacked, so a PR often targets another stage rather
+  # than main. Filtering on main left four stacked PRs with no checks at all.
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun ci
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Layering
+        run: bun run layers
+
+      - name: Dead code
+        run: bun run deadcode
+
+      - name: Structure budgets
+        run: bun run structure
+
+      - name: Format
+        run: bun run format
+
+      - name: Run tests
+        run: bun run test
+
+      # Data_Protection_and_Retention.txt:112-113 — run on every release that touches storage.
+      - name: Erasure acceptance gate
+        run: bun run gate:erasure

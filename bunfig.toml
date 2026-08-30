@@ -1,0 +1,6 @@
+[install]
+# Explicit rather than relying on lockfile-version inference — this is a workspace
+# monorepo (packages/*), and isolated installs prevent phantom dependencies (a
+# package importing something it never declared, because hoisting happened to
+# put it within reach). See https://bun.com/docs/pm/isolated-installs.
+linker = "isolated"

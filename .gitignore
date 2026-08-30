@@ -3,14 +3,15 @@ node_modules/
 .env.*
 !.env.example
 
-# Playwright
-/tests/results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+# bun test
+/coverage/
 
 # Not tracked in this repo (local machine setup / working state, kept on disk only)
 /.claude/
-/.playwright/
 /.research/
 /.graphify/
+
+# superpowers plugin working state. .superpowers/brainstorm/ holds a live session
+# token (.last-token); the plugin only self-ignores .superpowers/sdd/, so ignore the root.
+/.superpowers/
+/.worktrees/

@@ -9,8 +9,12 @@ export type InvalidRunId = { readonly kind: "invalid-run-id"; readonly received:
  * The grammar and the alphabet that satisfies it live together on purpose. Split across packages
  * — a parser here, a generator in an interface layer — they agree until one changes, and the drift
  * surfaces as a runtime throw on a path that used to work.
+ *
+ * Crockford-style: 32 symbols with `i`, `l`, `o` and `u` removed. Run ids are read aloud, copied
+ * out of logs and typed into queries during an incident, and `1`/`l` and `0`/`o` are the pairs
+ * that get transcribed wrong under exactly that pressure.
  */
-const RUN_ID_ALPHABET = "0123456789abcdefghijklmnopqrstuv";
+const RUN_ID_ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
 const RUN_ID_BODY_LENGTH = 26;
 const RUN_ID_PATTERN = /^r_[0-9a-z]{26}$/;
 

@@ -28,7 +28,8 @@ export type XaiProviderConfig = {
   /**
    * Without a deadline a stalled provider hangs the whole run: the loop's iteration, cost and
    * stagnation ceilings are only evaluated between turns, so a turn that never returns is a run
-   * that never halts. `timeout` is the one ProviderFailure the retry policy treats as transient.
+   * that never halts. A deadline turns that into a `timeout`, which the retry policy treats as
+   * transient and the fallback chain can act on.
    */
   readonly timeoutMs: number;
 };

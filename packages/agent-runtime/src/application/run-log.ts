@@ -120,9 +120,11 @@ export async function finishRun(
 }
 
 /**
- * Every terminal exit closes the run. A log that ends without run-finished is, by the durable
- * store's own documented limit, indistinguishable from one truncated by tampering — so the
- * outcome the caller sees and the outcome the record shows are written together.
+ * Every terminal exit closes the run, with one exception the code cannot close: a persistence
+ * failure means the store itself is unreachable, so there is nothing left to write the closing
+ * entry with. Otherwise a log that ends without run-finished is, by the durable store's own
+ * documented limit, indistinguishable from one truncated by tampering — so the outcome the caller
+ * sees and the outcome the record shows are written together.
  */
 export async function closeFailed(
   failure: AgentRunFailure,

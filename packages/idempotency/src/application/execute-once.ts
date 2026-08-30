@@ -1,4 +1,4 @@
-import { err, ok, type Result } from "@custodian/domain-primitives";
+import { err, ok, type Namespace, type Result } from "@custodian/domain-primitives";
 import type {
   IdempotencyFailure,
   IdempotencyStore,
@@ -8,6 +8,7 @@ import type { RequestHash } from "../domain/request-hash";
 
 export type ExecuteOnceRequest = {
   readonly store: IdempotencyStore;
+  readonly namespace: Namespace;
   readonly request: RequestHash;
   readonly at: string;
   readonly invoke: () => Promise<RecordedOutcome>;
@@ -21,7 +22,7 @@ export type ExecuteOnceRequest = {
 export async function executeOnce(
   request: ExecuteOnceRequest,
 ): Promise<Result<RecordedOutcome, IdempotencyFailure>> {
-  const claimed = await request.store.claim(request.request, request.at);
+  const claimed = await request.store.claim(request.namespace, request.request, request.at);
   if (!claimed.ok) {
     return claimed;
   }
@@ -34,6 +35,6 @@ export async function executeOnce(
   }
 
   const outcome = await request.invoke();
-  const completed = await request.store.complete(request.request, outcome);
+  const completed = await request.store.complete(request.namespace, request.request, outcome);
   return completed.ok ? ok(outcome) : completed;
 }

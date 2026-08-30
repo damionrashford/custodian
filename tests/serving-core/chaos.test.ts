@@ -21,6 +21,11 @@ import { InMemoryIdempotencyStore, parseRequestHash } from "@custodian/idempoten
 import { appendEntry, Sha256ContentHasher, verifyRunLog } from "@custodian/execution-log";
 import { type ProviderProfile } from "@custodian/routing";
 import type { PromptSnapshot } from "@custodian/config-registry";
+import {
+  verifyTenantClaim,
+  type ClaimVerifier,
+  type VerifiedTenantClaim,
+} from "@custodian/knowledge-base";
 
 function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {
   if (!parsed.ok) throw new Error(`fixture: bad ${label}`);
@@ -35,6 +40,26 @@ const requestHash = parsedOrThrow(parseRequestHash("b".repeat(64)), "hash");
 const euWest = parsedOrThrow(parseRegion("eu-west-1"), "region");
 const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
 const usEast = parsedOrThrow(parseRegion("us-east-1"), "region");
+
+const claimVerifier: ClaimVerifier = {
+  verify: () => ({
+    ok: true,
+    value: {
+      tenant,
+      issuedAt: "2026-08-28T23:45:00.000Z",
+      expiresAt: "2026-08-29T00:15:00.000Z",
+    },
+  }),
+};
+
+function tenantClaim(): VerifiedTenantClaim {
+  const verified = verifyTenantClaim("signed", {
+    verifier: claimVerifier,
+    now: new Date("2026-08-29T00:00:00.000Z"),
+  });
+  if (!verified.ok) throw new Error("fixture: claim rejected");
+  return verified.value;
+}
 
 const operator: Principal = {
   kind: "human",
@@ -88,7 +113,7 @@ function baseRequest(providers: readonly ModelProvider[], candidates: readonly P
   return {
     runId,
     principal: operator,
-    tenant,
+    claim: tenantClaim(),
     tenantRegion: euWest,
     legalBasisPolicy: "tenant-contract",
     requiresZeroRetention: true,

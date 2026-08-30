@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@custodian/crypto-shred": "workspace:*",
-    "@custodian/domain-primitives": "workspace:*"
+    "@custodian/domain-primitives": "workspace:*",
+    "@custodian/retention": "workspace:*"
   }
 }

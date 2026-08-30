@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The execution log has append-only storage. A shortened run and a rewritten prefix are both refused
+  at write time rather than only detected afterwards, and reads are scoped to the tenant the run
+  belongs to.
+
 - Tenant knowledge bases are isolated per namespace, and a namespace can only be derived from a
   verified tenant claim — there is no way to name another tenant's namespace.
 - Data-subject erasure destroys the encryption key rather than deleting rows, so a restore from a
@@ -76,6 +80,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `snapshot` fields — always written with the same value — are one field.
 
 ### Security
+
+- Idempotency claims are scoped to the tenant. Keyed by request hash alone, two tenants whose
+  requests hashed alike shared one claim and the second was told its work had already been done.
+- The gateway derives the tenant it records and the scope it stores under from a verified claim
+  rather than accepting a tenant identifier from its caller.
+- Execution-log content cannot be disposed of before its retention period elapses. The period is
+  taken from the schedule and the storage key derived from it, so a caller can no longer destroy the
+  incident-reporting window early by passing its own.
 
 - Execution-log content and prompts/completions are held under separate retention keys. They shared
   one key, so a tenant exercising its right to zero retention on prompts and completions would have

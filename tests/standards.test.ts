@@ -111,7 +111,7 @@ test("the layering gate sees type-only imports", async () => {
   expect(config).toContain("tsPreCompilationDeps: true");
 });
 
-test("type assertions are exempt in exactly one source file", async () => {
+test("type assertions are exempt in exactly the two pinned source files", async () => {
   const config = await Bun.file("eslint.config.js").text();
   const block = config.slice(config.indexOf("Two exceptions the standard names"));
   const exempt = [...block.slice(0, block.indexOf("],")).matchAll(/"(packages\/[^"]+)"/g)];

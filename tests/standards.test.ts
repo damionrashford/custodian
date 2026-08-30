@@ -111,6 +111,57 @@ test("the layering gate sees type-only imports", async () => {
   expect(config).toContain("tsPreCompilationDeps: true");
 });
 
+/**
+ * Every workspace import a package makes must be declared in that package's own `package.json`.
+ *
+ * Nothing else checks this, which was a surprise worth recording. `bunfig.toml` sets
+ * `linker = "isolated"` specifically to prevent phantom dependencies, and it does scope
+ * `packages/<name>/node_modules` correctly — `routing`'s holds only `domain-primitives`. But module
+ * resolution walks *up*, and the root `node_modules` holds all 27 packages, because LD-3 requires
+ * every one of them in the root `devDependencies` so `tests/` can import them. The upward walk
+ * defeats the isolation.
+ *
+ * Demonstrated rather than assumed: `gateway/infrastructure` importing `@custodian/oversight`, a
+ * package absent from gateway's manifest, passed tsc, dependency-cruiser, knip and ESLint together.
+ * dependency-cruiser catches the `domain` case only because a *layering* rule happens to fire there;
+ * between any other two layers it sees nothing, since a workspace import arrives with
+ * `dependencyTypes: unknown` (the reason `.dependency-cruiser.cjs` uses path-based rules at all).
+ *
+ * This is LD-11's shape a third time: a gate believed to enforce something, never shown to reject
+ * the idiomatic violation.
+ */
+test("every workspace import is declared by the package that makes it", async () => {
+  const importPattern = /from\s+"(@custodian\/[a-z-]+)"/g;
+  const undeclared: string[] = [];
+
+  for await (const manifestPath of new Bun.Glob("packages/*/package.json").scan(".")) {
+    const directory = manifestPath.slice(0, manifestPath.lastIndexOf("/"));
+    const manifest: unknown = await Bun.file(manifestPath).json();
+    const dependencies = readProperty(
+      typeof manifest === "object" && manifest !== null ? manifest : {},
+      "dependencies",
+    );
+    const declared = new Set(
+      typeof dependencies === "object" && dependencies !== null ? Object.keys(dependencies) : [],
+    );
+    const own = readProperty(
+      typeof manifest === "object" && manifest !== null ? manifest : {},
+      "name",
+    );
+
+    for await (const source of new Bun.Glob(`${directory}/src/**/*.ts`).scan(".")) {
+      const text = await readRepoFile(source);
+      for (const [, imported] of text.matchAll(importPattern)) {
+        if (imported !== undefined && imported !== own && !declared.has(imported)) {
+          undeclared.push(`${source} → ${imported}`);
+        }
+      }
+    }
+  }
+
+  expect(undeclared).toEqual([]);
+});
+
 test("no subject key store holds its own keys", async () => {
   const offenders: string[] = [];
   for await (const path of new Bun.Glob("packages/**/src/**/*.ts").scan(".")) {

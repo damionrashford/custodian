@@ -210,6 +210,9 @@
     "packages/retention": {
       "name": "@custodian/retention",
       "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+      },
     },
     "packages/retrieval": {
       "name": "@custodian/retrieval",

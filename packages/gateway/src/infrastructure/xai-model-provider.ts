@@ -1,5 +1,6 @@
 import {
   err,
+  isRecord,
   ok,
   type ModelSnapshot,
   type ProviderId,
@@ -65,10 +66,6 @@ export function buildXaiRequest(
     },
     body: JSON.stringify(body),
   });
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 /**

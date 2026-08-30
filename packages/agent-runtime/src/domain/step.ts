@@ -1,14 +1,17 @@
-import { err, ok, parseToolName, type Result, type ToolName } from "@custodian/domain-primitives";
+import {
+  err,
+  isRecord,
+  ok,
+  parseToolName,
+  type Result,
+  type ToolName,
+} from "@custodian/domain-primitives";
 
 export type AgentStep =
   | { readonly kind: "use-tool"; readonly tool: ToolName; readonly argumentsJson: string }
   | { readonly kind: "answer"; readonly text: string };
 
 export type StepParseFailure = { readonly kind: "unparseable-step"; readonly reason: string };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 /**
  * The model's reply is untrusted input and crosses this boundary exactly once (parse, don't

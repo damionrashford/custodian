@@ -1,4 +1,11 @@
-import { err, ok, type Namespace, type Result, type ToolName } from "@custodian/domain-primitives";
+import {
+  err,
+  isRecord,
+  ok,
+  type Namespace,
+  type Result,
+  type ToolName,
+} from "@custodian/domain-primitives";
 import type { VectorIndex } from "@custodian/knowledge-base";
 import type { Embedder } from "@custodian/retrieval";
 import type { RetrievedRecord, Tool, ToolFailure, ToolObservation } from "../domain/tool";
@@ -26,10 +33,6 @@ export type KbSearchToolDeps = {
  */
 export function kbDocumentKey(namespace: Namespace, documentId: string): string {
   return `${namespace} ${documentId}`;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 /**

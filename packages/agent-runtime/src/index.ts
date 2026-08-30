@@ -8,7 +8,7 @@ export type {
   AgentRunDeps,
   AgentRunFailure,
   AgentRunRequest,
-} from "./application/run-agent";
+} from "./application/agent-run";
 export { runAgent } from "./application/run-agent";
 export type { KbDocument, KbSearchToolDeps } from "./infrastructure/kb-search-tool";
 export { kbDocumentKey, KbSearchTool } from "./infrastructure/kb-search-tool";

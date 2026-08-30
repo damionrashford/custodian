@@ -1,113 +1,25 @@
+import { canonicalJson, err, ok, type Result } from "@custodian/domain-primitives";
+import { evaluateLoop } from "@custodian/agent-loop";
+import { resolve, type PromptSnapshot } from "@custodian/config-registry";
+import { serveCompletion, type CompletionResponse } from "@custodian/gateway";
+import { parseRequestHash } from "@custodian/idempotency";
+import type { ToolSummary } from "@custodian/tool-registry";
+import { parseStep } from "../domain/step";
 import {
-  canonicalJson,
-  err,
-  ok,
-  type CompletionUsage,
-  type ContentHasher,
-  type Principal,
-  type Region,
-  type Result,
-  type RunId,
-  type SealedContent,
-  type SubjectId,
-  type ToolName,
-} from "@custodian/domain-primitives";
-import {
-  evaluateLoop,
-  type HaltReason,
-  type LoopLimits,
-  type RunState,
-} from "@custodian/agent-loop";
-import { resolve, type DeploymentLabel, type Registry } from "@custodian/config-registry";
-import { capToolOutput, type ContextItem } from "@custodian/context-assembly";
-import type { SubjectKeyStore } from "@custodian/crypto-shred";
-import {
-  appendEntry,
-  type ExecutionEvent,
-  type ExecutionLogStore,
-  type LoggedEntry,
-} from "@custodian/execution-log";
-import { serveCompletion, type CompletionResponse, type ModelProvider } from "@custodian/gateway";
-import {
-  railRetrieved,
-  screen,
-  type BlockedChunk,
-  type Classifier,
-  type RetrievedChunk,
-} from "@custodian/guardrails";
-import { parseRequestHash, type IdempotencyStore } from "@custodian/idempotency";
-import { namespaceFor, type VerifiedTenantClaim } from "@custodian/knowledge-base";
-import { bucketFor } from "@custodian/retention";
-import type { ProviderProfile } from "@custodian/routing";
-import type { TaskClass, ToolCatalogue, ToolSummary } from "@custodian/tool-registry";
-import type { PromptSnapshot } from "@custodian/config-registry";
-import { parseStep, type AgentStep } from "../domain/step";
-import type { RetrievedRecord, Tool } from "../domain/tool";
-import { advance, type StepEffect } from "./progress";
-
-export type AgentRunRequest = {
-  readonly runId: RunId;
-  readonly principal: Principal;
-  readonly claim: VerifiedTenantClaim;
-  readonly tenantRegion: Region;
-  readonly legalBasisPolicy: string;
-  readonly requiresZeroRetention: boolean;
-  readonly question: string;
-  readonly subject: SubjectId;
-  readonly deployment: DeploymentLabel;
-  readonly taskClass: TaskClass;
-  readonly limits: LoopLimits;
-  readonly maxOutputTokens: number;
-  readonly at: () => string;
-  readonly jitter: number;
-};
-
-export type AgentRunDeps = {
-  readonly registry: Registry;
-  readonly catalogue: ToolCatalogue;
-  readonly tools: readonly Tool[];
-  readonly classifiers: readonly Classifier[];
-  readonly logStore: ExecutionLogStore;
-  readonly candidates: readonly ProviderProfile[];
-  readonly providers: readonly ModelProvider[];
-  readonly idempotency: IdempotencyStore;
-  readonly keys: SubjectKeyStore;
-  readonly hasher: ContentHasher;
-  readonly costMicros: (usage: CompletionUsage) => number;
-};
-
-export type AgentAnswer = { readonly runId: RunId; readonly answer: string };
-
-export type AgentRunFailure = {
-  readonly kind: "halted" | "refused" | "already-served" | "failed";
-  /** Plain-language and surface-safe; the interface layer returns it verbatim. */
-  readonly publicReason: string;
-};
-
-const STOP_COPY =
-  "The assistant stopped before finding an answer. Nothing was changed on your behalf.";
-
-const HALT_COPY: Readonly<Record<HaltReason, string>> = {
-  "iteration-ceiling": STOP_COPY,
-  stagnating: STOP_COPY,
-  "unverified-action": STOP_COPY,
-  "cost-ceiling": "This request reached its cost limit before finding an answer.",
-};
-
-const REFUSED_COPY = "No provider in your region is available for this request.";
-const ALREADY_COPY = "This request was already submitted.";
-const FAILED_COPY = "The assistant could not complete this request.";
-
-const CORRECTION =
-  'Reply with exactly one JSON object: {"action":"use-tool","tool":"<name>","arguments":{...}} or {"action":"answer","text":"..."}.';
-
-type LoopContext = {
-  log: readonly LoggedEntry[];
-  state: RunState;
-  readonly observations: ContextItem[];
-  readonly corrections: string[];
-  readonly seen: Set<string>;
-};
+  ALREADY_COPY,
+  CORRECTION,
+  FAILED_COPY,
+  HALT_COPY,
+  REFUSED_COPY,
+  type AgentAnswer,
+  type AgentRunDeps,
+  type AgentRunFailure,
+  type AgentRunRequest,
+  type LoopContext,
+} from "./agent-run";
+import { advance } from "./progress";
+import { closeFailed, finishRun, persist } from "./run-log";
+import { applyToolStep } from "./tool-step";
 
 /**
  * The ReAct loop — C20's default mode ("start with ReAct and let observed failures dictate
@@ -142,10 +54,9 @@ export async function runAgent(
     const verdict = evaluateLoop(context.state, request.limits);
     if (verdict.kind === "halt") {
       const finished = await finishRun("halted", context, request, deps);
-      if (!finished.ok) {
-        return finished;
-      }
-      return err({ kind: "halted", publicReason: HALT_COPY[verdict.reason] });
+      return finished.ok
+        ? err({ kind: "halted", publicReason: HALT_COPY[verdict.reason] })
+        : finished;
     }
 
     const served = await serveTurn(snapshot.value, summaries.value, context, request, deps);
@@ -171,13 +82,10 @@ export async function runAgent(
 
     if (step.value.kind === "answer") {
       const finished = await finishRun("succeeded", context, request, deps);
-      if (!finished.ok) {
-        return finished;
-      }
-      return ok({ runId: request.runId, answer: step.value.text });
+      return finished.ok ? ok({ runId: request.runId, answer: step.value.text }) : finished;
     }
 
-    const effect = await applyToolStep(step.value, context, request, deps);
+    const effect = await applyToolStep({ step: step.value, context, request, deps });
     if (!effect.ok) {
       return closeFailed(effect.error, context, request, deps);
     }
@@ -196,6 +104,8 @@ async function serveTurn(
   request: AgentRunRequest,
   deps: AgentRunDeps,
 ): Promise<Result<CompletionResponse, AgentRunFailure>> {
+  // The turn hash is scoped to the run: the same question asked by a different run is new work,
+  // and the same question at a different iteration is a different turn.
   const hashed = parseRequestHash(
     deps.hasher.hash(
       canonicalJson({
@@ -249,192 +159,6 @@ async function serveTurn(
   return ok(served.value.response);
 }
 
-async function applyToolStep(
-  step: Extract<AgentStep, { kind: "use-tool" }>,
-  context: LoopContext,
-  request: AgentRunRequest,
-  deps: AgentRunDeps,
-): Promise<Result<StepEffect, AgentRunFailure>> {
-  // Progressive disclosure: the full definition enters play only once the model reaches for the
-  // tool by name (Agent_Architecture_Addendum.txt:145). The slice has one tool, so the definition
-  // is not re-injected into context — that wiring lands with the second tool.
-  const definition = await deps.catalogue.define(request.taskClass, step.tool);
-  const tool = deps.tools.find((candidate) => candidate.name === step.tool);
-  if (!definition.ok || tool === undefined) {
-    // An attempted call the agent could not make is still a tool call the record must show: field
-    // group 4 asks what the agent did, and "reached for a tool it may not use" is an answer.
-    const sealed = await deps.keys.seal({
-      subject: request.subject,
-      bucket: bucketFor("execution-log-content", request.at()),
-      plaintext: step.argumentsJson,
-    });
-    if (!sealed.ok) {
-      return err({ kind: "failed", publicReason: FAILED_COPY });
-    }
-    const denied = appendEvents(
-      [toolCalled(step.tool, sealed.value, "denied")],
-      context,
-      request,
-      deps,
-    );
-    if (!denied.ok) {
-      return denied;
-    }
-    context.observations.push(capToolOutput(String(step.tool), "Tool unavailable."));
-    return ok({ kind: "tool-failed" });
-  }
-
-  const sealedArgs = await deps.keys.seal({
-    subject: request.subject,
-    bucket: bucketFor("execution-log-content", request.at()),
-    plaintext: step.argumentsJson,
-  });
-  if (!sealedArgs.ok) {
-    return err({ kind: "failed", publicReason: FAILED_COPY });
-  }
-
-  const executed = await tool.execute(step.argumentsJson, namespaceFor(request.claim));
-  if (!executed.ok) {
-    const appended = appendEvents(
-      [toolCalled(tool.name, sealedArgs.value, "failed")],
-      context,
-      request,
-      deps,
-    );
-    if (!appended.ok) {
-      return appended;
-    }
-    context.observations.push(capToolOutput(String(tool.name), "The tool could not complete."));
-    return ok({ kind: "tool-failed" });
-  }
-
-  // Chunks are reconciled by identity, never by record id: a document chunked into several
-  // records shares one id, so an id-keyed set re-admits the blocked chunk alongside its clean
-  // sibling — the rail would log a block and hand the model the text anyway.
-  const chunks = executed.value.retrieved.map((record) => ({
-    documentId: record.recordId,
-    text: record.text,
-  }));
-  const railed = railRetrieved(chunks, deps.classifiers);
-  const admittedChunks = new Set<RetrievedChunk>(railed.admitted);
-  const admitted = executed.value.retrieved.filter((_, index) => {
-    const chunk = chunks[index];
-    return chunk !== undefined && admittedChunks.has(chunk);
-  });
-
-  const appended = appendEvents(
-    retrievalEvents(
-      tool.name,
-      sealedArgs.value,
-      railed.blocked,
-      admitted,
-      deps.classifiers.length > 0,
-    ),
-    context,
-    request,
-    deps,
-  );
-  if (!appended.ok) {
-    return appended;
-  }
-
-  const hasNewEvidence = admitted.some((record) => !context.seen.has(record.recordId));
-  for (const record of admitted) {
-    context.seen.add(record.recordId);
-  }
-  // Context is rebuilt from railed records, so blocked text cannot ride in via the tool's own
-  // observation string; that string is only trusted when nothing was retrieved at all.
-  // Re-retrieved evidence is summarised, not re-pasted: a model that searches the same thing twice
-  // would otherwise be re-billed for the same documents every turn, and the growing transcript
-  // gives it no signal that it already holds the answer.
-  const contextText =
-    admitted.length === 0
-      ? screenedObservation(executed.value.observation, deps.classifiers)
-      : hasNewEvidence
-        ? admitted.map((record) => record.text).join("\n")
-        : "The search returned only records already retrieved in this run.";
-  context.observations.push(capToolOutput(String(tool.name), contextText));
-  return ok({ kind: hasNewEvidence ? "observed-new-evidence" : "observed-nothing-new" });
-}
-
-function toolCalled(
-  tool: ToolName,
-  sealedArguments: SealedContent,
-  status: "succeeded" | "failed" | "denied",
-): ExecutionEvent {
-  return {
-    kind: "tool-called",
-    tool,
-    arguments: sealedArguments,
-    status,
-    sideEffectsCommitted: [],
-  };
-}
-
-/**
- * A successful tool call as log events, in the order the run performed them: every policy that
- * fired, every record that survived it, then the call itself.
- */
-function retrievalEvents(
-  tool: ToolName,
-  sealedArguments: SealedContent,
-  blocked: readonly BlockedChunk[],
-  admitted: readonly RetrievedRecord[],
-  screened: boolean,
-): readonly ExecutionEvent[] {
-  return [
-    ...blocked.map((blockedChunk): ExecutionEvent => ({
-      kind: "guardrail-evaluated",
-      policy: blockedChunk.verdict.policy,
-      rule: blockedChunk.verdict.rule,
-      outcome: "blocked",
-    })),
-    // Only when a classifier ran: "screened and passed" and "never screened" are different facts,
-    // and an allowed entry written with no classifier configured would assert the wrong one.
-    ...(screened
-      ? admitted.map((): ExecutionEvent => ({
-          kind: "guardrail-evaluated",
-          policy: "retrieval-rail",
-          rule: "all-classifiers-passed",
-          outcome: "allowed",
-        }))
-      : []),
-    ...admitted.map((record): ExecutionEvent => ({
-      kind: "record-retrieved",
-      recordId: record.recordId,
-      classification: record.classification,
-      provenance: record.provenance,
-    })),
-    toolCalled(tool, sealedArguments, "succeeded"),
-  ];
-}
-
-/**
- * Every terminal exit closes the run. A log that ends without run-finished is, by the durable
- * store's own documented limit, indistinguishable from one truncated by tampering — so the
- * outcome the caller sees and the outcome the record shows are written together.
- */
-async function closeFailed(
-  failure: AgentRunFailure,
-  context: LoopContext,
-  request: AgentRunRequest,
-  deps: AgentRunDeps,
-): Promise<Result<AgentAnswer, AgentRunFailure>> {
-  const outcome = failure.kind === "refused" ? "refused" : "failed";
-  const finished = await finishRun(outcome, context, request, deps);
-  return finished.ok ? err(failure) : finished;
-}
-
-/** A tool's free-form observation is model-visible text, so it passes the same screen a record does. */
-function screenedObservation(observation: string, classifiers: readonly Classifier[]): string {
-  if (observation.length === 0 || classifiers.length === 0) {
-    return observation;
-  }
-  return screen(observation, classifiers).kind === "block"
-    ? "The tool's response was withheld by a safety policy."
-    : observation;
-}
-
 function transcript(
   question: string,
   summaries: readonly ToolSummary[],
@@ -454,50 +178,4 @@ function transcript(
     ...observed,
     ...context.corrections,
   ].join("\n\n");
-}
-
-function appendEvents(
-  events: readonly ExecutionEvent[],
-  context: LoopContext,
-  request: AgentRunRequest,
-  deps: AgentRunDeps,
-): Result<void, AgentRunFailure> {
-  for (const event of events) {
-    const appended = appendEntry(context.log, event, {
-      runId: request.runId,
-      at: request.at(),
-      hasher: deps.hasher,
-    });
-    if (!appended.ok) {
-      return err({ kind: "failed", publicReason: FAILED_COPY });
-    }
-    context.log = appended.value;
-  }
-  return ok(undefined);
-}
-
-async function persist(
-  context: LoopContext,
-  request: AgentRunRequest,
-  deps: AgentRunDeps,
-): Promise<Result<void, AgentRunFailure>> {
-  const stored = await deps.logStore.append(
-    namespaceFor(request.claim),
-    request.runId,
-    context.log,
-  );
-  return stored.ok ? ok(undefined) : err({ kind: "failed", publicReason: FAILED_COPY });
-}
-
-async function finishRun(
-  outcome: "succeeded" | "halted" | "failed" | "refused",
-  context: LoopContext,
-  request: AgentRunRequest,
-  deps: AgentRunDeps,
-): Promise<Result<void, AgentRunFailure>> {
-  const appended = appendEvents([{ kind: "run-finished", outcome }], context, request, deps);
-  if (!appended.ok) {
-    return appended;
-  }
-  return persist(context, request, deps);
 }

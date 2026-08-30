@@ -10,6 +10,7 @@ import { railRetrieved, type RetrievedChunk } from "../domain/retrieval-rail";
 import type { Classifier } from "../domain/screen";
 import { namespaceFor } from "@custodian/knowledge";
 import { bucketFor } from "@custodian/primitives";
+import { seekApproval } from "@custodian/governance";
 import type { AgentStep } from "../domain/step";
 import type { RetrievedRecord, Tool, ToolObservation } from "../domain/tool";
 import {
@@ -38,7 +39,17 @@ export async function applyToolStep(
   // is not re-injected into context — that wiring lands with the second tool.
   const definition = await scope.deps.catalogue.define(scope.request.taskClass, scope.step.tool);
   const tool = scope.deps.tools.find((candidate) => candidate.name === scope.step.tool);
-  return !definition.ok || tool === undefined ? recordDeniedTool(scope) : runTool(scope, tool);
+  if (!definition.ok || tool === undefined) {
+    return recordDeniedTool(scope, "Tool unavailable.");
+  }
+
+  // Approval before execution, never after. A tool that has already written the file and is then
+  // told no has not been reviewed, it has been audited — and the two are different products.
+  const resolution = await seekApproval(tool.actionClass, scope.deps.approvals, scope.request.at());
+  if (resolution.kind === "denied") {
+    return recordDeniedTool(scope, DENIED_COPY[resolution.reason]);
+  }
+  return runTool(scope, tool);
 }
 
 function sealArguments(scope: ToolStepScope): Promise<Result<SealedContent, KeyStoreFailure>> {
@@ -53,8 +64,19 @@ function sealArguments(scope: ToolStepScope): Promise<Result<SealedContent, KeyS
  * An attempted call the agent could not make is still a tool call the record must show: field
  * group 4 asks what the agent did, and "reached for a tool it may not use" is an answer.
  */
+/**
+ * Plain-language, and it distinguishes the two denials because they call for different next moves:
+ * a rejection means stop, a timeout means the queue is backed up and trying later may work. No
+ * implementation language, per the interface vocabulary rules.
+ */
+const DENIED_COPY: Readonly<Record<"rejected" | "timed-out-fail-safe", string>> = {
+  rejected: "A reviewer declined this action.",
+  "timed-out-fail-safe": "This action needs approval and nobody was available to give it.",
+};
+
 async function recordDeniedTool(
   scope: ToolStepScope,
+  copy: string,
 ): Promise<Result<StepEffect, AgentRunFailure>> {
   const sealed = await sealArguments(scope);
   if (!sealed.ok) {
@@ -69,7 +91,7 @@ async function recordDeniedTool(
   if (!denied.ok) {
     return denied;
   }
-  scope.context.observations.push(capToolOutput(String(scope.step.tool), "Tool unavailable."));
+  scope.context.observations.push(capToolOutput(String(scope.step.tool), copy));
   return ok({ kind: "tool-failed" });
 }
 

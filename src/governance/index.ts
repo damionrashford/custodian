@@ -12,6 +12,7 @@ export type {
   ReviewOutcome,
   ReviewRequest,
 } from "./domain/decision-lane";
-export { LANE_POLICIES, laneFor, resolveReview } from "./domain/decision-lane";
+export { LANE_POLICIES, laneFor, resolveReview, seekApproval } from "./domain/decision-lane";
+export type { ApprovalGate } from "./domain/decision-lane";
 export type { OversightHealth } from "./domain/rubber-stamp";
 export { assessOversight } from "./domain/rubber-stamp";

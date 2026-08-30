@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import type { ApprovalGate } from "@custodian/governance";
 import {
   parseModelSnapshot,
   parsePrincipalId,
@@ -173,6 +174,7 @@ function fixture(overrides: {
   readonly classifiers?: readonly Classifier[];
   readonly costMicros?: (usage: { inputTokens: number; outputTokens: number }) => number;
   readonly candidates?: readonly ProviderProfile[];
+  readonly approvals?: ApprovalGate;
 }): Fixture {
   const logStore = new InMemoryExecutionLogStore();
   const calls: CompletionRequest[] = [];
@@ -185,6 +187,7 @@ function fixture(overrides: {
     catalogue: catalogue(),
     tools: [overrides.tool ?? fakeTool([[record("kb-1", "Custodian is an agent platform.")]])],
     classifiers: overrides.classifiers ?? [],
+    ...(overrides.approvals === undefined ? {} : { approvals: overrides.approvals }),
     logStore,
     candidates: overrides.candidates ?? [profile("xai-us")],
     providers: [scripted("xai-us", overrides.responses ?? [USE_TOOL, ANSWER], calls)],
@@ -520,4 +523,70 @@ test("tool arguments are sealed in the log — the plaintext query never appears
   if (toolCalled === undefined || toolCalled.event.kind !== "tool-called")
     throw new Error("no tool-called");
   expect(toolCalled.event.arguments.ciphertext.length).toBeGreaterThan(0);
+});
+
+/** A tool that records whether it was ever run, so the assertion can be about the side effect. */
+function irreversibleTool(ran: { value: boolean }): Tool {
+  return {
+    name: searchKb,
+    actionClass: "financial-or-irreversible",
+    execute: () => {
+      ran.value = true;
+      return Promise.resolve({
+        ok: true as const,
+        value: { kind: "acted" as const, receipt: { summary: "did it", output: "" } },
+      });
+    },
+  };
+}
+
+test("an irreversible tool does not run when there is no reviewer", async () => {
+  const ran = { value: false };
+  const { deps, logStore } = fixture({ tool: irreversibleTool(ran) });
+
+  const outcome = await runAgent(request(), deps);
+
+  // The assertion that matters is the side effect, not the message. A test that only checked the
+  // model's observation would pass just as happily against a tool that ran and was then apologised
+  // for, which is auditing rather than reviewing.
+  expect(ran.value).toBe(false);
+
+  // And the run halts rather than answering. Denied its only tool, the agent has no evidence, and
+  // the loop refuses to answer from nothing — the user is told plainly that nothing was changed,
+  // which is the one thing they need to know after a refusal.
+  expect(outcome.ok ? "answered" : outcome.error.kind).toBe("halted");
+  expect(outcome.ok ? "" : outcome.error.publicReason).toBe(STOP_COPY);
+  // The attempt is still in the log: field group 4 asks what the agent did, and "reached for a tool
+  // it was not allowed to use" is an answer.
+  expect(await kindsOf(logStore)).toContain("tool-called");
+});
+
+test("an irreversible tool runs once a reviewer approves it", async () => {
+  const ran = { value: false };
+  const { deps } = fixture({
+    tool: irreversibleTool(ran),
+    approvals: {
+      request: () =>
+        Promise.resolve({ kind: "approved" as const, reviewer: "p_operator", tookMs: 500 }),
+    },
+  });
+
+  await runAgent(request(), deps);
+
+  expect(ran.value).toBe(true);
+});
+
+test("a reviewer's rejection stops the tool", async () => {
+  const ran = { value: false };
+  const { deps } = fixture({
+    tool: irreversibleTool(ran),
+    approvals: {
+      request: () =>
+        Promise.resolve({ kind: "rejected" as const, reviewer: "p_operator", tookMs: 500 }),
+    },
+  });
+
+  await runAgent(request(), deps);
+
+  expect(ran.value).toBe(false);
 });

@@ -75,3 +75,34 @@ export function resolveReview(request: ReviewRequest, outcome: ReviewOutcome): R
     }
   }
 }
+
+/**
+ * Where a review actually happens. Implemented by whatever holds the human queue — a console, a
+ * chat surface, a pager — and deliberately not by this component, which decides policy rather than
+ * staffing it.
+ */
+export interface ApprovalGate {
+  request(review: ReviewRequest): Promise<ReviewOutcome>;
+}
+
+/**
+ * Whether an action of this class may proceed, given who is available to review it.
+ *
+ * An absent gate is treated as nobody answering, not as permission. That single choice is what
+ * makes the whole thing fail safe: `resolveReview` already denies a timeout on every lane but the
+ * fast one, so a deployment with no reviewer wired up can still run low-risk reversible work and
+ * cannot run anything else. The alternative — treating "no gate configured" as "no approval needed"
+ * — would make the strictest deployment the most permissive one.
+ */
+export async function seekApproval(
+  action: ActionClass,
+  gate: ApprovalGate | undefined,
+  requestedAt: string,
+): Promise<Resolution> {
+  const review: ReviewRequest = { action, requestedAt };
+  const lane = laneFor(action);
+  if (gate === undefined) {
+    return resolveReview(review, { kind: "timed-out", lane, waitedMs: 0 });
+  }
+  return resolveReview(review, await gate.request(review));
+}

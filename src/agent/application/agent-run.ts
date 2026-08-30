@@ -18,6 +18,7 @@ import type { VerifiedTenantClaim } from "@custodian/knowledge";
 import type { ProviderProfile } from "@custodian/serving";
 import type { TaskClass } from "../domain/task-class";
 import type { ToolCatalogue } from "../domain/tool-catalogue";
+import type { ApprovalGate } from "@custodian/governance";
 import type { Tool } from "../domain/tool";
 
 /**
@@ -47,6 +48,13 @@ export type AgentRunDeps = {
   readonly catalogue: ToolCatalogue;
   readonly tools: readonly Tool[];
   readonly classifiers: readonly Classifier[];
+  /**
+   * Who reviews an action before it happens. Optional in the type and never optional in effect:
+   * leaving it out means nobody answers, which `seekApproval` resolves as a timeout — and a timeout
+   * denies on every lane but the fast one. A deployment with no reviewer can still retrieve and can
+   * do nothing irreversible.
+   */
+  readonly approvals?: ApprovalGate;
   readonly logStore: ExecutionLogStore;
   readonly candidates: readonly ProviderProfile[];
   readonly providers: readonly ModelProvider[];

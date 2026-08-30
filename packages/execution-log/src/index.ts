@@ -9,3 +9,5 @@ export { appendEntry, GENESIS_HASH } from "./domain/append-entry";
 export type { LogIntegrityFailure, VerifiedRunLog } from "./domain/verify-run-log";
 export { verifyRunLog } from "./domain/verify-run-log";
 export { Sha256EntryHasher } from "./infrastructure/sha256-entry-hasher";
+export type { RedactionRequest } from "./application/redact-expired-content";
+export { redactExpiredContent } from "./application/redact-expired-content";

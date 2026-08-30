@@ -34,6 +34,7 @@
       "name": "@custodian/execution-log",
       "version": "0.0.0",
       "dependencies": {
+        "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
       },
     },

@@ -31,6 +31,15 @@ export const DATA_MAP = [
    * disposed of by that clock rather than on request.
    */
   "deletion-registry",
+  /**
+   * The approval queue holds no subject content — an action class, a lane, four timestamps and the
+   * pseudonymous identifier of the reviewer who was shown the item. It is in this map anyway,
+   * because a reviewer is a person and the map is every location personal data reaches, not every
+   * location a *tenant's* data reaches. Its mechanism is the deletion registry's: this is the
+   * record of who allowed what, which is a human-intervention entry in the execution log's sense,
+   * so it is disposed of on the execution-log metadata clock rather than cleared on request.
+   */
+  "approval-queue",
 ] as const;
 
 /**

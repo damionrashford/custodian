@@ -4,13 +4,17 @@
   "workspaces": {
     "": {
       "devDependencies": {
+        "@custodian/context-assembly": "workspace:*",
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/gateway": "workspace:*",
         "@custodian/idempotency": "workspace:*",
         "@custodian/identity": "workspace:*",
+        "@custodian/knowledge-base": "workspace:*",
         "@custodian/metering": "workspace:*",
+        "@custodian/response-cache": "workspace:*",
+        "@custodian/retrieval": "workspace:*",
         "@custodian/routing": "workspace:*",
         "@custodian/streaming": "workspace:*",
         "@custodian/tool-registry": "workspace:*",
@@ -24,6 +28,13 @@
         "prettier": "^3.9.6",
         "typescript": "6.0.3",
         "typescript-eslint": "^8.68.0",
+      },
+    },
+    "packages/context-assembly": {
+      "name": "@custodian/context-assembly",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
       },
     },
     "packages/crypto-shred": {
@@ -69,12 +80,34 @@
         "@custodian/domain-primitives": "workspace:*",
       },
     },
+    "packages/knowledge-base": {
+      "name": "@custodian/knowledge-base",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+      },
+    },
     "packages/metering": {
       "name": "@custodian/metering",
       "version": "0.0.0",
       "dependencies": {
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/gateway": "workspace:*",
+      },
+    },
+    "packages/response-cache": {
+      "name": "@custodian/response-cache",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+        "@custodian/knowledge-base": "workspace:*",
+      },
+    },
+    "packages/retrieval": {
+      "name": "@custodian/retrieval",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
       },
     },
     "packages/routing": {
@@ -101,6 +134,8 @@
     },
   },
   "packages": {
+    "@custodian/context-assembly": ["@custodian/context-assembly@workspace:packages/context-assembly"],
+
     "@custodian/crypto-shred": ["@custodian/crypto-shred@workspace:packages/crypto-shred"],
 
     "@custodian/domain-primitives": ["@custodian/domain-primitives@workspace:packages/domain-primitives"],
@@ -113,7 +148,13 @@
 
     "@custodian/identity": ["@custodian/identity@workspace:packages/identity"],
 
+    "@custodian/knowledge-base": ["@custodian/knowledge-base@workspace:packages/knowledge-base"],
+
     "@custodian/metering": ["@custodian/metering@workspace:packages/metering"],
+
+    "@custodian/response-cache": ["@custodian/response-cache@workspace:packages/response-cache"],
+
+    "@custodian/retrieval": ["@custodian/retrieval@workspace:packages/retrieval"],
 
     "@custodian/routing": ["@custodian/routing@workspace:packages/routing"],
 

@@ -32,31 +32,35 @@ function isTransient(failure: ProviderFailure): boolean {
 }
 
 /**
- * Pure: `jitter` is supplied in [0, 1) by the caller rather than drawn here, so backoff is testable
- * without stubbing randomness. Jitter is not optional — if ten thousand deliveries fail during a
+ * Pure. Jitter is not optional — if ten thousand deliveries fail during a
  * brief outage, unjittered retries all fire at the same interval and create a thundering herd
  * (AI_Agent_Implementation_Plan_v2.txt:203).
  */
-export function nextRetry(
-  failure: ProviderFailure,
-  attempt: number,
-  policy: RetryPolicy,
-  jitter: number,
-): RetryDecision {
+export type RetryContext = {
+  readonly attempt: number;
+  readonly policy: RetryPolicy;
+  /** Supplied in [0, 1) by the caller rather than drawn here, so backoff is testable. */
+  readonly jitter: number;
+};
+
+export function nextRetry(failure: ProviderFailure, context: RetryContext): RetryDecision {
   if (!isTransient(failure)) {
     return { kind: "give-up", reason: "not-transient" };
   }
-  if (attempt >= policy.maxAttempts) {
+  if (context.attempt >= context.policy.maxAttempts) {
     return { kind: "give-up", reason: "attempts-exhausted" };
   }
   if (failure.kind === "rate-limited") {
-    return { kind: "retry", afterMs: failure.retryAfterMs, attempt: attempt + 1 };
+    return { kind: "retry", afterMs: failure.retryAfterMs, attempt: context.attempt + 1 };
   }
 
-  const exponential = Math.min(policy.baseDelayMs * 2 ** (attempt - 1), policy.maxDelayMs);
+  const exponential = Math.min(
+    context.policy.baseDelayMs * 2 ** (context.attempt - 1),
+    context.policy.maxDelayMs,
+  );
   return {
     kind: "retry",
-    afterMs: Math.round(exponential * (1 + jitter)),
-    attempt: attempt + 1,
+    afterMs: Math.round(exponential * (1 + context.jitter)),
+    attempt: context.attempt + 1,
   };
 }

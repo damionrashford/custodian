@@ -13,6 +13,17 @@ export type {
 } from "./application/agent-run";
 export { runAgent } from "./application/run-agent";
 export { healthHandler } from "./interface/http";
+export type {
+  CodeExecutor,
+  ExecutionFailure,
+  ExecutionLimits,
+  ExecutionOutcome,
+  ExecutionRequest,
+  Runtime,
+  SandboxDecision,
+} from "./domain/code-executor";
+export { DEFAULT_EXECUTION_LIMITS, sandboxDecision } from "./domain/code-executor";
+export { DockerCodeExecutor } from "./infrastructure/docker-code-executor";
 export type { KbDocument, KbSearchToolDeps } from "./infrastructure/kb-search-tool";
 export { kbDocumentKey, KbSearchTool } from "./infrastructure/kb-search-tool";
 export type { HaltReason, LoopLimits, LoopVerdict, RunState } from "./domain/loop-controls";

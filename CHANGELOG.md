@@ -73,6 +73,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a public key and cannot mint a credential itself, so a leaked verification key no longer lets
   anyone issue one — and a credential still expires, and still cannot be issued with an unbounded
   lifetime.
+- An erasure proof now records who vouches for it. A record the platform wrote about its own
+  erasure is marked as such and is refused where evidence is required, so a proof that only the
+  erasing party can attest to cannot be mistaken for one an outside custodian issued.
 - The first real model provider (xAI). Platform model pins translate to provider model ids at the
   adapter, an unmapped pin is refused rather than sent as-is, and raw provider errors never leave
   the adapter.

@@ -15,11 +15,13 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "gate:erasure": "bun test tests/erasure-acceptance.test.ts",
-    "verify": "bun run typecheck && bun run lint && bun run layers && bun run deadcode && bun run structure && bun run format && bun run test"
+    "verify": "bun run typecheck && bun run lint && bun run layers && bun run deadcode && bun run structure && bun run format && bun run test",
+    "agent": "bun packages/agent-runtime/src/main.ts"
   },
   "dependencies": {},
   "devDependencies": {
     "@custodian/agent-loop": "workspace:*",
+    "@custodian/agent-runtime": "workspace:*",
     "@custodian/config-registry": "workspace:*",
     "@custodian/context-assembly": "workspace:*",
     "@custodian/crypto-shred": "workspace:*",

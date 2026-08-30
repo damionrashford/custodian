@@ -189,6 +189,12 @@ async function attemptOnce(
  * (Compliance_and_Certification.txt:51). A failed run with no such entry is unattributable.
  */
 async function openRun(serve: ServeRequest): Promise<Result<readonly LoggedEntry[], ServeFailure>> {
+  // Field group 1 is per run, not per provider call. The agent runtime calls serveCompletion once
+  // per loop turn; re-opening on every turn would write a second attribution record the
+  // accounting unit does not have (Compliance_and_Certification.txt:50 — "per agent session").
+  if (serve.log.some((entry) => entry.event.kind === "run-started")) {
+    return ok(serve.log);
+  }
   const sealed = await serve.keys.seal({
     subject: serve.subject,
     bucket: bucketFor("execution-log-content", serve.at),

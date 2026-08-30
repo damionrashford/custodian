@@ -9,3 +9,5 @@ export { MAX_CLAIM_LIFETIME_MS, verifyTenantClaim } from "./domain/tenant-claim"
 export { namespaceFor } from "./domain/namespace";
 export type { Match, RetrievalFailure, ScopedQuery, VectorIndex } from "./domain/scoped-query";
 export { scopedQuery } from "./domain/scoped-query";
+export type { IndexedDocument } from "./infrastructure/in-memory-vector-index";
+export { InMemoryVectorIndex } from "./infrastructure/in-memory-vector-index";

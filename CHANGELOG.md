@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The agent can run a shell command, read and write files in its workspace, fetch a page, and render
+  one in a browser. Each declares what class of action it performs, and anything that cannot be
+  undone needs a person's approval before it runs — with no reviewer configured, those actions are
+  refused rather than allowed.
+- Code the agent runs is confined: no network, a read-only filesystem apart from scratch space, a
+  memory and process ceiling, and a time limit. A browser reaches the network only through a proxy
+  that checks every request a page makes, not just the address the agent asked for.
+- Files the agent reads and writes stay inside its own workspace. A path that would climb out is
+  refused, however it is spelled.
+- A design system: colour, type, spacing and motion held once as data, with the seven states an
+  agent run can be in as first-class values rather than decoration.
+- Every string a person reads lives in one catalogue, checked against the vocabulary rules for the
+  audience that reads it. Errors say what happened, what it cost, and the one thing to do next.
+
 - The execution log has append-only storage. A shortened run and a rewritten prefix are both refused
   at write time rather than only detected afterwards, and reads are scoped to the tenant the run
   belongs to.
@@ -130,6 +144,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- An AI disclosure is carried in the interaction itself, at first contact and in the same weight as
+  the surrounding text, and is versioned so a deployment can say which wording was shown when.
+- A web address the agent asks for is checked against an allowlist before anything is looked up.
+  Only ordinary web addresses are accepted; a request for a local file, a storage bucket or an inline
+  document is refused, as is one carrying a password, one pointing at a private address, and one
+  redirected to a host that was not allowed.
 - The record proving a data subject was erased is now itself accounted for. It holds that subject's
   identifier, and it was in no data map, had no retention period, and could never be removed — the
   one store nobody could ask us to clear was also the one that named them. It is now declared as

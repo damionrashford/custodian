@@ -75,8 +75,10 @@ lists the full collision set.
 
 ## Parallelise — this is a MUST, not a preference
 
-**Every tool call that does not consume the output of another goes in the same block as that other
-call.** Serialising independent work is the single largest source of wasted time in this repo, and
+Two levels, and the second is the one that gets skipped.
+
+**Level 1 — tool calls. Every tool call that does not consume the output of another goes in the same
+block as that other call.** Serialising independent work is the single largest source of wasted time in this repo, and
 it is invisible in the result: the diff looks identical, the wall-clock is many times worse.
 
 The test before every response: *of the calls I am about to make, which one needs an answer I do not
@@ -102,8 +104,24 @@ Two rules that make this work in practice:
   changed signature). One `python3`/`sed` pass over the whole blast radius, then verify once. This
   is also what `change-discipline.md` demands anyway — the whole blast radius moves together.
 
-The exception is genuine dependency: you cannot patch call sites before deciding the new signature,
-and you cannot claim a gate passes before running it. Sequence those. Nothing else.
+**Level 2 — the work itself.** A plan with four independent slices is four agents, not four turns.
+When the remaining work separates into pieces that touch different components, dispatch a subagent
+per slice with `isolation: "worktree"` so each gets its own checkout and they cannot collide, then
+integrate. One agent doing four slices in sequence is the same mistake as four `Read` turns, one
+order of magnitude more expensive.
+
+The test for whether slices are genuinely independent: name the files each will touch. If two lists
+overlap, they are one slice, not two — split them by component instead, and give each agent an
+explicit list of what it does **not** own. `tests/standards.test.ts`, `CHANGELOG.md` and the plan
+documents are the usual collision points; keep those for yourself.
+
+What makes this safe here rather than reckless: `main` is protected with a required check and
+`strict: true`, so every branch must be current before it merges. The work runs concurrently and the
+merges serialise on their own. Auto-merge lands each one the moment its CI is green.
+
+Sequence, don't parallelise, when there is genuine dependency: you cannot patch call sites before
+deciding the new signature, you cannot build a surface before the type it renders, and you cannot
+claim a gate passes before running it. Nothing else.
 
 ## Working in this repo
 

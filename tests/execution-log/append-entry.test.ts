@@ -20,6 +20,7 @@ function run() {
 
 const usage: ExecutionEvent = {
   kind: "usage-recorded",
+  invocationSeq: 0,
   inputTokens: 120,
   outputTokens: 40,
   costMicros: 900,

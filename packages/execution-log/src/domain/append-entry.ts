@@ -7,6 +7,7 @@ import {
   type Result,
 } from "@custodian/domain-primitives";
 import type { ExecutionEvent } from "./execution-event";
+import type { LogStoreFailure } from "./execution-log-store";
 import type { LoggedEntry } from "./logged-entry";
 
 export const GENESIS_HASH = "0".repeat(64);
@@ -30,6 +31,33 @@ export function hashableEntry(entry: Omit<LoggedEntry, "hash">): string {
     previousHash: entry.previousHash,
     event: entry.event,
   });
+}
+
+/**
+ * The write-time refusal every ExecutionLogStore adapter applies, in one place so adapters cannot
+ * drift apart on the check that makes the store append-only. The caller passes the whole run: a
+ * shorter log is a deletion attempt, a diverging continuation is a rewrite, and both are refused
+ * rather than merged (Compliance_and_Certification.txt:59). Returns the entries actually new to
+ * the store.
+ */
+export function validateAppend(
+  storedCount: number,
+  tailHash: string | undefined,
+  entries: readonly LoggedEntry[],
+): Result<readonly LoggedEntry[], LogStoreFailure> {
+  if (entries.length < storedCount) {
+    return err({ kind: "sequence-rewind", tail: storedCount - 1, received: entries.length - 1 });
+  }
+  const incoming = entries.slice(storedCount);
+  const first = incoming[0];
+  if (first === undefined) {
+    return ok([]);
+  }
+  const expectedPrevious = tailHash ?? GENESIS_HASH;
+  if (first.previousHash !== expectedPrevious) {
+    return err({ kind: "chain-diverged", expectedPrevious, received: first.previousHash });
+  }
+  return ok(incoming);
 }
 
 export function appendEntry(

@@ -17,7 +17,7 @@ function usageRun(at: string, costs: readonly number[]): readonly LoggedEntry[] 
     log = must(
       appendEntry(
         log,
-        { kind: "usage-recorded", inputTokens: 10, outputTokens: 20, costMicros },
+        { kind: "usage-recorded", invocationSeq: 0, inputTokens: 10, outputTokens: 20, costMicros },
         { runId, at, hasher },
       ),
       "append",
@@ -55,4 +55,14 @@ test("the period is half-open: a boundary event lands in exactly one window", ()
   expect(august.totalMicros).toBe(0);
   expect(september.totalMicros).toBe(500);
   expect(september.source).toBe("meter-events");
+});
+
+test("period boundaries compare as instants, not strings", () => {
+  // An invoice period written without milliseconds names the same instant as the log's
+  // fixed-width form; a string comparison would misfile the boundary event into August.
+  const events = meterEventsFrom(usageRun("2026-09-01T00:00:00.000Z", [500]));
+  const august = sourceTotalFrom(events, "2026-08-01T00:00:00Z", "2026-09-01T00:00:00Z");
+  const september = sourceTotalFrom(events, "2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z");
+  expect(august.totalMicros).toBe(0);
+  expect(september.totalMicros).toBe(500);
 });

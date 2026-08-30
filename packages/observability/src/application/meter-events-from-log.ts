@@ -26,16 +26,22 @@ export function meterEventsFrom(log: readonly LoggedEntry[]): readonly MeterEven
 
 /**
  * Half-open period [start, end): two adjacent windows never both count a boundary event.
- * Lexicographic comparison is exact here because every timestamp in the log is a fixed-width UTC
- * ISO string. Timezone mismatch at a date boundary is a documented divergence cause
- * (AI_Agent_Implementation_Plan_v2.txt:119).
+ * Boundaries compare as instants, not strings — an invoice period written without milliseconds or
+ * with a zone offset names the same instant as the log's fixed-width form, and a string comparison
+ * would misfile the boundary event. Timezone mismatch at a date boundary is a documented
+ * divergence cause (AI_Agent_Implementation_Plan_v2.txt:119).
  */
 export function sourceTotalFrom(
   events: readonly MeterEvent[],
   periodStart: string,
   periodEnd: string,
 ): SourceTotal {
-  const inPeriod = events.filter((event) => event.at >= periodStart && event.at < periodEnd);
+  const start = Date.parse(periodStart);
+  const end = Date.parse(periodEnd);
+  const inPeriod = events.filter((event) => {
+    const at = Date.parse(event.at);
+    return at >= start && at < end;
+  });
   return {
     source: "meter-events",
     periodStart,

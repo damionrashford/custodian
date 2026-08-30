@@ -166,7 +166,7 @@ test("a run older than the metadata retention period is disposed of; a younger o
   // The boundary comes from the schedule, not from a number in this test (LD-9): dispose exactly
   // when the schedule says the old run expires, and assert the young run survives that instant.
   const dueAt = expiresAtForDuration("execution-log-metadata", oldAt);
-  expect(store.disposeExpiredRuns(dueAt)).toBe(1);
+  expect(await store.disposeExpiredRuns(dueAt)).toBe(1);
 
   expect((await store.read(ACME, runId())).ok).toBe(false);
   expect((await store.read(OTHER, runId())).ok).toBe(true);
@@ -179,6 +179,68 @@ test("disposal one millisecond before expiry disposes of nothing", async () => {
 
   const dueAt = expiresAtForDuration("execution-log-metadata", oldAt);
   const justBefore = new Date(Date.parse(dueAt) - 1).toISOString();
-  expect(store.disposeExpiredRuns(justBefore)).toBe(0);
+  expect(await store.disposeExpiredRuns(justBefore)).toBe(0);
   expect((await store.read(ACME, runId())).ok).toBe(true);
+});
+
+test("a row deleted underneath the store is reported, not returned as a shorter clean log", async () => {
+  const path = storePath();
+  await new SqliteExecutionLogStore(path, hasher).append(ACME, runId(), logOf(3));
+
+  // The other idiomatic tamper (LD-11): deleting the incriminating entry. Every surviving row's
+  // own hash still matches, so only chain verification on read can catch the excision.
+  const db = new Database(path);
+  db.run("DELETE FROM entries WHERE seq = 1");
+  db.close();
+
+  const read = await new SqliteExecutionLogStore(path, hasher).read(ACME, runId());
+  expect(read.ok).toBe(false);
+  if (read.ok) return;
+  expect(read.error.kind).toBe("corrupt-entry");
+});
+
+test("a row edited into invalid JSON is a corrupt entry, not a crash", async () => {
+  const path = storePath();
+  await new SqliteExecutionLogStore(path, hasher).append(ACME, runId(), logOf(2));
+
+  const db = new Database(path);
+  db.run("UPDATE entries SET entry = substr(entry, 2) WHERE seq = 1");
+  db.close();
+
+  expect(await new SqliteExecutionLogStore(path, hasher).read(ACME, runId())).toEqual({
+    ok: false,
+    error: { kind: "corrupt-entry", runId: runId(), seq: 1 },
+  });
+});
+
+test("a disposed run cannot be resurrected by replaying its own log", async () => {
+  const store = new SqliteExecutionLogStore(storePath(), hasher);
+  const oldAt = "2024-08-01T00:00:00.000Z";
+  const log = logOf(2, oldAt);
+  await store.append(ACME, runId(), log);
+  await store.disposeExpiredRuns(expiresAtForDuration("execution-log-metadata", oldAt));
+
+  // A durable replay re-sending the genuine log would otherwise pass the genesis check and
+  // re-persist metadata past its lawful lifetime.
+  expect(await store.append(ACME, runId(), log)).toEqual({
+    ok: false,
+    error: { kind: "run-disposed", runId: runId() },
+  });
+});
+
+test("a run whose timestamps cannot be verified is never disposed of", async () => {
+  const path = storePath();
+  const store = new SqliteExecutionLogStore(path, hasher);
+  const oldAt = "2024-08-01T00:00:00.000Z";
+  await store.append(ACME, runId(), logOf(2, oldAt));
+
+  // Backdating a row is the laundering move: tamper, then let the retention sweep destroy the
+  // evidence "lawfully". The sweep reads timestamps from hash-verified bytes, so a tampered run
+  // stays in place as evidence instead of being reaped.
+  const db = new Database(path);
+  db.run("UPDATE entries SET entry = replace(entry, '2024-08-01', '2020-01-01')");
+  db.close();
+
+  const reopened = new SqliteExecutionLogStore(path, hasher);
+  expect(await reopened.disposeExpiredRuns("2026-08-30T00:00:00.000Z")).toBe(0);
 });

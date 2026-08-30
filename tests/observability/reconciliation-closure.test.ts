@@ -20,7 +20,7 @@ function usageRun(at: string, costs: readonly number[]): readonly LoggedEntry[] 
     log = must(
       appendEntry(
         log,
-        { kind: "usage-recorded", inputTokens: 10, outputTokens: 20, costMicros },
+        { kind: "usage-recorded", invocationSeq: 0, inputTokens: 10, outputTokens: 20, costMicros },
         { runId, at, hasher },
       ),
       "append",

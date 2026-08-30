@@ -63,7 +63,13 @@ function runFixture(): readonly LoggedEntry[] {
       routerDecision: must(parseProviderId("eu-secondary"), "provider"),
       routerRationale: "first choice returned a retryable failure",
     },
-    { kind: "usage-recorded", inputTokens: 120, outputTokens: 480, costMicros: 2000 },
+    {
+      kind: "usage-recorded",
+      invocationSeq: 2,
+      inputTokens: 120,
+      outputTokens: 480,
+      costMicros: 2000,
+    },
     { kind: "run-finished", outcome: "succeeded" },
   ] as const;
 
@@ -73,6 +79,35 @@ function runFixture(): readonly LoggedEntry[] {
   }
   return log;
 }
+
+test("usage attaches by recorded invocationSeq, never by adjacency", () => {
+  // The same fixture with the settlement pointed at the FIRST invocation: adjacency would pin the
+  // tokens on the last span regardless; the recorded association must win.
+  const log = runFixture();
+  const repointed = log.map((entry) =>
+    entry.event.kind === "usage-recorded"
+      ? { ...entry, event: { ...entry.event, invocationSeq: 1 } }
+      : entry,
+  );
+  const spans = spansFromRun(repointed);
+  expect(spans[0]?.attributes[GEN_AI_ATTRIBUTE.usageInputTokens]).toBe(120);
+  expect(spans[1]?.attributes[GEN_AI_ATTRIBUTE.usageInputTokens]).toBeUndefined();
+});
+
+test("multiple settlements of one invocation sum, matching the meter", () => {
+  const log = runFixture();
+  const usageEntry = log.find((entry) => entry.event.kind === "usage-recorded");
+  if (usageEntry === undefined || usageEntry.event.kind !== "usage-recorded") {
+    throw new Error("fixture: no usage entry");
+  }
+  const doubled = [
+    ...log.slice(0, -1),
+    { ...usageEntry, event: { ...usageEntry.event, inputTokens: 30, outputTokens: 20 } },
+  ];
+  const spans = spansFromRun(doubled);
+  expect(spans[1]?.attributes[GEN_AI_ATTRIBUTE.usageInputTokens]).toBe(150);
+  expect(spans[1]?.attributes[GEN_AI_ATTRIBUTE.usageOutputTokens]).toBe(500);
+});
 
 test("one span per model invocation, usage attached to the attempt that served", () => {
   const spans = spansFromRun(runFixture());

@@ -78,7 +78,7 @@ export default defineConfig(
       "**/*.test.ts",
       "tests/**/*.ts",
       "packages/domain-primitives/src/domain/language/brand.ts",
-      "packages/execution-log/src/infrastructure/sqlite-execution-log-store.ts",
+      "packages/execution-log/src/infrastructure/parse-stored-entry.ts",
     ],
     rules: { "@typescript-eslint/consistent-type-assertions": "off" },
   },

@@ -15,8 +15,10 @@ import type { PromptSnapshot, Registry } from "@custodian/config-registry";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import { Sha256ContentHasher, SqliteExecutionLogStore } from "@custodian/execution-log";
 import { XaiModelProvider } from "@custodian/gateway";
+import { PhraseInjectionClassifier } from "@custodian/guardrails";
 import { InMemoryIdempotencyStore } from "@custodian/idempotency";
 import {
+  MAX_CLAIM_LIFETIME_MS,
   InMemoryVectorIndex,
   namespaceFor,
   verifyTenantClaim,
@@ -28,7 +30,7 @@ import { HashEmbedder } from "@custodian/retrieval";
 import type { ProviderProfile } from "@custodian/routing";
 import { InMemoryToolCatalogue, parseTaskClass } from "@custodian/tool-registry";
 import { runAgent } from "./application/run-agent";
-import { KbSearchTool, type KbDocument } from "./infrastructure/kb-search-tool";
+import { kbDocumentKey, KbSearchTool, type KbDocument } from "./infrastructure/kb-search-tool";
 import { runsHandler } from "./interface/http";
 
 function must<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {
@@ -101,6 +103,7 @@ const provider = new XaiModelProvider({
   apiKey: required("XAI_API_KEY"),
   modelIds: new Map([[model, "grok-4.6"]]),
   reasoningEffort: "low",
+  timeoutMs: 60_000,
 });
 
 const prices: PriceTable = new Map<
@@ -142,11 +145,19 @@ const SEED_DOCUMENTS: readonly (readonly [string, KbDocument])[] = [
 
 const embedder = new HashEmbedder();
 
+const devClaimSecret = required("CUSTODIAN_DEV_CLAIM_SECRET");
+
+/**
+ * Local single-tenant development only, and it must not outlive that: the secret is a bearer
+ * string with no signature and no expiry of its own, so every presentation mints a fresh window
+ * and a leaked secret is an unexpiring credential — the shape LD-7 exists to refuse. What applies
+ * here is the lifetime bound (derived below from the locked constant, never re-declared); what
+ * does not yet apply is the signature, and that is the gap. Replace with an asymmetric verifier
+ * that carries the tenant inside the signed payload before a second tenant exists.
+ */
 const verifier: ClaimVerifier = {
-  // Dev verifier: accepts the shared-secret token and answers with the dev tenant on a fresh
-  // 30-minute window. A signed-claim verifier replaces this the moment a second tenant exists.
   verify: (token: string) => {
-    if (token !== required("CUSTODIAN_DEV_CLAIM_SECRET")) {
+    if (token !== devClaimSecret) {
       return { ok: false, error: { kind: "signature-invalid" } };
     }
     const now = Date.now();
@@ -154,8 +165,8 @@ const verifier: ClaimVerifier = {
       ok: true,
       value: {
         tenant,
-        issuedAt: new Date(now - 60_000).toISOString(),
-        expiresAt: new Date(now + 29 * 60_000).toISOString(),
+        issuedAt: new Date(now).toISOString(),
+        expiresAt: new Date(now + MAX_CLAIM_LIFETIME_MS / 2).toISOString(),
       },
     };
   },
@@ -183,10 +194,21 @@ const logStore = new SqliteExecutionLogStore(
   hasher,
 );
 
+/**
+ * Process-scoped, beside the durable log — never per request. Built inside the request closure,
+ * the key store's DEKs died with the request that made them, leaving sealed content on disk that
+ * no erasure could prove destroyed and no investigation could ever read; and a fresh claims map
+ * per delivery made the redelivery defence unable to see a redelivery. Both are still in-memory,
+ * so both still end at process exit — durable adapters are the next increment, and until then a
+ * restart is a key destruction that no one requested.
+ */
+const keys = new AesGcmSubjectKeyStore({ now: () => new Date() });
+const idempotency = new InMemoryIdempotencyStore({ onWrite: () => undefined });
+
 async function main(): Promise<void> {
   // The seed namespace is derived exactly the way every query derives it: verify the dev claim,
   // then namespaceFor — there is no other constructor, and that is the point.
-  const bootClaim = verifyTenantClaim(required("CUSTODIAN_DEV_CLAIM_SECRET"), {
+  const bootClaim = verifyTenantClaim(devClaimSecret, {
     verifier,
     now: new Date(),
   });
@@ -196,24 +218,23 @@ async function main(): Promise<void> {
   }
   const seedNamespace = namespaceFor(bootClaim.value);
 
+  const embeddings = await Promise.all(
+    SEED_DOCUMENTS.map(([, document]) => embedder.embed(document.text)),
+  );
   const indexed: IndexedDocument[] = [];
-  for (const [documentId, document] of SEED_DOCUMENTS) {
-    const embedded = await embedder.embed(document.text);
-    if (!embedded.ok) {
+  const documents = new Map<string, KbDocument>();
+  for (const [position, [documentId, document]] of SEED_DOCUMENTS.entries()) {
+    const embedded = embeddings[position];
+    if (embedded === undefined || !embedded.ok) {
       console.error("Seeding the knowledge base failed. Start again.");
       process.exit(1);
     }
     indexed.push({ namespace: seedNamespace, documentId, embedding: embedded.value });
+    documents.set(kbDocumentKey(seedNamespace, documentId), document);
   }
 
   const index = new InMemoryVectorIndex(indexed);
-  const tool = new KbSearchTool({
-    name: searchKb,
-    embedder,
-    index,
-    documents: new Map<string, KbDocument>(SEED_DOCUMENTS),
-    topK: 4,
-  });
+  const tool = new KbSearchTool({ name: searchKb, embedder, index, documents, topK: 4 });
 
   const handler = runsHandler({
     run: (request) =>
@@ -221,12 +242,14 @@ async function main(): Promise<void> {
         registry,
         catalogue,
         tools: [tool],
-        classifiers: [],
+        // A rail with no classifier admits everything; an empty list here would make the screening
+        // the changelog claims a gate that never fires (LD-2).
+        classifiers: [new PhraseInjectionClassifier()],
         logStore,
         candidates: [profile],
         providers: [provider],
-        idempotency: new InMemoryIdempotencyStore({ onWrite: () => undefined }),
-        keys: new AesGcmSubjectKeyStore({ now: () => new Date() }),
+        idempotency,
+        keys,
         hasher,
         costMicros: (usage) => {
           const priced = priceCompletion(usage, model, prices);
@@ -252,6 +275,9 @@ async function main(): Promise<void> {
 
   const server = Bun.serve({
     port: Number(Bun.env["PORT"] ?? "8787"),
+    // A run is several sequential provider calls and writes nothing until it answers, so the 10s
+    // default closes the connection on a working run while the loop keeps spending.
+    idleTimeout: 255,
     routes: { "/runs": { POST: handler } },
   });
   console.log(`agent runtime listening on :${String(server.port)}`);

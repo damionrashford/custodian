@@ -28,7 +28,13 @@ import {
   type LoggedEntry,
 } from "@custodian/execution-log";
 import { serveCompletion, type CompletionResponse, type ModelProvider } from "@custodian/gateway";
-import { railRetrieved, type BlockedChunk, type Classifier } from "@custodian/guardrails";
+import {
+  railRetrieved,
+  screen,
+  type BlockedChunk,
+  type Classifier,
+  type RetrievedChunk,
+} from "@custodian/guardrails";
 import { parseRequestHash, type IdempotencyStore } from "@custodian/idempotency";
 import { namespaceFor, type VerifiedTenantClaim } from "@custodian/knowledge-base";
 import { bucketFor } from "@custodian/retention";
@@ -73,7 +79,7 @@ export type AgentRunDeps = {
 export type AgentAnswer = { readonly runId: RunId; readonly answer: string };
 
 export type AgentRunFailure = {
-  readonly kind: "halted" | "refused" | "failed";
+  readonly kind: "halted" | "refused" | "already-served" | "failed";
   /** Plain-language and surface-safe; the interface layer returns it verbatim. */
   readonly publicReason: string;
 };
@@ -144,7 +150,7 @@ export async function runAgent(
 
     const served = await serveTurn(snapshot.value, summaries.value, context, request, deps);
     if (!served.ok) {
-      return served;
+      return closeFailed(served.error, context, request, deps);
     }
     const stepCost = deps.costMicros(served.value.usage);
 
@@ -173,7 +179,7 @@ export async function runAgent(
 
     const effect = await applyToolStep(step.value, context, request, deps);
     if (!effect.ok) {
-      return effect;
+      return closeFailed(effect.error, context, request, deps);
     }
     context.state = advance(context.state, effect.value, stepCost);
     const persisted = await persist(context, request, deps);
@@ -227,18 +233,15 @@ async function serveTurn(
   });
 
   if (!served.ok) {
+    // The caller closes the run: a refusal is the event most in need of evidence, and a log that
+    // stops without a terminal entry is indistinguishable from one truncated by tampering.
     context.log = served.error.log;
-    // A refusal is the event most in need of evidence; losing its record outranks the nicer copy.
-    const persisted = await persist(context, request, deps);
-    if (!persisted.ok) {
-      return persisted;
-    }
     const kind = served.error.rejection.kind;
     if (kind === "refused") {
       return err({ kind: "refused", publicReason: REFUSED_COPY });
     }
     if (kind === "already-served" || kind === "in-flight") {
-      return err({ kind: "failed", publicReason: ALREADY_COPY });
+      return err({ kind: "already-served", publicReason: ALREADY_COPY });
     }
     return err({ kind: "failed", publicReason: FAILED_COPY });
   }
@@ -258,6 +261,25 @@ async function applyToolStep(
   const definition = await deps.catalogue.define(request.taskClass, step.tool);
   const tool = deps.tools.find((candidate) => candidate.name === step.tool);
   if (!definition.ok || tool === undefined) {
+    // An attempted call the agent could not make is still a tool call the record must show: field
+    // group 4 asks what the agent did, and "reached for a tool it may not use" is an answer.
+    const sealed = await deps.keys.seal({
+      subject: request.subject,
+      bucket: bucketFor("execution-log-content", request.at()),
+      plaintext: step.argumentsJson,
+    });
+    if (!sealed.ok) {
+      return err({ kind: "failed", publicReason: FAILED_COPY });
+    }
+    const denied = appendEvents(
+      [toolCalled(step.tool, sealed.value, "denied")],
+      context,
+      request,
+      deps,
+    );
+    if (!denied.ok) {
+      return denied;
+    }
     context.observations.push(capToolOutput(String(step.tool), "Tool unavailable."));
     return ok({ kind: "tool-failed" });
   }
@@ -268,8 +290,7 @@ async function applyToolStep(
     plaintext: step.argumentsJson,
   });
   if (!sealedArgs.ok) {
-    const persisted = await persist(context, request, deps);
-    return persisted.ok ? err({ kind: "failed", publicReason: FAILED_COPY }) : persisted;
+    return err({ kind: "failed", publicReason: FAILED_COPY });
   }
 
   const executed = await tool.execute(step.argumentsJson, namespaceFor(request.claim));
@@ -287,15 +308,28 @@ async function applyToolStep(
     return ok({ kind: "tool-failed" });
   }
 
-  const railed = railRetrieved(
-    executed.value.retrieved.map((record) => ({ documentId: record.recordId, text: record.text })),
-    deps.classifiers,
-  );
-  const admittedIds = new Set(railed.admitted.map((chunk) => chunk.documentId));
-  const admitted = executed.value.retrieved.filter((record) => admittedIds.has(record.recordId));
+  // Chunks are reconciled by identity, never by record id: a document chunked into several
+  // records shares one id, so an id-keyed set re-admits the blocked chunk alongside its clean
+  // sibling — the rail would log a block and hand the model the text anyway.
+  const chunks = executed.value.retrieved.map((record) => ({
+    documentId: record.recordId,
+    text: record.text,
+  }));
+  const railed = railRetrieved(chunks, deps.classifiers);
+  const admittedChunks = new Set<RetrievedChunk>(railed.admitted);
+  const admitted = executed.value.retrieved.filter((_, index) => {
+    const chunk = chunks[index];
+    return chunk !== undefined && admittedChunks.has(chunk);
+  });
 
   const appended = appendEvents(
-    retrievalEvents(tool.name, sealedArgs.value, railed.blocked, admitted),
+    retrievalEvents(
+      tool.name,
+      sealedArgs.value,
+      railed.blocked,
+      admitted,
+      deps.classifiers.length > 0,
+    ),
     context,
     request,
     deps,
@@ -313,7 +347,7 @@ async function applyToolStep(
   const contextText =
     admitted.length > 0
       ? admitted.map((record) => record.text).join("\n")
-      : executed.value.observation;
+      : screenedObservation(executed.value.observation, deps.classifiers);
   context.observations.push(capToolOutput(String(tool.name), contextText));
   return ok({ kind: hasNewEvidence ? "observed-new-evidence" : "observed-nothing-new" });
 }
@@ -321,7 +355,7 @@ async function applyToolStep(
 function toolCalled(
   tool: ToolName,
   sealedArguments: SealedContent,
-  status: "succeeded" | "failed",
+  status: "succeeded" | "failed" | "denied",
 ): ExecutionEvent {
   return {
     kind: "tool-called",
@@ -341,6 +375,7 @@ function retrievalEvents(
   sealedArguments: SealedContent,
   blocked: readonly BlockedChunk[],
   admitted: readonly RetrievedRecord[],
+  screened: boolean,
 ): readonly ExecutionEvent[] {
   return [
     ...blocked.map((blockedChunk): ExecutionEvent => ({
@@ -349,6 +384,16 @@ function retrievalEvents(
       rule: blockedChunk.verdict.rule,
       outcome: "blocked",
     })),
+    // Only when a classifier ran: "screened and passed" and "never screened" are different facts,
+    // and an allowed entry written with no classifier configured would assert the wrong one.
+    ...(screened
+      ? admitted.map((): ExecutionEvent => ({
+          kind: "guardrail-evaluated",
+          policy: "retrieval-rail",
+          rule: "all-classifiers-passed",
+          outcome: "allowed",
+        }))
+      : []),
     ...admitted.map((record): ExecutionEvent => ({
       kind: "record-retrieved",
       recordId: record.recordId,
@@ -357,6 +402,32 @@ function retrievalEvents(
     })),
     toolCalled(tool, sealedArguments, "succeeded"),
   ];
+}
+
+/**
+ * Every terminal exit closes the run. A log that ends without run-finished is, by the durable
+ * store's own documented limit, indistinguishable from one truncated by tampering — so the
+ * outcome the caller sees and the outcome the record shows are written together.
+ */
+async function closeFailed(
+  failure: AgentRunFailure,
+  context: LoopContext,
+  request: AgentRunRequest,
+  deps: AgentRunDeps,
+): Promise<Result<AgentAnswer, AgentRunFailure>> {
+  const outcome = failure.kind === "refused" ? "refused" : "failed";
+  const finished = await finishRun(outcome, context, request, deps);
+  return finished.ok ? err(failure) : finished;
+}
+
+/** A tool's free-form observation is model-visible text, so it passes the same screen a record does. */
+function screenedObservation(observation: string, classifiers: readonly Classifier[]): string {
+  if (observation.length === 0 || classifiers.length === 0) {
+    return observation;
+  }
+  return screen(observation, classifiers).kind === "block"
+    ? "The tool's response was withheld by a safety policy."
+    : observation;
 }
 
 function transcript(
@@ -414,7 +485,7 @@ async function persist(
 }
 
 async function finishRun(
-  outcome: "succeeded" | "halted",
+  outcome: "succeeded" | "halted" | "failed" | "refused",
   context: LoopContext,
   request: AgentRunRequest,
   deps: AgentRunDeps,

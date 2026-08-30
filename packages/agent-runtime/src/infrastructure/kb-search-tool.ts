@@ -13,9 +13,20 @@ export type KbSearchToolDeps = {
   readonly name: ToolName;
   readonly embedder: Embedder;
   readonly index: VectorIndex;
+  /** Keyed by `kbDocumentKey`, never by bare document id — see that function. */
   readonly documents: ReadonlyMap<string, KbDocument>;
   readonly topK: number;
 };
+
+/**
+ * Document ids are chosen per tenant and unique only within a namespace, so a map keyed by id
+ * alone serves whichever tenant wrote "doc-1" last. The index filters by namespace before scoring;
+ * this keeps the text store's key on the same footing, rather than leaving isolation to depend on
+ * two tenants never picking the same id. A namespace cannot contain a space, so no key collides.
+ */
+export function kbDocumentKey(namespace: Namespace, documentId: string): string {
+  return `${namespace} ${documentId}`;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -63,7 +74,7 @@ export class KbSearchTool implements Tool {
     }
 
     const retrieved = matches.value.flatMap((match) => {
-      const document = this.#deps.documents.get(match.documentId);
+      const document = this.#deps.documents.get(kbDocumentKey(match.namespace, match.documentId));
       return document === undefined
         ? []
         : [

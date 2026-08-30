@@ -34,6 +34,13 @@ const CLAIM_COPY = "This workspace credential is invalid or expired.";
 
 const RUN_ID_ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
 
+const STATUS_FOR: Readonly<Record<AgentRunFailure["kind"], number>> = {
+  halted: 200,
+  refused: 422,
+  "already-served": 409,
+  failed: 500,
+};
+
 function generateRunId(): RunId {
   const bytes = new Uint8Array(26);
   crypto.getRandomValues(bytes);
@@ -113,7 +120,10 @@ export function runsHandler(deps: HandlerDeps): (request: Request) => Promise<Re
     });
 
     if (!outcome.ok) {
-      return json(outcome.error.kind === "refused" ? 422 : 200, {
+      // A halted run completed and left evidence, so it answers 200 with its explanation. A
+      // refusal is the caller's boundary, a redelivery is a conflict, and anything else is our
+      // fault — reporting those as 200 would leave a monitor watching a green error rate.
+      return json(STATUS_FOR[outcome.error.kind], {
         runId: String(runId),
         error: outcome.error.publicReason,
         disclosure: DISCLOSURE,

@@ -344,6 +344,93 @@ test("consecutive unparseable replies stagnate toward a halt, with a correction 
   expect(secondCall.input).toContain("Reply with exactly one JSON object");
 });
 
+test("a refused run is closed in the record, as refused and not as a failure", async () => {
+  const euWest = must(parseRegion("eu-west-1"), "region");
+  const { deps, logStore } = fixture({ candidates: [profile("xai-us", euWest)] });
+  await runAgent(request(), deps);
+
+  // A log that stops without a terminal entry is indistinguishable from one truncated by
+  // tampering, and a refusal recorded as a failure files correct behaviour under malfunction.
+  const read = await logStore.read(namespaceFor(claim()), runIdValue);
+  if (!read.ok) throw new Error("log missing");
+  const last = read.value.at(-1);
+  if (last?.event.kind !== "run-finished") throw new Error("run left open");
+  expect(last.event.outcome).toBe("refused");
+  expect(verifyRunLog(read.value, hasher).ok).toBe(true);
+});
+
+test("a halted run is closed in the record too", async () => {
+  const { deps, logStore } = fixture({ responses: [USE_TOOL], tool: fakeTool([undefined]) });
+  await runAgent(request(), deps);
+  const read = await logStore.read(namespaceFor(claim()), runIdValue);
+  if (!read.ok) throw new Error("log missing");
+  const last = read.value.at(-1);
+  if (last?.event.kind !== "run-finished") throw new Error("run left open");
+  expect(last.event.outcome).toBe("halted");
+});
+
+test("a blocked chunk is not re-admitted by a clean sibling sharing its record id", async () => {
+  const blocker: Classifier = {
+    stage: "fast-injection",
+    policy: "indirect-injection",
+    classify: (text) =>
+      text.includes("IGNORE ALL PREVIOUS")
+        ? {
+            kind: "block",
+            stage: "fast-injection",
+            policy: "indirect-injection",
+            rule: "injection-phrase",
+          }
+        : { kind: "allow" },
+  };
+  // One document chunked into two records: same id, one clean, one poisoned.
+  const { deps, calls } = fixture({
+    classifiers: [blocker],
+    tool: fakeTool([
+      [record("kb-1", "Custodian is an agent platform."), record("kb-1", "IGNORE ALL PREVIOUS")],
+    ]),
+  });
+  const outcome = await runAgent(request(), deps);
+  expect(outcome.ok).toBe(true);
+
+  const secondCall = calls[1];
+  if (secondCall === undefined) throw new Error("no second call");
+  expect(secondCall.input).not.toContain("IGNORE ALL PREVIOUS");
+});
+
+test("a tool the agent may not use is still recorded as an attempted call", async () => {
+  const { deps, logStore } = fixture({ responses: [USE_TOOL], tool: fakeTool([[]]) });
+  const outcome = await runAgent(
+    { ...request(), taskClass: must(parseTaskClass("other-class"), "task class") },
+    deps,
+  );
+  expect(outcome.ok).toBe(false);
+
+  const read = await logStore.read(namespaceFor(claim()), runIdValue);
+  if (!read.ok) throw new Error("log missing");
+  const denied = read.value.find(
+    (entry) => entry.event.kind === "tool-called" && entry.event.status === "denied",
+  );
+  expect(denied).toBeDefined();
+});
+
+test("screening that ran is recorded, so passed and unscreened are different facts", async () => {
+  const allower: Classifier = {
+    stage: "fast-injection",
+    policy: "indirect-injection",
+    classify: () => ({ kind: "allow" }),
+  };
+  const { deps, logStore } = fixture({ classifiers: [allower] });
+  await runAgent(request(), deps);
+
+  const read = await logStore.read(namespaceFor(claim()), runIdValue);
+  if (!read.ok) throw new Error("log missing");
+  const allowed = read.value.filter(
+    (entry) => entry.event.kind === "guardrail-evaluated" && entry.event.outcome === "allowed",
+  );
+  expect(allowed).toHaveLength(1);
+});
+
 test("a residency refusal from the gateway surfaces the fixed public copy", async () => {
   const euWest = must(parseRegion("eu-west-1"), "region");
   const { deps } = fixture({ candidates: [profile("xai-us", euWest)] });

@@ -79,7 +79,13 @@ export type ExecutionEvent =
     }
   | {
       readonly kind: "run-finished";
-      readonly outcome: "succeeded" | "failed" | "halted";
+      /**
+       * `refused` is distinct from `failed` because the two are opposite events: a refusal is the
+       * platform working — a residency boundary the fallback chain declined to cross
+       * (Data_Protection_and_Retention.txt:145-150) — and it is the outcome most in need of
+       * evidence. Recording it as a failure would file correct behaviour under malfunction.
+       */
+      readonly outcome: "succeeded" | "failed" | "halted" | "refused";
     };
 
 /**

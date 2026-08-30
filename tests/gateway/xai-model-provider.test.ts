@@ -10,12 +10,14 @@ function must<T>(parsed: { ok: true; value: T } | { ok: false }, label: string):
 const pinnedModel = must(parseModelSnapshot("grok-4.6-20260801"), "model");
 
 const config: XaiProviderConfig = {
+  // A stub scheme, not the real endpoint: these tests never reach the network, and writing the
+  // live URL here — even split to dodge the guard — is the shape LD-10's rule exists to keep out.
+  baseUrl: "stub://provider/v1",
   id: must(parseProviderId("xai-us"), "provider"),
-  // Split so the LD-10 guard (no http(s):// literal in a test file) stays intact.
-  baseUrl: "https:" + "//api.x.ai/v1",
   apiKey: "test-key",
   modelIds: new Map([[pinnedModel, "grok-4.6"]]),
   reasoningEffort: "low",
+  timeoutMs: 30_000,
 };
 
 const request = {

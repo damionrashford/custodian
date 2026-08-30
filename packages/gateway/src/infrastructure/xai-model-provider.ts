@@ -24,6 +24,12 @@ export type XaiProviderConfig = {
   readonly modelIds: ReadonlyMap<ModelSnapshot, string>;
   /** Works on grok-4.6 despite the docs scoping it to 4.3, and roughly halves cost. */
   readonly reasoningEffort: "low" | "high" | undefined;
+  /**
+   * Without a deadline a stalled provider hangs the whole run: the loop's iteration, cost and
+   * stagnation ceilings are only evaluated between turns, so a turn that never returns is a run
+   * that never halts. `timeout` is the one ProviderFailure the retry policy treats as transient.
+   */
+  readonly timeoutMs: number;
 };
 
 export type BuiltRequest = {
@@ -116,9 +122,11 @@ export class XaiModelProvider implements ModelProvider {
         method: "POST",
         headers: built.value.headers,
         body: built.value.body,
+        signal: AbortSignal.timeout(this.#config.timeoutMs),
       });
-    } catch {
-      return err({ kind: "unavailable" });
+    } catch (cause) {
+      const timedOut = cause instanceof DOMException && cause.name === "TimeoutError";
+      return err(timedOut ? { kind: "timeout" } : { kind: "unavailable" });
     }
     if (response.status === 429) {
       const after = Number(response.headers.get("retry-after") ?? "1");

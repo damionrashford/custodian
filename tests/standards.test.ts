@@ -54,3 +54,49 @@ test("tsconfig.base.json declares every mandated compiler option", async () => {
     expect([option, readProperty(compilerOptions, option)]).toEqual([option, expected]);
   }
 });
+
+/**
+ * Repo-configuration invariants. Each of these guards a failure that actually happened, and each
+ * was invisible until something downstream broke — which is why they live in a test rather than in
+ * a comment somebody has to remember to read.
+ */
+
+async function readRepoFile(relative: string): Promise<string> {
+  return Bun.file(new URL(`../${relative}`, import.meta.url)).text();
+}
+
+test("CI runs on every pull request, not only those targeting main", async () => {
+  const workflow = await readRepoFile(".github/workflows/ci.yml");
+  const afterTrigger = workflow.slice(workflow.indexOf("pull_request:") + "pull_request:".length);
+  const nextDirective = afterTrigger.split("\n").find((line) => line.trim().length > 0) ?? "";
+
+  // Stage branches are stacked, so a PR often targets another stage. A branch filter here left
+  // four stacked PRs with no checks at all — they looked mergeable while never having been run.
+  expect(nextDirective).not.toContain("branches:");
+});
+
+test("no test reaches the network", async () => {
+  const offenders: string[] = [];
+  for await (const path of new Bun.Glob("tests/**/*.ts").scan(".")) {
+    const source = await readRepoFile(path);
+    if (/https?:\/\//.test(source)) {
+      offenders.push(path);
+    }
+  }
+
+  // A flaky network dependency inside a blocking gate is worse than no gate: a gate that never
+  // fires is false assurance, but one that fires at random trains people to click through red CI,
+  // which costs the credibility of every gate beside it.
+  expect(offenders).toEqual([]);
+});
+
+test("the TypeScript pin is ignored under the ecosystem that owns it", async () => {
+  const dependabot = await readRepoFile(".github/dependabot.yml");
+  const blocks = dependabot.split("- package-ecosystem:");
+  const bunBlock = blocks.find((block) => block.trimStart().startsWith('"bun"')) ?? "";
+
+  // LD-5 pins TypeScript to 6.x. An ignore filed under the wrong ecosystem parses fine and does
+  // nothing at all, which is how a considered decision gets quietly reversed by a bot.
+  expect(bunBlock).toContain("typescript");
+  expect(bunBlock).toContain("7.x");
+});

@@ -103,6 +103,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Claim signing keys can be rotated without invalidating claims already in flight. A claim now names
+  the key that signed it and the platform holds a ring of trusted keys, so a rotation adds the new
+  key, switches issuance to it, and retires the old one only once the longest live claim has
+  expired. There is also a production claim issuer; it is deliberately not part of the serving path,
+  because a platform that can verify a tenant identity must not be able to forge one.
+- The vector index is durable. It previously lived in memory beside an execution log on disk, so
+  after a restart a run's recorded retrieval cited documents nothing could produce again.
 - Subject keys are held by a key custodian outside the process, so a restart no longer destroys
   every key. Content is sealed under a single-use key wrapped by a key-encryption key in HashiCorp
   Vault's Transit engine; erasing a subject destroys that key, and both the wrapped keys and the
@@ -123,6 +130,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- The record proving a data subject was erased is now itself accounted for. It holds that subject's
+  identifier, and it was in no data map, had no retention period, and could never be removed — the
+  one store nobody could ask us to clear was also the one that named them. It is now declared as
+  what it is, evidence retained for as long as the evidence is owed, and disposed of on that
+  schedule. A new check refuses any durable store that has not been classified this way.
+- A claim naming an unexpected signing algorithm is refused on its own terms rather than left to
+  fail the signature check, and a claim naming a key the platform does not hold is refused before
+  any signature is verified.
 - Erasing a data subject now reaches their embeddings. The vector index held plaintext vectors, so
   destroying a subject's key removed the documents and left the embeddings intact — and an embedding
   can be inverted far enough to recover source text, which makes it a surviving fragment rather than

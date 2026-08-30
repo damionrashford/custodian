@@ -104,9 +104,8 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   // the identity, legal-hold and data-map steps that guard the destruction.
   const erased = await runErasure(
     {
-      subject,
+      identity: { kind: "resolved", subject },
       receivedAt: "2026-08-29T00:00:00.000Z",
-      identityAmbiguous: false,
       legalHold: undefined,
       coveredLocations: DATA_MAP,
     },

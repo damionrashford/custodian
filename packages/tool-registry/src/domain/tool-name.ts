@@ -1,4 +1,4 @@
-import { type Brand, err, ok, type Result } from "@custodian/domain-primitives";
+import { brand, type Brand, err, ok, type Result } from "@custodian/domain-primitives";
 
 export type ToolName = Brand<string, "ToolName">;
 export type TaskClass = Brand<string, "TaskClass">;
@@ -11,12 +11,12 @@ const TASK_CLASS_PATTERN = /^[a-z][a-z0-9-]{2,31}$/;
 
 export function parseToolName(value: string): Result<ToolName, InvalidToolName> {
   return TOOL_NAME_PATTERN.test(value)
-    ? ok(value as ToolName)
+    ? ok(brand<ToolName>(value))
     : err({ kind: "invalid-tool-name", received: value });
 }
 
 export function parseTaskClass(value: string): Result<TaskClass, InvalidTaskClass> {
   return TASK_CLASS_PATTERN.test(value)
-    ? ok(value as TaskClass)
+    ? ok(brand<TaskClass>(value))
     : err({ kind: "invalid-task-class", received: value });
 }

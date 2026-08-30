@@ -1,10 +1,6 @@
 import { expect, test } from "bun:test";
-import {
-  parseProviderId,
-  parseRegion,
-  selectProvider,
-  type ProviderProfile,
-} from "@custodian/routing";
+import { parseRegion, selectProvider, type ProviderProfile } from "@custodian/routing";
+import { parseProviderId } from "@custodian/domain-primitives";
 
 function region(value: string) {
   const parsed = parseRegion(value);

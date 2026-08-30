@@ -1,4 +1,11 @@
-import { type Brand, type ContentHasher, err, ok, type Result } from "@custodian/domain-primitives";
+import {
+  brand,
+  type Brand,
+  type ContentHasher,
+  err,
+  ok,
+  type Result,
+} from "@custodian/domain-primitives";
 import { GENESIS_HASH, hashableEntry } from "./append-entry";
 import type { LoggedEntry } from "./logged-entry";
 
@@ -34,5 +41,5 @@ export function verifyRunLog(
     expectedPrevious = entry.hash;
   }
 
-  return ok(log as VerifiedRunLog);
+  return ok(brand<VerifiedRunLog, readonly LoggedEntry[]>(log));
 }

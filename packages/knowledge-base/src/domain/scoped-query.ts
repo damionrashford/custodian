@@ -1,5 +1,5 @@
-import type { Result } from "@custodian/domain-primitives";
-import { namespaceFor, type Namespace } from "./namespace";
+import type { Namespace, Result } from "@custodian/domain-primitives";
+import { namespaceFor } from "./namespace";
 import type { VerifiedTenantClaim } from "./tenant-claim";
 
 export type ScopedQuery = {

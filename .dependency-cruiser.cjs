@@ -83,6 +83,11 @@ module.exports = {
   options: {
     doNotFollow: { path: "node_modules" },
     tsConfig: { fileName: "tsconfig.json" },
+    // Without this, dependency-cruiser cruises transpiled output, where `import type` has already
+    // been erased — and under `verbatimModuleSyntax` most cross-package imports in `domain` are
+    // type-only. The layering rules below would then pass a domain file importing an infrastructure
+    // package's types, which is the exact violation they exist to catch.
+    tsPreCompilationDeps: true,
     // Bun's isolated linker symlinks workspace deps into node_modules. Resolving to the realpath
     // keeps cross-package imports on their true `packages/...` paths, which is what the `from`
     // and `to` patterns above match against.

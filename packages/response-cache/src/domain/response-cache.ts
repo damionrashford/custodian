@@ -1,6 +1,6 @@
 import type { SealedContent } from "@custodian/domain-primitives";
-import type { Namespace } from "@custodian/knowledge-base";
-import { expiresAt } from "@custodian/retention";
+import type { Namespace } from "@custodian/domain-primitives";
+import { expiresAtForDuration } from "@custodian/retention";
 import type { CacheKey } from "./cache-key";
 
 export type CacheEntry = {
@@ -20,11 +20,12 @@ export function cacheEntryFor(
   value: SealedContent,
   storedAt: string,
 ): CacheEntry {
-  const due = expiresAt("prompts-and-completions", storedAt);
-  if (due === undefined) {
-    throw new Error("prompts-and-completions must be a duration class");
-  }
-  return { namespace, value, storedAt, expiresAt: due };
+  return {
+    namespace,
+    value,
+    storedAt,
+    expiresAt: expiresAtForDuration("prompts-and-completions", storedAt),
+  };
 }
 
 /**

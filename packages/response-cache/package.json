@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@custodian/domain-primitives": "workspace:*",
-    "@custodian/knowledge-base": "workspace:*",
     "@custodian/retention": "workspace:*"
   }
 }

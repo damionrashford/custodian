@@ -1,5 +1,5 @@
-import type { Brand } from "./brand";
-import { err, ok, type Result } from "./result";
+import { brand, type Brand } from "../language/brand";
+import { err, ok, type Result } from "../language/result";
 
 /**
  * A pinned snapshot, never a rolling alias. A call site on an alias cannot answer which side of a
@@ -17,7 +17,7 @@ const MODEL_SNAPSHOT_PATTERN = /^[a-z0-9][a-z0-9.-]*-\d{8}$/;
 
 export function parseModelSnapshot(value: string): Result<ModelSnapshot, InvalidModelSnapshot> {
   return MODEL_SNAPSHOT_PATTERN.test(value)
-    ? ok(value as ModelSnapshot)
+    ? ok(brand<ModelSnapshot>(value))
     : err({ kind: "invalid-model-snapshot", received: value });
 }
 

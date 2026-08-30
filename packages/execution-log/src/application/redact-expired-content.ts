@@ -1,5 +1,10 @@
-import type { ErasureProof, RetentionBucket, Result } from "@custodian/domain-primitives";
-import type { KeyStoreFailure, SubjectKeyStore } from "@custodian/crypto-shred";
+import type {
+  ErasureProof,
+  KeyStoreFailure,
+  RetentionBucket,
+  Result,
+} from "@custodian/domain-primitives";
+import type { SubjectKeyStore } from "@custodian/crypto-shred";
 
 export type RedactionRequest = {
   readonly store: SubjectKeyStore;

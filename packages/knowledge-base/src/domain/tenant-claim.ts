@@ -1,4 +1,11 @@
-import { type Brand, err, ok, type Result, type TenantId } from "@custodian/domain-primitives";
+import {
+  brand,
+  type Brand,
+  err,
+  ok,
+  type Result,
+  type TenantId,
+} from "@custodian/domain-primitives";
 
 /**
  * A tenant identity that has been cryptographically verified AND is currently valid. Isolation is
@@ -86,5 +93,10 @@ export function verifyTenantClaim(
     return err({ kind: "lifetime-too-long", lifetimeMs, maxMs: MAX_CLAIM_LIFETIME_MS });
   }
 
-  return ok({ tenant, expiresAt } as VerifiedTenantClaim);
+  return ok(
+    brand<VerifiedTenantClaim, { readonly tenant: TenantId; readonly expiresAt: string }>({
+      tenant,
+      expiresAt,
+    }),
+  );
 }

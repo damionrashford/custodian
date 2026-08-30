@@ -1,5 +1,6 @@
+import { brand } from "@custodian/domain-primitives";
 import type { Brand, ContentHasher } from "@custodian/domain-primitives";
-import type { Namespace } from "@custodian/knowledge-base";
+import type { Namespace } from "@custodian/domain-primitives";
 
 /**
  * Exact match only. Semantic caching is NOT built here and must not be added without an eval loop
@@ -19,5 +20,5 @@ export function cacheKeyFor(
   prompt: string,
   hasher: ContentHasher,
 ): CacheKey {
-  return hasher.hash(`${namespace} ${model} ${prompt}`) as CacheKey;
+  return brand<CacheKey>(hasher.hash(`${namespace} ${model} ${prompt}`));
 }

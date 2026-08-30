@@ -1,4 +1,5 @@
-import type { ProviderId, Region } from "./region";
+import type { ProviderId } from "@custodian/domain-primitives";
+import type { Region } from "./region";
 
 /**
  * Storage location and processing location are recorded separately because they are independent

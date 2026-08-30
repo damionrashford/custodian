@@ -100,3 +100,26 @@ test("the TypeScript pin is ignored under the ecosystem that owns it", async () 
   expect(bunBlock).toContain("typescript");
   expect(bunBlock).toContain("7.x");
 });
+
+test("the layering gate sees type-only imports", async () => {
+  const config = await Bun.file(".dependency-cruiser.cjs").text();
+
+  // Without this, dependency-cruiser cruises transpiled output where `import type` is already gone.
+  // Under verbatimModuleSyntax most cross-package imports in `domain` are type-only, so the
+  // layering rules passed clean for the whole build while never inspecting them. Three real
+  // violations surfaced the moment it was turned on.
+  expect(config).toContain("tsPreCompilationDeps: true");
+});
+
+test("type assertions are exempt in exactly one source file", async () => {
+  const config = await Bun.file("eslint.config.js").text();
+  const block = config.slice(config.indexOf("Two exceptions the standard names"));
+  const exempt = [...block.slice(0, block.indexOf("],")).matchAll(/"(packages\/[^"]+)"/g)];
+
+  // A path list of individual parsers used to hold this exemption, and six files silently lost it
+  // by moving one folder deeper. Every brand is now built through `brand()`, so the list is one
+  // entry — and growing it back is a decision someone has to make in this test first.
+  expect(exempt.map((m) => m[1])).toEqual([
+    "packages/domain-primitives/src/domain/language/brand.ts",
+  ]);
+});

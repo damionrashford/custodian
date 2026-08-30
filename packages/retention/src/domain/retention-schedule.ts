@@ -84,6 +84,21 @@ export const RETENTION_SCHEDULE: Readonly<Record<RetentionClass, RetentionRule>>
  * When a record of this class written at `writtenAt` becomes due for disposal. Undefined for
  * tenant-lifetime classes, which are dropped by an offboarding event rather than by a clock.
  */
+/** Classes disposed of by a clock. Excludes tenant-lifetime, which is dropped by an offboarding event. */
+export type DurationClass = Exclude<RetentionClass, "vector-index">;
+
+/**
+ * Total for duration classes, so a caller with a literal class needs no undefined branch. The
+ * partial `expiresAt` below stays for callers holding a RetentionClass that could be either.
+ */
+export function expiresAtForDuration(retention: DurationClass, writtenAt: string): string {
+  const rule = RETENTION_SCHEDULE[retention];
+  if (rule.kind === "tenant-lifetime") {
+    return writtenAt;
+  }
+  return new Date(Date.parse(writtenAt) + rule.days * DAY_MS).toISOString();
+}
+
 export function expiresAt(retention: RetentionClass, writtenAt: string): string | undefined {
   const rule = RETENTION_SCHEDULE[retention];
   if (rule.kind === "tenant-lifetime") {

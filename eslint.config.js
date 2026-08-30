@@ -68,29 +68,24 @@ export default defineConfig(
     },
   },
   {
-    // Test fixtures and parsers are the two exceptions the standard names for `as`.
-    // A test is the composition root for the unit under test, so it is also the one place a
-    // lower layer may reach an adapter — the layering rules still bind every non-test file.
+    // Two exceptions the standard names for `as`: test fixtures, and the single brand constructor
+    // every branded type is built through. A path list of individual parsers was the previous
+    // approach and it broke silently the first time a file moved folders.
+    //
+    // A test is the composition root for the unit under test, so it is also the one place a lower
+    // layer may reach an adapter — the layering rules still bind every non-test file.
     files: [
       "**/*.test.ts",
       "tests/**/*.ts",
-      "packages/*/src/domain/*-id.ts",
-      "packages/*/src/domain/verify-*.ts",
-      "packages/*/src/domain/sanitize-*.ts",
-      "packages/*/src/domain/retention-bucket.ts",
-      "packages/*/src/domain/request-hash.ts",
-      "packages/*/src/domain/model-snapshot.ts",
-      "packages/*/src/domain/tool-name.ts",
-      "packages/*/src/domain/region.ts",
-      "packages/*/src/domain/model-provider.ts",
-      "packages/*/src/domain/namespace.ts",
-      "packages/*/src/domain/cache-key.ts",
-      "packages/*/src/domain/workflow.ts",
-      "packages/*/src/domain/signed-event.ts",
-      "packages/*/src/domain/prompt-version.ts",
-      "packages/*/src/domain/tenant-claim.ts",
+      "packages/domain-primitives/src/domain/language/brand.ts",
     ],
     rules: { "@typescript-eslint/consistent-type-assertions": "off" },
+  },
+  {
+    // `brand`'s caller-chosen return type is the assertion, which is what the rule is detecting.
+    // Keeping it caller-chosen is the whole design: it is what makes the carrier type checked.
+    files: ["packages/domain-primitives/src/domain/language/brand.ts"],
+    rules: { "@typescript-eslint/no-unnecessary-type-parameters": "off" },
   },
   {
     files: ["eslint.config.js", "scripts/**/*.ts"],

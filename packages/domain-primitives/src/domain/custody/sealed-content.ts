@@ -1,5 +1,5 @@
 import type { RetentionBucket } from "./retention-bucket";
-import type { SubjectId } from "./subject-id";
+import type { SubjectId } from "../identity/subject-id";
 
 /**
  * Ciphertext under two independent keys. Destroying either the subject key (Article 17 erasure) or

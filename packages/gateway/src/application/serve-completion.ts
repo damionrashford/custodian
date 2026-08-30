@@ -7,7 +7,6 @@ import {
   type ProviderId,
   type Region,
   type Result,
-  type RetentionBucket,
   type RunId,
   type SubjectId,
   type TenantId,
@@ -15,7 +14,8 @@ import {
 import type { PromptSnapshot } from "@custodian/config-registry";
 import type { SubjectKeyStore } from "@custodian/crypto-shred";
 import { appendEntry, type LoggedEntry } from "@custodian/execution-log";
-import type { IdempotencyStore, RequestHash } from "@custodian/idempotency";
+import type { IdempotencyStore, RecordedOutcome, RequestHash } from "@custodian/idempotency";
+import { bucketFor } from "@custodian/retention";
 import { selectProvider, type ProviderProfile } from "@custodian/routing";
 import type {
   CompletionRequest,
@@ -38,6 +38,12 @@ export type ServeRequest = {
    * be named is a completion no rollback can reason about.
    */
   readonly prompt: PromptSnapshot;
+  /**
+   * The triggering request, which is what field group 1 requires the log to seal
+   * (Compliance_and_Certification.txt:51). Sealing `prompt.text` instead would record the template
+   * — byte-identical for every run on that version, and already named by `promptVersion`.
+   */
+  readonly input: string;
   readonly maxOutputTokens: number;
   /**
    * The run's log so far. Entries chain by hash from the previous one, so a gateway that started
@@ -55,7 +61,6 @@ export type ServeRequest = {
   /** The completion is personal data, so it is sealed before it reaches the idempotency store. */
   readonly keys: SubjectKeyStore;
   readonly subject: SubjectId;
-  readonly bucket: RetentionBucket;
   /** Cost stays a pure function of usage and the price table — see @custodian/metering. */
   readonly costMicros: (usage: CompletionUsage) => number;
 };
@@ -67,7 +72,14 @@ export type ServedCompletion = {
 
 export type ServeRejection =
   | { readonly kind: "refused"; readonly reason: string }
-  | { readonly kind: "already-served" }
+  /** A redelivery of a request that already reached an outcome — the first outcome stands. */
+  | { readonly kind: "already-served"; readonly outcome: RecordedOutcome }
+  /**
+   * A redelivery of a request still in flight. Distinct from `already-served` because there is no
+   * outcome to return: the caller must retry, not treat this as an answer. `executeOnce` already
+   * draws this line, and a second, weaker copy of it here would be two implementations of one rule.
+   */
+  | { readonly kind: "in-flight" }
   | { readonly kind: "provider-failed"; readonly reason: string };
 
 /**
@@ -100,7 +112,8 @@ type AttemptState = {
 function completionRequestFor(serve: ServeRequest): CompletionRequest {
   return {
     model: serve.prompt.model,
-    prompt: serve.prompt.text,
+    system: serve.prompt.text,
+    input: serve.input,
     maxOutputTokens: serve.maxOutputTokens,
   };
 }
@@ -167,8 +180,8 @@ async function attemptOnce(
 async function openRun(serve: ServeRequest): Promise<Result<readonly LoggedEntry[], ServeFailure>> {
   const sealed = await serve.keys.seal({
     subject: serve.subject,
-    bucket: serve.bucket,
-    plaintext: serve.prompt.text,
+    bucket: bucketFor("execution-log-content", serve.at),
+    plaintext: serve.input,
   });
   if (!sealed.ok) {
     const rejection = { kind: "provider-failed", reason: "seal-failed" } as const;
@@ -196,6 +209,28 @@ async function openRun(serve: ServeRequest): Promise<Result<readonly LoggedEntry
 }
 
 /**
+ * A terminal failure completes the claim rather than leaving it open. A claim abandoned at
+ * `outcome: undefined` blocks every redelivery for its full 24-hour TTL
+ * (@custodian/idempotency `CLAIM_TTL_MS`), so a run refused on residency grounds would answer
+ * `in-flight` for a day to a caller that can never succeed.
+ */
+async function failRun(
+  serve: ServeRequest,
+  state: AttemptState,
+  rejection: ServeRejection,
+): Promise<Result<ServedCompletion, ServeFailure>> {
+  const sealed = await serve.keys.seal({
+    subject: serve.subject,
+    bucket: bucketFor("prompts-and-completions", serve.at),
+    plaintext: JSON.stringify(rejection),
+  });
+  if (sealed.ok) {
+    await serve.idempotency.complete(serve.requestHash, { status: "failed", body: sealed.value });
+  }
+  return err({ rejection, log: state.log });
+}
+
+/**
  * Field group 8: token counts and cost, reconcilable to the billing ledger
  * (Compliance_and_Certification.txt:58). Without this entry the log has no usage record for a call
  * the provider did bill, so reconcile() can never close cleanly on gateway traffic.
@@ -207,7 +242,7 @@ async function closeRun(
 ): Promise<Result<ServedCompletion, ServeFailure>> {
   const sealed = await serve.keys.seal({
     subject: serve.subject,
-    bucket: serve.bucket,
+    bucket: bucketFor("prompts-and-completions", serve.at),
     plaintext: response.text,
   });
   if (!sealed.ok) {
@@ -238,8 +273,17 @@ export async function serveCompletion(
   serve: ServeRequest,
 ): Promise<Result<ServedCompletion, ServeFailure>> {
   const claimed = await serve.idempotency.claim(serve.requestHash, serve.at);
-  if (!claimed.ok || claimed.value.kind === "already-claimed") {
-    return err({ rejection: { kind: "already-served" }, log: serve.log });
+  if (!claimed.ok) {
+    const rejection = { kind: "provider-failed", reason: claimed.error.kind } as const;
+    return err({ rejection, log: serve.log });
+  }
+  if (claimed.value.kind === "already-claimed") {
+    const recorded = claimed.value.claim.outcome;
+    const rejection: ServeRejection =
+      recorded === undefined
+        ? { kind: "in-flight" }
+        : { kind: "already-served", outcome: recorded };
+    return err({ rejection, log: serve.log });
   }
 
   const opened = await openRun(serve);
@@ -252,13 +296,12 @@ export async function serveCompletion(
   for (let attempt = 1; attempt <= DEFAULT_RETRY_POLICY.maxAttempts; attempt += 1) {
     const outcome = await attemptOnce(serve, state, attempt);
     if (outcome.kind === "halted") {
-      return err({ rejection: outcome.rejection, log: state.log });
+      return failRun(serve, state, outcome.rejection);
     }
     if (outcome.kind === "served") {
       return closeRun(serve, state, outcome.response);
     }
   }
 
-  const rejection = { kind: "provider-failed", reason: "attempts-exhausted" } as const;
-  return err({ rejection, log: state.log });
+  return failRun(serve, state, { kind: "provider-failed", reason: "attempts-exhausted" });
 }

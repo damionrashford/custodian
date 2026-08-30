@@ -1,6 +1,7 @@
 import type {
   ModelSnapshot,
   Principal,
+  PrincipalId,
   ProviderId,
   PromptVersion,
   Region,
@@ -58,7 +59,7 @@ export type ExecutionEvent =
     }
   | {
       readonly kind: "human-intervened";
-      readonly reviewer: string;
+      readonly reviewer: PrincipalId;
       readonly decision: "approved" | "rejected" | "timed-out";
       readonly requestedAt: string;
       readonly decidedAt: string;

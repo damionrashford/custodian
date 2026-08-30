@@ -3,7 +3,10 @@ import type { ProviderId } from "@custodian/domain-primitives";
 
 export type CompletionRequest = {
   readonly model: ModelSnapshot;
-  readonly prompt: string;
+  /** The versioned prompt text from the registry. Identical for every run on that version. */
+  readonly system: string;
+  /** What the caller actually asked. This is the personal data; `system` is not. */
+  readonly input: string;
   readonly maxOutputTokens: number;
 };
 

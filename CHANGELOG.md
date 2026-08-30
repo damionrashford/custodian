@@ -55,6 +55,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   indistinguishable in the record from one that never started.
 - The gateway continues the run's existing log rather than starting a second chain at sequence zero,
   which integrity verification reported as a gap once the two halves of a run were put together.
+- The log seals the request that triggered a run. It previously sealed the prompt template, which is
+  identical for every run on a version and already named by the recorded prompt version.
+- A redelivered request that is still running is reported as in flight rather than as already served,
+  and a run that ends in failure records that outcome instead of leaving the claim open for its full
+  24-hour lifetime and answering every retry with a result that never arrives.
 
 - Document chunks no longer exceed the configured token budget. Overlap was being added on top of an
   already-full chunk.
@@ -71,6 +76,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `snapshot` fields — always written with the same value — are one field.
 
 ### Security
+
+- Execution-log content and prompts/completions are held under separate retention keys. They shared
+  one key, so a tenant exercising its right to zero retention on prompts and completions would have
+  destroyed the incident-reporting window along with it.
+- Principal identifiers are validated before they are recorded, and the pattern refuses anything
+  shaped like an email address or a name. A principal identifier survives in log metadata for 24
+  months, past the erasure of everything held under the subject key, which is defensible only while
+  it is pseudonymous.
+- An agent principal no longer carries card material. A card is verified once at handoff; copying it
+  into the log would have made the record a queryable store of signatures at rest.
 
 - Tenant claims are rejected unless they are signed, currently valid, not future-dated, and bounded
   to at most one hour of total lifetime. Previously a captured tenant claim — the credential that

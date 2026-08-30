@@ -1,16 +1,14 @@
 import { expect, test } from "bun:test";
 import {
-  brand,
   parseModelSnapshot,
   parseProviderId,
+  parsePrincipalId,
   parsePromptVersion,
   parseRegion,
-  parseRetentionBucket,
   parseRunId,
   parseSubjectId,
   parseTenantId,
   type Principal,
-  type PrincipalId,
 } from "@custodian/domain-primitives";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import {
@@ -36,10 +34,13 @@ const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
 const requestHash = parsedOrThrow(parseRequestHash("b".repeat(64)), "hash");
 const euWest = parsedOrThrow(parseRegion("eu-west-1"), "region");
 const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
-const bucket = parsedOrThrow(parseRetentionBucket("content-2026-08"), "bucket");
 const usEast = parsedOrThrow(parseRegion("us-east-1"), "region");
 
-const operator: Principal = { kind: "human", id: brand<PrincipalId>("p_operator"), tenant };
+const operator: Principal = {
+  kind: "human",
+  id: parsedOrThrow(parsePrincipalId("p_operator"), "principal"),
+  tenant,
+};
 
 const prompt: PromptSnapshot = {
   version: parsedOrThrow(parsePromptVersion("pv_01jd7k9h2m4n6p8r0s2t4v6x8z"), "prompt version"),
@@ -92,6 +93,7 @@ function baseRequest(providers: readonly ModelProvider[], candidates: readonly P
     legalBasisPolicy: "tenant-contract",
     requiresZeroRetention: true,
     prompt,
+    input: "what did the user actually type",
     maxOutputTokens: 100,
     log: [],
     requestHash,
@@ -103,7 +105,6 @@ function baseRequest(providers: readonly ModelProvider[], candidates: readonly P
     jitter: 0,
     keys: new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
     subject,
-    bucket,
     costMicros: (usage: { inputTokens: number; outputTokens: number }) =>
       usage.inputTokens * 3 + usage.outputTokens * 15,
   };
@@ -159,9 +160,12 @@ test("a redelivered request hash does not produce a second provider call", async
   const request = baseRequest([succeeds("eu-primary", calls)], [profile("eu-primary")]);
 
   await serveCompletion(request);
-  await serveCompletion(request);
+  const second = await serveCompletion(request);
 
   expect(calls).toEqual(["eu-primary"]);
+  expect(second.ok).toBe(false);
+  if (second.ok) return;
+  expect(second.error.rejection.kind).toBe("already-served");
 });
 
 test("a non-transient refusal is not retried against a second provider", async () => {

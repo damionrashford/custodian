@@ -5,3 +5,4 @@ export {
   isDueForDisposal,
   RETENTION_SCHEDULE,
 } from "./domain/retention-schedule";
+export { bucketFor } from "./domain/retention-bucket-for";

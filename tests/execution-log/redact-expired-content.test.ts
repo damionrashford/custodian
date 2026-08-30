@@ -1,9 +1,8 @@
 import { expect, test } from "bun:test";
 import {
-  brand,
+  parsePrincipalId,
   parseRegion,
   type Principal,
-  type PrincipalId,
   type Region,
   type TenantId,
   parseRetentionBucket,
@@ -21,7 +20,9 @@ import {
 } from "@custodian/execution-log";
 
 function principal(tenant: TenantId): Principal {
-  return { kind: "human", id: brand<PrincipalId>("p_operator"), tenant };
+  const id = parsePrincipalId("p_operator");
+  if (!id.ok) throw new Error("fixture: bad principal");
+  return { kind: "human", id: id.value, tenant };
 }
 
 function region(): Region {

@@ -6,6 +6,16 @@ export type {
   VerifiedTenantClaim,
 } from "./domain/tenant-claim";
 export { MAX_CLAIM_LIFETIME_MS, verifyTenantClaim } from "./domain/tenant-claim";
+export type {
+  ClaimIssuer,
+  InvalidKeyRing,
+  InvalidSigningKeyId,
+  IssuanceFailure,
+  IssueRequest,
+  SigningKeyId,
+} from "./domain/tenant-claim";
+export { boundedLifetime, parseKeyRing, parseSigningKeyId } from "./domain/tenant-claim";
+export { Ed25519ClaimIssuer } from "./infrastructure/ed25519-claim-issuer";
 export { namespaceFor } from "./domain/namespace";
 export { Ed25519ClaimVerifier } from "./infrastructure/ed25519-claim-verifier";
 export type { Match, RetrievalFailure, ScopedQuery, VectorIndex } from "./domain/scoped-query";

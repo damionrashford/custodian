@@ -27,6 +27,7 @@ import { SqliteIdempotencyStore } from "@custodian/serving";
 import {
   Ed25519ClaimVerifier,
   InMemoryVectorIndex,
+  parseKeyRing,
   namespaceFor,
   sealEmbedding,
   verifyTenantClaim,
@@ -162,8 +163,21 @@ const embedder = new HashEmbedder();
  * The corpus specifies "a signed JWT claim carrying the tenant ID"
  * (AI_Agent_Implementation_Plan_v2.txt:156) but no algorithm or key distribution, so Ed25519 and
  * an issuer-held private key are decisions taken here. `scripts/mint-dev-claim.ts` mints both.
+ *
+ * A ring rather than a key, because rotation is otherwise a cutover that invalidates every claim in
+ * flight. Adding the next key here is step one of three; the issuer switches to it second, and it
+ * leaves the ring only once the longest live claim has expired (Gap_Register_v2.txt:272).
  */
-const verifier = new Ed25519ClaimVerifier(required("CUSTODIAN_CLAIM_PUBLIC_KEY"));
+const keyRing = parseKeyRing(required("CUSTODIAN_CLAIM_KEYS"));
+if (!keyRing.ok) {
+  console.error(
+    `CUSTODIAN_CLAIM_KEYS is not a usable key ring (${keyRing.error.kind}). It is JSON mapping a ` +
+      `signing key id to its SPKI PEM: {"claim-2026-08": "-----BEGIN PUBLIC KEY-----..."}. ` +
+      `Mint one with scripts/mint-dev-claim.ts.`,
+  );
+  process.exit(1);
+}
+const verifier = new Ed25519ClaimVerifier(keyRing.value);
 
 const subject = must(
   parseSubjectId(Bun.env["CUSTODIAN_DEV_SUBJECT"] ?? "s_01jd7k9h2m4n6p8r0s2t4v6x8z"),

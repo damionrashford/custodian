@@ -3,18 +3,18 @@
 /**
  * Checks the Vault-backed key custodian against a live Vault.
  *
- * NOT RUN. No `vault` binary is installed on the machine this was written on, so the HTTP wire
- * format is unverified: endpoints and payload shapes follow the published Transit API, and the
- * custodian's behaviour is tested against a fake that models Transit's semantics, but nothing here
- * has spoken to a real server. Until this script has been run and passed, do not describe the Vault
- * adapter as verified.
+ * RUN AND PASSING as of 2026-08-30, against hashicorp/vault:latest in dev mode with the transit
+ * engine enabled. All nine checks below passed, so the HTTP wire format is no longer an assumption.
+ * Re-run it after any change to the custodian or the transport, and after a Vault major upgrade.
  *
  * This is a script rather than a test on purpose. `tests/standards.test.ts` fails the build on an
  * `http(s)://` literal anywhere under `tests/`, because a network dependency inside a blocking gate
  * is worse than no gate — one that fires at random trains people to click through red CI.
  *
- *   vault server -dev                       # in another terminal
- *   vault secrets enable transit
+ *   docker run --rm -d --name custodian-vault -p 8201:8200 \\
+ *     -e VAULT_DEV_ROOT_TOKEN_ID=root hashicorp/vault
+ *   curl -H 'X-Vault-Token: root' -X POST -d '{"type":"transit"}' \\
+ *     http://127.0.0.1:8201/v1/sys/mounts/transit
  *   CUSTODIAN_VAULT_ADDR=... CUSTODIAN_VAULT_TOKEN=... bun scripts/verify-vault-custody.ts
  */
 import {

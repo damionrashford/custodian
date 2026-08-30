@@ -113,9 +113,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Subject keys are held by a key custodian outside the process, so a restart no longer destroys
   every key. Content is sealed under a single-use key wrapped by a key-encryption key in HashiCorp
   Vault's Transit engine; erasing a subject destroys that key, and both the wrapped keys and the
-  ciphertext are stored together because neither is of any use without it. The Vault HTTP path has
-  not yet been exercised against a live server — `scripts/verify-vault-custody.ts` is the check, and
-  it has not been run.
+  ciphertext are stored together because neither is of any use without it. Verified against a live
+  Vault: sealing, unsealing, key destruction, the externally attested proof, and a repeat erasure
+  returning the original proof all behave as intended end to end.
 - The service refuses to start when a key custodian is half-configured — a Vault address with no
   token, or the reverse — even when the development-mode acknowledgement is also set. It previously
   had no such path to configure at all.

@@ -42,7 +42,7 @@ import { InMemoryToolCatalogue } from "./infrastructure/in-memory-tool-catalogue
 import { custodyDecision } from "./application/custody-decision";
 import { runAgent } from "./application/run-agent";
 import { kbDocumentKey, KbSearchTool, type KbDocument } from "./infrastructure/kb-search-tool";
-import { runsHandler } from "./interface/http";
+import { healthHandler, runsHandler } from "./interface/http";
 
 function must<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {
   if (!parsed.ok) {
@@ -349,10 +349,12 @@ async function main(): Promise<void> {
 
   const server = Bun.serve({
     port: Number(Bun.env["PORT"] ?? "8787"),
+    // 0.0.0.0 inside a container, or the port is published and nothing can reach it.
+    hostname: Bun.env["HOST"] ?? "0.0.0.0",
     // A run is several sequential provider calls and writes nothing until it answers, so the 10s
     // default closes the connection on a working run while the loop keeps spending.
     idleTimeout: 255,
-    routes: { "/runs": { POST: handler } },
+    routes: { "/runs": { POST: handler }, "/health": { GET: healthHandler } },
   });
   console.log(`agent runtime listening on :${String(server.port)}`);
 

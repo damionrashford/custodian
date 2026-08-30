@@ -12,6 +12,7 @@ export type {
   AgentRunRequest,
 } from "./application/agent-run";
 export { runAgent } from "./application/run-agent";
+export { healthHandler } from "./interface/http";
 export type { KbDocument, KbSearchToolDeps } from "./infrastructure/kb-search-tool";
 export { kbDocumentKey, KbSearchTool } from "./infrastructure/kb-search-tool";
 export type { HaltReason, LoopLimits, LoopVerdict, RunState } from "./domain/loop-controls";

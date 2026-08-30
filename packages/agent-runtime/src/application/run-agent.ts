@@ -344,10 +344,15 @@ async function applyToolStep(
   }
   // Context is rebuilt from railed records, so blocked text cannot ride in via the tool's own
   // observation string; that string is only trusted when nothing was retrieved at all.
+  // Re-retrieved evidence is summarised, not re-pasted: a model that searches the same thing twice
+  // would otherwise be re-billed for the same documents every turn, and the growing transcript
+  // gives it no signal that it already holds the answer.
   const contextText =
-    admitted.length > 0
-      ? admitted.map((record) => record.text).join("\n")
-      : screenedObservation(executed.value.observation, deps.classifiers);
+    admitted.length === 0
+      ? screenedObservation(executed.value.observation, deps.classifiers)
+      : hasNewEvidence
+        ? admitted.map((record) => record.text).join("\n")
+        : "The search returned only records already retrieved in this run.";
   context.observations.push(capToolOutput(String(tool.name), contextText));
   return ok({ kind: hasNewEvidence ? "observed-new-evidence" : "observed-nothing-new" });
 }

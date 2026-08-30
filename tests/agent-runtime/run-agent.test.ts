@@ -431,6 +431,22 @@ test("screening that ran is recorded, so passed and unscreened are different fac
   expect(allowed).toHaveLength(1);
 });
 
+test("re-retrieved evidence is summarised, not pasted into the prompt twice", async () => {
+  const { deps, calls } = fixture({
+    responses: [USE_TOOL, USE_TOOL, ANSWER],
+    tool: fakeTool([[record("kb-1", "Custodian is an agent platform.")]]),
+  });
+  const outcome = await runAgent(request(), deps);
+  expect(outcome.ok).toBe(true);
+
+  // Turn 2 sees the document once. Turn 3 must not be billed for a second copy of it.
+  const third = calls[2];
+  if (third === undefined) throw new Error("no third call");
+  const copies = third.input.split("Custodian is an agent platform.").length - 1;
+  expect(copies).toBe(1);
+  expect(third.input).toContain("already retrieved in this run");
+});
+
 test("a residency refusal from the gateway surfaces the fixed public copy", async () => {
   const euWest = must(parseRegion("eu-west-1"), "region");
   const { deps } = fixture({ candidates: [profile("xai-us", euWest)] });

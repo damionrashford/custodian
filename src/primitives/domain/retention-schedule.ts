@@ -115,3 +115,20 @@ export function isDueForDisposal(
   const due = expiresAt(retention, writtenAt);
   return due !== undefined && Date.parse(now) >= Date.parse(due);
 }
+
+/**
+ * The oldest `writtenAt` still inside its retention period at `now` — the mirror of
+ * `expiresAtForDuration`, for stores that dispose with a single ranged delete rather than by
+ * checking one record at a time.
+ *
+ * It exists so the period stays in the schedule. A sweeper that subtracted its own day count would
+ * be a second copy of a legal position, free to drift from this table without failing the test that
+ * transcribes the spec.
+ */
+export function disposalCutoff(retention: DurationClass, now: string): string {
+  const rule = RETENTION_SCHEDULE[retention];
+  if (rule.kind === "tenant-lifetime") {
+    return now;
+  }
+  return new Date(Date.parse(now) - rule.days * DAY_MS).toISOString();
+}

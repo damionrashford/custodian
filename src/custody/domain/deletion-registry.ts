@@ -13,4 +13,15 @@ import type { CustodyKeyName } from "./key-custodian";
 export interface DeletionRegistry {
   record(name: CustodyKeyName, proof: ErasureProof): void;
   lookup(name: CustodyKeyName): ErasureProof | undefined;
+  /**
+   * Drops proofs past the execution-log metadata period, and returns how many went.
+   *
+   * Sealing made every other store erasable *on request*; it did nothing about disposal *on
+   * schedule*, and those are separate obligations (LD-9). This one is sharper than most: the row
+   * holds a subject identifier and records that person's erasure, so keeping it forever would mean
+   * the one store nobody can ask us to clear is also the one that names them. It is retained as
+   * evidence for as long as the evidence is owed — the AI Act and SOC 2 window the execution log's
+   * metadata uses — and no longer.
+   */
+  disposeExpired(now: string): number;
 }

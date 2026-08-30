@@ -357,6 +357,7 @@ async function main(): Promise<void> {
     () => {
       const now = new Date().toISOString();
       idempotency.sweepExpired(now);
+      deletionRegistry.disposeExpired(now);
       void logStore.disposeExpiredRuns(now);
     },
     60 * 60 * 1000,
@@ -367,6 +368,7 @@ async function main(): Promise<void> {
     void server.stop().then(() => {
       logStore.close();
       idempotency.close();
+      deletionRegistry.close();
       process.exit(0);
     });
   };

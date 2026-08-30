@@ -203,6 +203,47 @@ test("no component declares a dependency it does not use", async () => {
   expect(unused.sort()).toEqual([]);
 });
 
+/**
+ * Every durable store has a location in the erasure data map.
+ *
+ * `runErasure` checks that a request covers every location in `DATA_MAP`, which catches a request
+ * that forgot one — and can never catch a location missing from the map itself. That is not
+ * hypothetical: `SqliteDeletionRegistry` shipped writing a subject identifier to disk, with no
+ * DATA_MAP entry, no retention class and no way to remove a row, and every gate passed.
+ *
+ * So the map is diffed against the durable stores that actually exist. A new `Sqlite*` adapter has
+ * to be classified here before the build goes green, which is the moment someone is actually
+ * thinking about where its rows go.
+ */
+const DURABLE_STORE_LOCATIONS: Readonly<Record<string, string>> = {
+  SqliteExecutionLogStore: "execution-log",
+  SqliteIdempotencyStore: "idempotency-store",
+  SqliteDeletionRegistry: "deletion-registry",
+};
+
+test("every durable store is classified in the erasure data map", async () => {
+  const dataMap = await readRepoFile("src/custody/domain/erasure-workflow.ts");
+  const declared = new Set(
+    [...dataMap.matchAll(/^\s*"([a-z-]+)",$/gm)].map(([, location]) => location),
+  );
+
+  const unclassified: string[] = [];
+  for await (const path of new Bun.Glob("src/*/infrastructure/*.ts").scan(".")) {
+    const source = await readRepoFile(path);
+    for (const [, name] of source.matchAll(/export class (Sqlite\w+)/g)) {
+      if (name === undefined) {
+        continue;
+      }
+      const location = DURABLE_STORE_LOCATIONS[name];
+      if (location === undefined || !declared.has(location)) {
+        unclassified.push(`${name} (${path})`);
+      }
+    }
+  }
+
+  expect(unclassified).toEqual([]);
+});
+
 test("no subject key store holds its own keys", async () => {
   const offenders: string[] = [];
   for await (const path of new Bun.Glob("src/**/*.ts").scan(".")) {

@@ -35,6 +35,7 @@ export type { KeyStoreFailure } from "./domain/custody/key-store-failure";
 export type { DurationClass, RetentionClass, RetentionRule } from "./domain/retention-schedule";
 export {
   expiresAt,
+  disposalCutoff,
   expiresAtForDuration,
   isDueForDisposal,
   RETENTION_SCHEDULE,

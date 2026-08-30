@@ -23,6 +23,14 @@ export const DATA_MAP = [
   "stream-journal",
   "backups",
   "routing-memory",
+  /**
+   * The deletion registry holds a subject identifier, so it is a location personal data reaches and
+   * belongs in this map — but it is the one location erasure *writes to* rather than clears. The
+   * proof that a subject was erased cannot itself be erased without destroying the evidence the
+   * erasure produced, which is why it is retained on the execution-log metadata schedule and
+   * disposed of by that clock rather than on request.
+   */
+  "deletion-registry",
 ] as const;
 
 /**

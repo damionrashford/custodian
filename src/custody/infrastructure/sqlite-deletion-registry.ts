@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import { isRecord, type ErasureProof } from "@custodian/primitives";
+import { disposalCutoff, isRecord, type ErasureProof } from "@custodian/primitives";
 import type { DeletionRegistry } from "../domain/deletion-registry";
 import type { CustodyKeyName } from "../domain/key-custodian";
 
@@ -39,6 +39,20 @@ export class SqliteDeletionRegistry implements DeletionRegistry {
       .query<ProofRow, [string]>("SELECT proof FROM destructions WHERE key_name = ?")
       .get(name);
     return row === null ? undefined : parseProof(row.proof);
+  }
+
+  /**
+   * `json_extract` rather than a `destroyed_at` column, so the timestamp has exactly one home. A
+   * column would be a second copy of a value the proof already carries, and the two could disagree
+   * — which for an audit artefact is worse than the query being marginally slower.
+   */
+  disposeExpired(now: string): number {
+    return this.#db.run(
+      `DELETE FROM destructions
+       WHERE json_extract(proof, '$.destroyedAt') IS NOT NULL
+         AND json_extract(proof, '$.destroyedAt') <= ?`,
+      [disposalCutoff("execution-log-metadata", now)],
+    ).changes;
   }
 
   close(): void {

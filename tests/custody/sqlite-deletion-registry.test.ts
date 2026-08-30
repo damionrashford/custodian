@@ -54,3 +54,27 @@ test("an unrecorded key has no proof", () => {
   expect(registry.lookup(name())).toBeUndefined();
   registry.close();
 });
+
+test("a proof is disposed of once the evidence window has passed", () => {
+  const registry = new SqliteDeletionRegistry(":memory:");
+  registry.record(name(), PROOF);
+
+  // Two years and a day after the destruction it recorded. The registry is the one location an
+  // erasure writes to rather than clears, so it is disposed of by the clock instead — on the same
+  // window the execution log's metadata uses, because it is evidence of the same kind.
+  const wellAfter = "2028-08-31T00:00:00.000Z";
+  expect(registry.disposeExpired(wellAfter)).toBe(1);
+  expect(registry.lookup(name())).toBeUndefined();
+  registry.close();
+});
+
+test("a proof inside the evidence window is not disposed of", () => {
+  const registry = new SqliteDeletionRegistry(":memory:");
+  registry.record(name(), PROOF);
+
+  // A sweep that dropped this would destroy the proof the erasure exists to produce, and the
+  // erasure would become unprovable at exactly the moment a regulator asked.
+  expect(registry.disposeExpired("2027-08-30T00:00:00.000Z")).toBe(0);
+  expect(registry.lookup(name())).toEqual(PROOF);
+  registry.close();
+});

@@ -106,6 +106,39 @@ test("no test reaches the network", async () => {
   expect(offenders).toEqual([]);
 });
 
+test("nothing that needs a container runs in the merge-blocking suite", async () => {
+  const manifest: unknown = await Bun.file(new URL("../package.json", import.meta.url)).json();
+  const scripts = readProperty(
+    typeof manifest === "object" && manifest !== null ? manifest : {},
+    "scripts",
+  );
+  const testScript = readProperty(
+    typeof scripts === "object" && scripts !== null ? scripts : {},
+    "test",
+  );
+
+  // `bun run test` is what CI blocks a merge on. Container tests pull images over the network, and
+  // a network dependency in a blocking position is the flaky gate LD-10 warns about — the one that
+  // teaches people to click through red CI.
+  expect(String(testScript)).toContain("sandbox");
+
+  const offenders: string[] = [];
+  for await (const path of new Bun.Glob("tests/**/*.ts").scan(".")) {
+    // This file names those classes in order to look for them, so it matches itself.
+    if (path.startsWith("tests/sandbox/") || path === "tests/standards.test.ts") {
+      continue;
+    }
+    const source = await readRepoFile(path);
+    if (/"docker"|DockerCodeExecutor|DockerBrowserTool/.test(source)) {
+      offenders.push(path);
+    }
+  }
+
+  // And the separation cannot drift: a container test written in the wrong folder fails here rather
+  // than quietly rejoining the blocking path.
+  expect(offenders).toEqual([]);
+});
+
 test("the TypeScript pin is ignored under the ecosystem that owns it", async () => {
   const dependabot = await readRepoFile(".github/dependabot.yml");
   const blocks = dependabot.split("- package-ecosystem:");

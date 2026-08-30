@@ -47,3 +47,21 @@ jobs:
       # Data_Protection_and_Retention.txt:112-113 — run on every release that touches storage.
       - name: Erasure acceptance gate
         run: bun run gate:erasure
+
+  # Deliberately a separate job, and deliberately not a required check.
+  #
+  # These drive real containers, so they pull images over the network. Inside the job that gates a
+  # merge that is a network dependency in a blocking position, which LD-10 calls worse than no gate:
+  # one that fires at random teaches people to click through red CI and costs every gate beside it
+  # its credibility. The isolation they prove is worth having and is not worth blocking on.
+  sandbox:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun ci
+      - name: Sandbox isolation tests
+        run: bun run test:sandbox

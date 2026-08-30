@@ -9,11 +9,12 @@
     "layers": "depcruise src tests scripts --config .dependency-cruiser.cjs",
     "deadcode": "knip",
     "structure": "bun scripts/check-structure.ts",
-    "test": "bun test",
+    "test": "bun test --path-ignore-patterns \"**/sandbox/**\"",
     "test:watch": "bun test --watch",
     "gate:erasure": "bun test tests/erasure-acceptance.test.ts",
     "verify": "bun run typecheck && bun run lint && bun run layers && bun run deadcode && bun run structure && bun run format && bun run test",
-    "agent": "bun src/agent/main.ts"
+    "agent": "bun src/agent/main.ts",
+    "test:sandbox": "bun test tests/sandbox"
   },
   "dependencies": {},
   "devDependencies": {

@@ -45,3 +45,7 @@ jobs:
       # changes, add an explicit browser-install step here.
       - name: Run tests
         run: bun run test
+
+      # Data_Protection_and_Retention.txt:112-113 — run on every release that touches storage.
+      - name: Erasure acceptance gate
+        run: bun run gate:erasure

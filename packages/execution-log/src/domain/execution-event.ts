@@ -1,4 +1,14 @@
-import type { SealedContent, SubjectId, TenantId } from "@custodian/domain-primitives";
+import type {
+  ModelSnapshot,
+  Principal,
+  ProviderId,
+  PromptVersion,
+  Region,
+  SealedContent,
+  SubjectId,
+  TenantId,
+  ToolName,
+} from "@custodian/domain-primitives";
 
 /**
  * The eight field groups required per agent session by Compliance_and_Certification.txt:50-58.
@@ -8,9 +18,9 @@ import type { SealedContent, SubjectId, TenantId } from "@custodian/domain-primi
 export type ExecutionEvent =
   | {
       readonly kind: "run-started";
-      readonly principal: string;
+      readonly principal: Principal;
       readonly tenant: TenantId;
-      readonly region: string;
+      readonly region: Region;
       readonly legalBasisPolicy: string;
       readonly request: SealedContent;
     }
@@ -22,15 +32,20 @@ export type ExecutionEvent =
     }
   | {
       readonly kind: "model-invoked";
-      readonly model: string;
-      readonly snapshot: string;
-      readonly promptVersion: string;
-      readonly routerDecision: string;
+      /**
+       * One field, not a `model` and a `snapshot`: a pinned snapshot *is* the model identity, and
+       * the pair was only ever written with the same value on both sides. Recording an alias
+       * alongside it would defeat the reason snapshots are pinned — an entry on a rolling alias
+       * cannot answer which side of a retirement date the call sat on.
+       */
+      readonly snapshot: ModelSnapshot;
+      readonly promptVersion: PromptVersion;
+      readonly routerDecision: ProviderId;
       readonly routerRationale: string;
     }
   | {
       readonly kind: "tool-called";
-      readonly tool: string;
+      readonly tool: ToolName;
       readonly arguments: SealedContent;
       readonly status: "succeeded" | "failed" | "denied";
       readonly sideEffectsCommitted: readonly string[];

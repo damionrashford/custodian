@@ -1,5 +1,5 @@
-import type { Result } from "@custodian/domain-primitives";
-import type { TaskClass, ToolName } from "./tool-name";
+import type { Result, ToolName } from "@custodian/domain-primitives";
+import type { TaskClass } from "./task-class";
 
 /**
  * What is always in context. Name plus one line — nothing else, because MCP loading every tool

@@ -7,6 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@custodian/config-registry": "workspace:*",
     "@custodian/crypto-shred": "workspace:*",
     "@custodian/domain-primitives": "workspace:*",
     "@custodian/execution-log": "workspace:*",

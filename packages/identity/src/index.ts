@@ -1,4 +1,3 @@
-export type { Principal, PrincipalId } from "./domain/principal";
 export type { AgentCard, CardRejection, NonceLedger, SignatureVerifier } from "./domain/agent-card";
 export type { CardVerificationDeps } from "./domain/verify-agent-card";
 export { verifyAgentCard } from "./domain/verify-agent-card";

@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
 import {
+  brand,
+  parseRegion,
+  type Principal,
+  type PrincipalId,
+  type Region,
+  type TenantId,
   parseRetentionBucket,
   parseRunId,
   parseSubjectId,
@@ -16,6 +22,16 @@ import {
   verifyRunLog,
   type LoggedEntry,
 } from "@custodian/execution-log";
+
+function principal(tenant: TenantId): Principal {
+  return { kind: "human", id: brand<PrincipalId>("p_operator"), tenant };
+}
+
+function region(): Region {
+  const parsed = parseRegion("eu-west-1");
+  if (!parsed.ok) throw new Error("fixture: bad region");
+  return parsed.value;
+}
 
 /**
  * The release gate from Data_Protection_and_Retention.txt:112-113. Create a synthetic data subject,
@@ -49,9 +65,9 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
     [],
     {
       kind: "run-started",
-      principal: "p_operator",
+      principal: principal(tenant),
       tenant,
-      region: "eu-west-1",
+      region: region(),
       legalBasisPolicy: "tenant-contract",
       request: sealed.value,
     },

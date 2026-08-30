@@ -1,10 +1,16 @@
 import { expect, test } from "bun:test";
 import {
+  brand,
   parseModelSnapshot,
+  parseProviderId,
+  parsePromptVersion,
+  parseRegion,
   parseRetentionBucket,
   parseRunId,
   parseSubjectId,
   parseTenantId,
+  type Principal,
+  type PrincipalId,
 } from "@custodian/domain-primitives";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
 import {
@@ -14,9 +20,9 @@ import {
   type ProviderFailure,
 } from "@custodian/gateway";
 import { InMemoryIdempotencyStore, parseRequestHash } from "@custodian/idempotency";
-import { Sha256ContentHasher } from "@custodian/execution-log";
-import { parseRegion, type ProviderProfile } from "@custodian/routing";
-import { parseProviderId } from "@custodian/domain-primitives";
+import { appendEntry, Sha256ContentHasher, verifyRunLog } from "@custodian/execution-log";
+import { type ProviderProfile } from "@custodian/routing";
+import type { PromptSnapshot } from "@custodian/config-registry";
 
 function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label: string): T {
   if (!parsed.ok) throw new Error(`fixture: bad ${label}`);
@@ -32,6 +38,19 @@ const euWest = parsedOrThrow(parseRegion("eu-west-1"), "region");
 const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
 const bucket = parsedOrThrow(parseRetentionBucket("content-2026-08"), "bucket");
 const usEast = parsedOrThrow(parseRegion("us-east-1"), "region");
+
+const operator: Principal = { kind: "human", id: brand<PrincipalId>("p_operator"), tenant };
+
+const prompt: PromptSnapshot = {
+  version: parsedOrThrow(parsePromptVersion("pv_01jd7k9h2m4n6p8r0s2t4v6x8z"), "prompt version"),
+  text: "hello",
+  model,
+  parameters: { temperature: 0.2 },
+  changeSource: "ticket CUS-118",
+  rationale: "chaos fixture",
+  evalPassCaret: 0.9,
+  createdAt: "2026-08-29T00:00:00.000Z",
+};
 
 function profile(id: string, region = euWest): ProviderProfile {
   return {
@@ -67,10 +86,14 @@ function succeeds(id: string, calls: string[]): ModelProvider {
 function baseRequest(providers: readonly ModelProvider[], candidates: readonly ProviderProfile[]) {
   return {
     runId,
+    principal: operator,
     tenant,
     tenantRegion: euWest,
+    legalBasisPolicy: "tenant-contract",
     requiresZeroRetention: true,
-    request: { model, prompt: "hello", maxOutputTokens: 100 },
+    prompt,
+    maxOutputTokens: 100,
+    log: [],
     requestHash,
     candidates,
     providers,
@@ -125,10 +148,9 @@ test("exhausting in-region providers refuses — the out-of-region provider is n
     ),
   );
 
-  expect(served).toEqual({
-    ok: false,
-    error: { kind: "refused", reason: "all-eligible-exhausted" },
-  });
+  expect(served.ok).toBe(false);
+  if (served.ok) return;
+  expect(served.error.rejection).toEqual({ kind: "refused", reason: "all-eligible-exhausted" });
   expect(calls).toEqual([]);
 });
 
@@ -156,4 +178,68 @@ test("a non-transient refusal is not retried against a second provider", async (
 
   expect(served.ok).toBe(false);
   expect(calls).toEqual([]);
+});
+
+test("a served call names its principal, tenant, region and legal basis", async () => {
+  const served = await serveCompletion(
+    baseRequest([succeeds("eu-primary", [])], [profile("eu-primary")]),
+  );
+
+  expect(served.ok).toBe(true);
+  if (!served.ok) return;
+  const first = served.value.log[0];
+  if (first?.event.kind !== "run-started") throw new Error("field group 1 missing from the log");
+
+  // A run with no run-started entry is unattributable — there is nothing naming who asked, under
+  // which tenant policy, in which region (Compliance_and_Certification.txt:51).
+  expect(first.event.principal).toEqual(operator);
+  expect(first.event.region).toBe(euWest);
+  expect(first.event.legalBasisPolicy).toBe("tenant-contract");
+});
+
+test("a refused run still records who was refused", async () => {
+  const served = await serveCompletion(
+    baseRequest([succeeds("us-fallback", [])], [profile("us-fallback", usEast)]),
+  );
+
+  expect(served.ok).toBe(false);
+  if (served.ok) return;
+  expect(served.error.rejection).toEqual({
+    kind: "refused",
+    reason: "no-eligible-in-region-provider",
+  });
+
+  // The evidence has to survive the refusal. A run refused on residency grounds that leaves no
+  // entry naming the principal is indistinguishable in the record from one that never started.
+  const first = served.error.log[0];
+  if (first?.event.kind !== "run-started") throw new Error("refusal left no evidence");
+  expect(first.event.principal).toEqual(operator);
+  expect(first.event.region).toBe(euWest);
+});
+
+test("the gateway continues the run's chain rather than starting a second one at seq 0", async () => {
+  const opening = appendEntry(
+    [],
+    {
+      kind: "record-retrieved",
+      recordId: "kb-1",
+      classification: "internal",
+      provenance: "tenant-authored",
+    },
+    { runId, at: "2026-08-29T00:00:00.000Z", hasher },
+  );
+  if (!opening.ok) throw new Error("fixture: append failed");
+
+  const served = await serveCompletion({
+    ...baseRequest([succeeds("eu-primary", [])], [profile("eu-primary")]),
+    log: opening.value,
+  });
+  expect(served.ok).toBe(true);
+  if (!served.ok) return;
+
+  // Sequence numbers and previousHash links are computed from the log handed in. Starting from []
+  // would emit a second entry at seq 0, which verifyRunLog reports as a sequence gap once the two
+  // halves of the run are put together.
+  expect(served.value.log.map((entry) => entry.seq)).toEqual([0, 1, 2, 3]);
+  expect(verifyRunLog(served.value.log, hasher).ok).toBe(true);
 });

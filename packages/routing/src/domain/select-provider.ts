@@ -1,6 +1,6 @@
 import type { ProviderProfile } from "./provider-profile";
 import type { ProviderId } from "@custodian/domain-primitives";
-import type { Region } from "./region";
+import type { Region } from "@custodian/domain-primitives";
 
 export type RoutingRequest = {
   readonly tenantRegion: Region;

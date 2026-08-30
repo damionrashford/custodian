@@ -2,9 +2,9 @@ import { expect, test } from "bun:test";
 import {
   InMemoryToolCatalogue,
   parseTaskClass,
-  parseToolName,
   type ToolDefinition,
 } from "@custodian/tool-registry";
+import { parseToolName } from "@custodian/domain-primitives";
 
 function name(value: string) {
   const parsed = parseToolName(value);

@@ -47,10 +47,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Every completion the gateway serves now opens its execution log with an entry naming the
+  principal, tenant, region and legal basis it ran under. That entry was never written, so a served
+  call could not be attributed to whoever requested it.
+- A refused or failed completion returns the run's log alongside the reason. Previously the log was
+  discarded on every failure path, which left a request refused on residency grounds
+  indistinguishable in the record from one that never started.
+- The gateway continues the run's existing log rather than starting a second chain at sequence zero,
+  which integrity verification reported as a gap once the two halves of a run were put together.
+
 - Document chunks no longer exceed the configured token budget. Overlap was being added on top of an
   already-full chunk.
 - An identical request repeated after the idempotency window now executes instead of silently
   returning a stale answer for work that never ran.
+
+### Changed
+
+- A completion's prompt text and model now come from the prompt registry rather than the caller, so
+  the version that produced an output is always recordable. The log previously stored the literal
+  string `unversioned` for every call.
+- Execution log entries record a principal, region, model snapshot, prompt version, provider and
+  tool name as their own types rather than as free-form strings, and the duplicated `model` and
+  `snapshot` fields — always written with the same value — are one field.
 
 ### Security
 

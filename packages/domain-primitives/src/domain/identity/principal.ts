@@ -1,4 +1,5 @@
-import type { Brand, TenantId } from "@custodian/domain-primitives";
+import type { Brand } from "../language/brand";
+import type { TenantId } from "./tenant-id";
 
 export type PrincipalId = Brand<string, "PrincipalId">;
 

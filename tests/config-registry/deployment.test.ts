@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 import {
-  parsePromptVersion,
   promote,
   publish,
   resolve,
@@ -8,6 +7,7 @@ import {
   type PromptSnapshot,
   type Registry,
 } from "@custodian/config-registry";
+import { parseModelSnapshot, parsePromptVersion } from "@custodian/domain-primitives";
 
 function version(value: string) {
   const parsed = parsePromptVersion(value);
@@ -18,11 +18,15 @@ function version(value: string) {
 const V1 = version("pv_01jd7k9h2m4n6p8r0s2t4v6x8z");
 const V2 = version("pv_02jd7k9h2m4n6p8r0s2t4v6x8z");
 
+const parsedModel = parseModelSnapshot("frontier-1.5-20260801");
+if (!parsedModel.ok) throw new Error("fixture: bad model snapshot");
+const MODEL = parsedModel.value;
+
 function snapshot(v: typeof V1, text: string): PromptSnapshot {
   return {
     version: v,
     text,
-    model: "frontier-1.5-20260801",
+    model: MODEL,
     parameters: { temperature: 0.2 },
     changeSource: "ticket CUS-114",
     rationale: "tighten refusal boundary on payment questions",

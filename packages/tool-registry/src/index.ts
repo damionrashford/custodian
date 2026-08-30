@@ -1,5 +1,5 @@
-export type { InvalidTaskClass, InvalidToolName, TaskClass, ToolName } from "./domain/tool-name";
-export { parseTaskClass, parseToolName } from "./domain/tool-name";
+export type { InvalidTaskClass, TaskClass } from "./domain/task-class";
+export { parseTaskClass } from "./domain/task-class";
 export type {
   CatalogueFailure,
   ToolCatalogue,

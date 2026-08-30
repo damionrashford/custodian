@@ -1,25 +1,4 @@
-import { brand, type Brand, err, ok, type Result } from "@custodian/domain-primitives";
-
-/**
- * A version is a snapshot in history. A deployment is a label declaring what production runs.
- * Conflating the two is the most frequent mistake in this area
- * (AI_Agent_Implementation_Plan_v2.txt:233), so they are different types here and a version has no
- * mutable field at all.
- */
-export type PromptVersion = Brand<string, "PromptVersion">;
-
-export type InvalidPromptVersion = {
-  readonly kind: "invalid-prompt-version";
-  readonly received: string;
-};
-
-const PROMPT_VERSION_PATTERN = /^pv_[0-9a-z]{26}$/;
-
-export function parsePromptVersion(value: string): Result<PromptVersion, InvalidPromptVersion> {
-  return PROMPT_VERSION_PATTERN.test(value)
-    ? ok(brand<PromptVersion>(value))
-    : err({ kind: "invalid-prompt-version", received: value });
-}
+import type { ModelSnapshot, PromptVersion } from "@custodian/domain-primitives";
 
 /**
  * A complete version captures text, model, parameters, change source, rationale and eval result.
@@ -30,8 +9,8 @@ export function parsePromptVersion(value: string): Result<PromptVersion, Invalid
 export type PromptSnapshot = {
   readonly version: PromptVersion;
   readonly text: string;
-  /** A pinned model snapshot, never a rolling alias — the registry doubles as the model inventory. */
-  readonly model: string;
+  /** A pinned snapshot, never a rolling alias — the registry doubles as the model inventory. */
+  readonly model: ModelSnapshot;
   readonly parameters: Readonly<Record<string, number>>;
   readonly changeSource: string;
   readonly rationale: string;

@@ -81,6 +81,10 @@ export async function runAgent(
     }
 
     if (step.value.kind === "answer") {
+      // No advance() here on purpose: the run ends, and nothing reads the tally afterwards. The
+      // cost of this turn is in the log where reconciliation looks for it (the gateway writes
+      // usage-recorded per call); folding it into loop state as well would be bookkeeping no
+      // test could observe — a line that cannot be proven wrong is a line that is not carrying.
       const finished = await finishRun("succeeded", context, request, deps);
       return finished.ok ? ok({ runId: request.runId, answer: step.value.text }) : finished;
     }

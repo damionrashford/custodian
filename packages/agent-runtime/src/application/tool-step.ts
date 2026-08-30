@@ -121,7 +121,7 @@ async function runTool(
   context.observations.push(
     capToolOutput(
       String(tool.name),
-      observationFor(executed.value, admitted.records, hasNewEvidence, deps),
+      observationFor(executed.value, admitted, hasNewEvidence, deps),
     ),
   );
   return ok({ kind: hasNewEvidence ? "observed-new-evidence" : "observed-nothing-new" });
@@ -132,13 +132,15 @@ async function runTool(
  * shares one id, so an id-keyed set re-admits the blocked chunk alongside its clean sibling — the
  * rail would log a block and hand the model the text anyway.
  */
+type RailedRecords = {
+  readonly records: readonly RetrievedRecord[];
+  readonly blocked: ReturnType<typeof railRetrieved>["blocked"];
+};
+
 function admittedRecords(
   retrieved: readonly RetrievedRecord[],
   classifiers: readonly Classifier[],
-): {
-  readonly records: readonly RetrievedRecord[];
-  readonly blocked: ReturnType<typeof railRetrieved>["blocked"];
-} {
+): RailedRecords {
   const chunks = retrieved.map((record) => ({
     documentId: record.recordId,
     text: record.text,
@@ -161,24 +163,28 @@ function admittedRecords(
  */
 function observationFor(
   observed: ToolObservation,
-  admitted: readonly RetrievedRecord[],
+  railed: RailedRecords,
   hasNewEvidence: boolean,
   deps: AgentRunDeps,
 ): string {
-  if (admitted.length === 0) {
-    return screenedObservation(observed.observation, deps.classifiers);
+  if (railed.records.length === 0) {
+    // Everything the tool found was withheld. Saying so beats a blank turn: the model cannot
+    // otherwise tell "found nothing" from "found something it may not see", and would search again.
+    return railed.blocked.length > 0
+      ? WITHHELD_COPY
+      : screenedObservation(observed.observation, deps.classifiers);
   }
   return hasNewEvidence
-    ? admitted.map((record) => record.text).join("\n")
+    ? railed.records.map((record) => record.text).join("\n")
     : "The search returned only records already retrieved in this run.";
 }
+
+const WITHHELD_COPY = "The tool's response was withheld by a safety policy.";
 
 /** A tool's free-form observation is model-visible text, so it passes the same screen a record does. */
 function screenedObservation(observation: string, classifiers: readonly Classifier[]): string {
   if (observation.length === 0 || classifiers.length === 0) {
     return observation;
   }
-  return screen(observation, classifiers).kind === "block"
-    ? "The tool's response was withheld by a safety policy."
-    : observation;
+  return screen(observation, classifiers).kind === "block" ? WITHHELD_COPY : observation;
 }

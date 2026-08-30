@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+  # No branch filter: stage branches are stacked, so a PR often targets another stage rather
+  # than main. Filtering on main left four stacked PRs with no checks at all.
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
@@ -40,9 +41,6 @@ jobs:
       - name: Format
         run: bun run format
 
-      # Bun.WebView drives an installed Chrome-family browser via CDP on Linux.
-      # ubuntu-latest ships google-chrome-stable pre-installed; if that ever
-      # changes, add an explicit browser-install step here.
       - name: Run tests
         run: bun run test
 

@@ -5,11 +5,13 @@
     "": {
       "devDependencies": {
         "@custodian/agent-loop": "workspace:*",
+        "@custodian/config-registry": "workspace:*",
         "@custodian/context-assembly": "workspace:*",
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/durable-execution": "workspace:*",
         "@custodian/erasure": "workspace:*",
+        "@custodian/eval": "workspace:*",
         "@custodian/event-delivery": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/gateway": "workspace:*",
@@ -18,6 +20,7 @@
         "@custodian/knowledge-base": "workspace:*",
         "@custodian/memory": "workspace:*",
         "@custodian/metering": "workspace:*",
+        "@custodian/oversight": "workspace:*",
         "@custodian/response-cache": "workspace:*",
         "@custodian/retention": "workspace:*",
         "@custodian/retrieval": "workspace:*",
@@ -39,6 +42,13 @@
     "packages/agent-loop": {
       "name": "@custodian/agent-loop",
       "version": "0.0.0",
+    },
+    "packages/config-registry": {
+      "name": "@custodian/config-registry",
+      "version": "0.0.0",
+      "dependencies": {
+        "@custodian/domain-primitives": "workspace:*",
+      },
     },
     "packages/context-assembly": {
       "name": "@custodian/context-assembly",
@@ -72,6 +82,10 @@
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
       },
+    },
+    "packages/eval": {
+      "name": "@custodian/eval",
+      "version": "0.0.0",
     },
     "packages/event-delivery": {
       "name": "@custodian/event-delivery",
@@ -136,6 +150,10 @@
         "@custodian/gateway": "workspace:*",
       },
     },
+    "packages/oversight": {
+      "name": "@custodian/oversight",
+      "version": "0.0.0",
+    },
     "packages/response-cache": {
       "name": "@custodian/response-cache",
       "version": "0.0.0",
@@ -182,6 +200,8 @@
   "packages": {
     "@custodian/agent-loop": ["@custodian/agent-loop@workspace:packages/agent-loop"],
 
+    "@custodian/config-registry": ["@custodian/config-registry@workspace:packages/config-registry"],
+
     "@custodian/context-assembly": ["@custodian/context-assembly@workspace:packages/context-assembly"],
 
     "@custodian/crypto-shred": ["@custodian/crypto-shred@workspace:packages/crypto-shred"],
@@ -191,6 +211,8 @@
     "@custodian/durable-execution": ["@custodian/durable-execution@workspace:packages/durable-execution"],
 
     "@custodian/erasure": ["@custodian/erasure@workspace:packages/erasure"],
+
+    "@custodian/eval": ["@custodian/eval@workspace:packages/eval"],
 
     "@custodian/event-delivery": ["@custodian/event-delivery@workspace:packages/event-delivery"],
 
@@ -207,6 +229,8 @@
     "@custodian/memory": ["@custodian/memory@workspace:packages/memory"],
 
     "@custodian/metering": ["@custodian/metering@workspace:packages/metering"],
+
+    "@custodian/oversight": ["@custodian/oversight@workspace:packages/oversight"],
 
     "@custodian/response-cache": ["@custodian/response-cache@workspace:packages/response-cache"],
 

@@ -213,7 +213,10 @@ const idempotency = new SqliteIdempotencyStore(
 
 async function main(): Promise<void> {
   // The seed namespace is derived exactly the way every query derives it: verify the dev claim,
-  // then namespaceFor — there is no other constructor, and that is the point.
+  // then namespaceFor — there is no other constructor, and that is the point. The consequence is
+  // deliberate and worth knowing: a claim expires, so a restart more than its lifetime after
+  // minting fails here rather than seeding from an unchecked identity. A production entry point
+  // needs a boot path that mints its own, not a longer-lived token.
   const bootClaim = verifyTenantClaim(required("CUSTODIAN_DEV_CLAIM"), {
     verifier,
     now: new Date(),

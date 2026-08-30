@@ -36,7 +36,8 @@ const pem = publicKey.export({ type: "spki", format: "pem" }).trim();
 const token = `${header}.${payload}.${signature}`;
 
 // A directory rather than shell exports: sourcing generated shell is how a stray character in a
-// key becomes an executed command.
+// key becomes an executed command. claim.token is a live bearer credential — short-lived, but do
+// not point outDir at a tracked path. The private key is never written anywhere.
 const outDir = Bun.argv[3];
 if (outDir === undefined) {
   console.log(`CUSTODIAN_CLAIM_PUBLIC_KEY (PEM):\n${pem}\n`);

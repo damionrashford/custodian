@@ -1,6 +1,6 @@
 import { dns } from "bun";
 import { err, isRecord, ok, type Result, type ToolName } from "@custodian/primitives";
-import { permitUrl, type EgressPolicy, type UrlRejection } from "../domain/url-policy";
+import { permitHost, permitUrl, type EgressPolicy, type UrlRejection } from "../domain/url-policy";
 import type { Tool, ToolFailure, ToolObservation } from "../domain/tool";
 
 /** Enough for a page, small enough that one fetch cannot fill the model's context. */
@@ -89,12 +89,13 @@ export class WebFetchTool implements Tool {
    * owner points it at a private address, which is the ordinary shape of an SSRF.
    */
   async #permit(target: string): Promise<Result<string, ToolFailure>> {
-    let hostname: string;
-    try {
-      hostname = new URL(target).hostname;
-    } catch {
-      return err({ kind: "invalid-arguments", reason: "url-unparseable" });
+    // Allowlist before DNS: a lookup for a host that was never going to be allowed still tells a
+    // DNS server whatever the model encoded in the name.
+    const allowed = permitHost(target, this.#policy);
+    if (!allowed.ok) {
+      return err(refused(allowed.error));
     }
+    const hostname = allowed.value;
 
     let address: string;
     try {

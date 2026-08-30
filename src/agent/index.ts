@@ -50,9 +50,12 @@ export { ReadFileTool, WriteFileTool, type WorkspaceOptions } from "./infrastruc
 export { WebFetchTool, type WebFetchOptions } from "./infrastructure/web-fetch-tool";
 export { safePath, type PathRejection, type SafePath } from "./domain/workspace-path";
 export {
+  permitHost,
   permitUrl,
   type EgressPolicy,
   type PermittedUrl,
   type UrlRejection,
 } from "./domain/url-policy";
 export type { ActionReceipt } from "./domain/tool";
+export { EgressProxy } from "./infrastructure/egress-proxy";
+export { DockerBrowserTool } from "./infrastructure/docker-browser-tool";

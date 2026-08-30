@@ -95,18 +95,23 @@ export type EgressPolicy = {
  * Closing it needs the connection pinned to the address that was checked, which the sandbox's
  * deny-by-default egress does structurally and this function cannot.
  */
-export function permitUrl(
-  requested: string,
-  resolvedAddress: string,
-  policy: EgressPolicy,
-): Result<PermittedUrl, UrlRejection> {
+/**
+ * Everything decidable without touching the network: the scheme, the absence of credentials, and
+ * whether anyone allowlisted this host.
+ *
+ * Split out so it can run *before* DNS. Resolving first and checking after looks equivalent and is
+ * not: a page can encode data in a hostname it never expects to reach, and the lookup alone hands
+ * that string to a DNS server. Refusing the fetch afterwards does not take it back. This is also
+ * what makes an off-allowlist host that fails to resolve show up as a refusal rather than as a
+ * network error, which matters because the refusal is the signal worth keeping.
+ */
+export function permitHost(requested: string, policy: EgressPolicy): Result<string, UrlRejection> {
   let url: URL;
   try {
     url = new URL(requested);
   } catch {
     return err({ kind: "url-unparseable", requested });
   }
-
   if (!PERMITTED_SCHEMES.has(url.protocol)) {
     return err({ kind: "scheme-not-permitted", scheme: url.protocol });
   }
@@ -115,12 +120,22 @@ export function permitUrl(
   if (url.username.length > 0 || url.password.length > 0) {
     return err({ kind: "credentials-in-url" });
   }
-  if (!policy.allowedHosts.includes(url.hostname)) {
-    return err({ kind: "host-not-allowlisted", host: url.hostname });
+  return policy.allowedHosts.includes(url.hostname)
+    ? ok(url.hostname)
+    : err({ kind: "host-not-allowlisted", host: url.hostname });
+}
+
+export function permitUrl(
+  requested: string,
+  resolvedAddress: string,
+  policy: EgressPolicy,
+): Result<PermittedUrl, UrlRejection> {
+  const host = permitHost(requested, policy);
+  if (!host.ok) {
+    return err(host.error);
   }
   if (!isPublicAddress(resolvedAddress)) {
     return err({ kind: "address-not-public", address: resolvedAddress });
   }
-
-  return ok(brand<PermittedUrl>(url.toString()));
+  return ok(brand<PermittedUrl>(new URL(requested).toString()));
 }

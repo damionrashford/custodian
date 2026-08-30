@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { permitUrl, type EgressPolicy } from "@custodian/agent";
+import { permitHost, permitUrl, type EgressPolicy } from "@custodian/agent";
 
 const POLICY: EgressPolicy = { allowedHosts: ["docs.example.com"] };
 const PUBLIC = "93.184.216.34";
@@ -70,4 +70,19 @@ test("credentials in the url are refused", () => {
 
 test("an unparseable url is refused rather than coerced", () => {
   expect(permitUrl("not a url", PUBLIC, POLICY).ok).toBe(false);
+});
+
+test("the host decision needs no DNS at all", () => {
+  // The ordering this pins is a security property, not a performance one. Resolving before deciding
+  // hands every hostname a page names to a DNS server, and a page can encode data in a name it never
+  // expects to reach — refusing the fetch afterwards does not take the lookup back.
+  //
+  // permitHost is total over its inputs and takes no address, so a caller physically cannot resolve
+  // first and check second while using it.
+  expect(permitHost("https://elsewhere.example.net/", POLICY).ok).toBe(false);
+  expect(permitHost("file:///etc/passwd", POLICY).ok).toBe(false);
+  expect(permitHost("https://user:pw@docs.example.com/", POLICY).ok).toBe(false);
+
+  const allowed = permitHost("https://docs.example.com/page", POLICY);
+  expect(allowed.ok && allowed.value).toBe("docs.example.com");
 });

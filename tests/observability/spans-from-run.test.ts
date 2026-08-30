@@ -47,6 +47,8 @@ function runFixture(): readonly LoggedEntry[] {
         bucket: bucketFor("execution-log-content", AT),
         iv: "aXY=",
         ciphertext: SENTINEL,
+        wrappedSubjectKey: "vault:v1:subject",
+        wrappedBucketKey: "vault:v1:bucket",
       },
     },
     {

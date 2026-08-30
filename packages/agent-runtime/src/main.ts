@@ -12,7 +12,14 @@ import {
 } from "@custodian/domain-primitives";
 import { DEFAULT_LOOP_LIMITS } from "@custodian/agent-loop";
 import type { PromptSnapshot, Registry } from "@custodian/config-registry";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  HttpVaultTransport,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+  VaultTransitKeyCustodian,
+  type KeyCustodian,
+} from "@custodian/crypto-shred";
 import { Sha256ContentHasher, SqliteExecutionLogStore } from "@custodian/execution-log";
 import { XaiModelProvider } from "@custodian/gateway";
 import { PhraseInjectionClassifier } from "@custodian/guardrails";
@@ -28,6 +35,7 @@ import { priceCompletion, type PriceTable } from "@custodian/metering";
 import { HashEmbedder } from "@custodian/retrieval";
 import type { ProviderProfile } from "@custodian/routing";
 import { InMemoryToolCatalogue, parseTaskClass } from "@custodian/tool-registry";
+import { custodyDecision } from "./application/custody-decision";
 import { runAgent } from "./application/run-agent";
 import { kbDocumentKey, KbSearchTool, type KbDocument } from "./infrastructure/kb-search-tool";
 import { runsHandler } from "./interface/http";
@@ -177,36 +185,55 @@ const logStore = new SqliteExecutionLogStore(
 );
 
 /**
- * Process-scoped, beside the durable log — never per request. Built inside the request closure,
- * the key store's DEKs died with the request that made them and the claims map could not see a
- * redelivery.
+ * Where the subject keys live, decided from the environment.
  *
- * The claim ledger is now durable, which is what the spec asks for outright: the request-hash key
- * is "persisted before any provider call" and is chaos-tested under forced worker restart
- * (AI_Agent_Implementation_Plan_v2.txt:65, :280). The key store is not, and persisting it is not
- * the same job — the spec's shape is a per-subject DEK wrapped by a KEK in a KMS, with the KMS
- * destruction record as the erasure proof (Data_Protection_and_Retention.txt:74). Raw keys in a
- * file beside their own ciphertext would be a different design wearing durability's name, so this
- * stays in-process until that adapter exists: a restart is still a key destruction nobody
- * requested, and no tenant traffic may run against it.
+ * Durable ciphertext with ephemeral keys is worse than either alone: a restart leaves rows on disk
+ * that nothing can ever decrypt, with no erasure request, no proof and no registry entry recording
+ * that they became unrecoverable — and a later erasure would mint a proof truthful in outcome but
+ * false about when. That is why the in-memory path still takes a deliberate acknowledgement, and why
+ * a half-configured Vault refuses instead of quietly falling back to it.
  */
-/**
- * The in-process key store is only safe to pair with durable content stores in development, and a
- * comment saying so is not a control. Durable ciphertext with ephemeral keys is worse than either
- * alone: a restart leaves rows on disk that nothing can ever decrypt, with no erasure request, no
- * proof and no registry entry recording that they became unrecoverable — and a later erasure would
- * mint a proof truthful in outcome but false about when. Until the KEK-backed store lands, booting
- * that combination takes a deliberate acknowledgement.
- */
-if (Bun.env["CUSTODIAN_DEV_MODE"] !== "1") {
-  console.error(
-    "This build keeps subject keys in memory while writing sealed content to disk, which is " +
-      "development-only. Set CUSTODIAN_DEV_MODE=1 to acknowledge, or compose a durable key store.",
-  );
-  process.exit(1);
+const custody = custodyDecision({
+  vaultAddress: Bun.env["CUSTODIAN_VAULT_ADDR"],
+  vaultToken: Bun.env["CUSTODIAN_VAULT_TOKEN"],
+  devMode: Bun.env["CUSTODIAN_DEV_MODE"],
+});
+
+function custodianFrom(decision: typeof custody): KeyCustodian {
+  switch (decision.kind) {
+    case "vault":
+      return new VaultTransitKeyCustodian({
+        transport: new HttpVaultTransport({
+          address: decision.address,
+          token: decision.token,
+          timeoutMs: 10_000,
+        }),
+        now: () => new Date(),
+      });
+    case "in-memory":
+      console.error(
+        "CUSTODIAN_DEV_MODE=1: subject keys are held in memory, so a restart destroys every key " +
+          "and the sealed rows on disk become permanently unreadable. Development only.",
+      );
+      return new InMemoryKeyCustodian({ now: () => new Date() });
+    case "refuse":
+      console.error(
+        "No key custodian is configured. Set CUSTODIAN_VAULT_ADDR and CUSTODIAN_VAULT_TOKEN " +
+          "together, or set CUSTODIAN_DEV_MODE=1 to acknowledge in-memory keys.",
+      );
+      return process.exit(1);
+    default:
+      return decision;
+  }
 }
 
-const keys = new AesGcmSubjectKeyStore({ now: () => new Date() });
+const deletionRegistry = new SqliteDeletionRegistry(
+  Bun.env["CUSTODIAN_REGISTRY_DB"] ?? "custodian-registry.sqlite",
+);
+const keys = new EnvelopeSubjectKeyStore({
+  custodian: custodianFrom(custody),
+  registry: deletionRegistry,
+});
 const idempotency = new SqliteIdempotencyStore(
   Bun.env["CUSTODIAN_CLAIMS_DB"] ?? "custodian-claims.sqlite",
 );

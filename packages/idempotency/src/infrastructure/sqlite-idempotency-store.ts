@@ -202,11 +202,18 @@ function parseSealedContent(stored: unknown): SealedContent | undefined {
   const bucket = stored["bucket"];
   const iv = stored["iv"];
   const ciphertext = stored["ciphertext"];
+  const wrappedSubjectKey = stored["wrappedSubjectKey"];
+  const wrappedBucketKey = stored["wrappedBucketKey"];
+  // A row missing either wrapped key is a row whose content is already unrecoverable. Returning it
+  // as a completed outcome would hand a caller a body nothing can open, so it reads as "no outcome
+  // yet" like any other unparseable row.
   if (
     typeof subject !== "string" ||
     typeof bucket !== "string" ||
     typeof iv !== "string" ||
-    typeof ciphertext !== "string"
+    typeof ciphertext !== "string" ||
+    typeof wrappedSubjectKey !== "string" ||
+    typeof wrappedBucketKey !== "string"
   ) {
     return undefined;
   }
@@ -215,5 +222,12 @@ function parseSealedContent(stored: unknown): SealedContent | undefined {
   if (!parsedSubject.ok || !parsedBucket.ok) {
     return undefined;
   }
-  return { subject: parsedSubject.value, bucket: parsedBucket.value, iv, ciphertext };
+  return {
+    subject: parsedSubject.value,
+    bucket: parsedBucket.value,
+    iv,
+    ciphertext,
+    wrappedSubjectKey,
+    wrappedBucketKey,
+  };
 }

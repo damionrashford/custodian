@@ -15,7 +15,11 @@ import {
   parseSubjectId,
   parseTenantId,
 } from "@custodian/domain-primitives";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/crypto-shred";
 import { admissibleProof, DATA_MAP, runErasure } from "@custodian/erasure";
 import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
@@ -58,7 +62,10 @@ function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label:
 }
 
 test("erasure gate: a crypto-shredded subject is unrecoverable from storage and from a pre-request backup", async () => {
-  const store = new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") });
+  const store = new EnvelopeSubjectKeyStore({
+    custodian: new InMemoryKeyCustodian({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
+    registry: new SqliteDeletionRegistry(":memory:"),
+  });
   const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
   const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "tenant");
   const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
@@ -249,7 +256,7 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   // refusing until a KMS-backed store returns a record someone outside this process issued.
   expect(admissibleProof(erased.value.proof)).toEqual({
     ok: false,
-    error: { kind: "self-attested", target: String(subject) },
+    error: { kind: "self-attested", target: `subject-${String(subject)}` },
   });
 
   // 6. Erasure is idempotent — a repeat request returns the original proof.

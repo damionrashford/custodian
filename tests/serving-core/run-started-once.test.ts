@@ -10,7 +10,11 @@ import {
   parseTenantId,
   type Principal,
 } from "@custodian/domain-primitives";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/crypto-shred";
 import { serveCompletion, type CompletionResponse, type ModelProvider } from "@custodian/gateway";
 import { InMemoryIdempotencyStore, parseRequestHash } from "@custodian/idempotency";
 import { Sha256ContentHasher, verifyRunLog } from "@custodian/execution-log";
@@ -111,7 +115,10 @@ function baseRequest(hash: string) {
     hasher,
     at: "2026-08-29T00:00:00.000Z",
     jitter: 0,
-    keys: new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
+    keys: new EnvelopeSubjectKeyStore({
+      custodian: new InMemoryKeyCustodian({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
+      registry: new SqliteDeletionRegistry(":memory:"),
+    }),
     subject,
     costMicros: (usage: { inputTokens: number; outputTokens: number }) =>
       usage.inputTokens * 3 + usage.outputTokens * 15,

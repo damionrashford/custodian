@@ -10,7 +10,11 @@ import {
   parseSubjectId,
   parseTenantId,
 } from "@custodian/domain-primitives";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/crypto-shred";
 import {
   appendEntry,
   redactExpiredContent,
@@ -39,7 +43,10 @@ function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label:
 }
 
 test("expiring a bucket removes the content and leaves the chain verifiable", async () => {
-  const store = new AesGcmSubjectKeyStore({ now: () => new Date("2026-09-28T00:00:00.000Z") });
+  const store = new EnvelopeSubjectKeyStore({
+    custodian: new InMemoryKeyCustodian({ now: () => new Date("2026-09-28T00:00:00.000Z") }),
+    registry: new SqliteDeletionRegistry(":memory:"),
+  });
   const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
   const bucket = bucketFor("execution-log-content", "2026-08-29T00:00:00.000Z");
   const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "tenant");
@@ -81,7 +88,10 @@ test("expiring a bucket removes the content and leaves the chain verifiable", as
 });
 
 test("redaction before the period elapses is refused, not merely discouraged", async () => {
-  const store = new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") });
+  const store = new EnvelopeSubjectKeyStore({
+    custodian: new InMemoryKeyCustodian({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
+    registry: new SqliteDeletionRegistry(":memory:"),
+  });
 
   // A caller passing its own bucket could destroy the Article 73 window on day one, and nothing at
   // the call site would show it. The period is a legal position, not a parameter (LD-9).

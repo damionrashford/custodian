@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/crypto-shred";
 import {
   parseRetentionBucket,
   parseSubjectId,
@@ -16,7 +20,10 @@ const SAME_DAY = "2026-08-29T06:00:00.000Z";
 const PAST_RETENTION = "2026-09-29T00:00:00.000Z";
 
 const digest = new Sha256ContentHasher();
-const keys = new AesGcmSubjectKeyStore({ now: () => new Date(STORED_AT) });
+const keys = new EnvelopeSubjectKeyStore({
+  custodian: new InMemoryKeyCustodian({ now: () => new Date(STORED_AT) }),
+  registry: new SqliteDeletionRegistry(":memory:"),
+});
 
 async function seal(plaintext: string): Promise<SealedContent> {
   const subject = parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z");

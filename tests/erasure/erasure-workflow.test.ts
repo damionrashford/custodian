@@ -1,6 +1,10 @@
 import { expect, test } from "bun:test";
 import { parseRetentionBucket, parseSubjectId } from "@custodian/domain-primitives";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/crypto-shred";
 import { DATA_MAP, runErasure, type ErasureRequest } from "@custodian/erasure";
 
 function subject(value: string) {
@@ -12,7 +16,10 @@ function subject(value: string) {
 const SUBJECT = subject("s_01jd7k9h2m4n6p8r0s2t4v6x8z");
 
 function store() {
-  return new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") });
+  return new EnvelopeSubjectKeyStore({
+    custodian: new InMemoryKeyCustodian({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
+    registry: new SqliteDeletionRegistry(":memory:"),
+  });
 }
 
 function request(overrides: Partial<ErasureRequest> = {}): ErasureRequest {
@@ -30,7 +37,9 @@ test("the happy path erases and returns a proof", async () => {
   expect(outcome.ok).toBe(true);
   if (!outcome.ok || outcome.value.kind !== "erased") throw new Error("expected erasure");
   expect(outcome.value.subject).toBe(SUBJECT);
-  expect(outcome.value.proof.target).toBe(SUBJECT);
+  // The proof names the key that was destroyed, not the person — a key destruction is the event it
+  // is evidence of. The subject sits beside it on the outcome, so nothing is lost by being precise.
+  expect(outcome.value.proof.target).toBe(`subject-${String(SUBJECT)}`);
 });
 
 test("the statutory clock starts at receipt, not at completion", async () => {

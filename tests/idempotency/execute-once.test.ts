@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/crypto-shred";
 import { parseRetentionBucket, parseSubjectId, parseTenantId } from "@custodian/domain-primitives";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
 import {
@@ -11,7 +15,10 @@ import {
   type RecordedOutcome,
 } from "@custodian/idempotency";
 
-const keys = new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") });
+const keys = new EnvelopeSubjectKeyStore({
+  custodian: new InMemoryKeyCustodian({ now: () => new Date("2026-08-29T00:00:00.000Z") }),
+  registry: new SqliteDeletionRegistry(":memory:"),
+});
 
 async function sealedBody(plaintext: string) {
   const subject = parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z");

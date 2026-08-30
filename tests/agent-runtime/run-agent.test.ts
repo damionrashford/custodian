@@ -12,7 +12,11 @@ import {
   type Principal,
 } from "@custodian/domain-primitives";
 import { DEFAULT_LOOP_LIMITS, type LoopLimits } from "@custodian/agent-loop";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/crypto-shred";
 import type { PromptSnapshot } from "@custodian/config-registry";
 import {
   InMemoryExecutionLogStore,
@@ -185,7 +189,10 @@ function fixture(overrides: {
     candidates: overrides.candidates ?? [profile("xai-us")],
     providers: [scripted("xai-us", overrides.responses ?? [USE_TOOL, ANSWER], calls)],
     idempotency: new InMemoryIdempotencyStore({ onWrite: () => undefined }),
-    keys: new AesGcmSubjectKeyStore({ now: () => new Date(AT) }),
+    keys: new EnvelopeSubjectKeyStore({
+      custodian: new InMemoryKeyCustodian({ now: () => new Date(AT) }),
+      registry: new SqliteDeletionRegistry(":memory:"),
+    }),
     hasher,
     costMicros:
       overrides.costMicros ?? ((usage) => usage.inputTokens * 3 + usage.outputTokens * 15),

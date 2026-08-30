@@ -48,6 +48,8 @@ const outcome: RecordedOutcome = {
     bucket: bucketFor("prompts-and-completions", AT),
     iv: "aXY=",
     ciphertext: "Y2lwaGVy",
+    wrappedSubjectKey: "vault:v1:subject",
+    wrappedBucketKey: "vault:v1:bucket",
   },
 };
 

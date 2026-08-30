@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import {
+  EnvelopeSubjectKeyStore,
+  InMemoryKeyCustodian,
+  SqliteDeletionRegistry,
+} from "@custodian/crypto-shred";
 import {
   parseRetentionBucket,
   parseRunId,
@@ -10,7 +14,10 @@ import {
 import { InMemoryStreamJournal, STREAMING_RESPONSE_HEADERS } from "@custodian/streaming";
 
 const AT = "2026-08-29T00:00:00.000Z";
-const keys = new AesGcmSubjectKeyStore({ now: () => new Date(AT) });
+const keys = new EnvelopeSubjectKeyStore({
+  custodian: new InMemoryKeyCustodian({ now: () => new Date(AT) }),
+  registry: new SqliteDeletionRegistry(":memory:"),
+});
 
 function run() {
   const parsed = parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z");

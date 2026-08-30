@@ -6,7 +6,6 @@
       "project": ["tests/**/*.ts", "scripts/**/*.ts"]
     },
     "packages/*": {
-      "entry": ["src/index.ts", "src/main.ts", "src/**/*.test.ts"],
       "project": ["src/**/*.ts"]
     }
   }

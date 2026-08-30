@@ -14,30 +14,30 @@ import {
   parseRunId,
   parseSubjectId,
   parseTenantId,
-} from "@custodian/domain-primitives";
+} from "@custodian/primitives";
 import {
   EnvelopeSubjectKeyStore,
   InMemoryKeyCustodian,
   SqliteDeletionRegistry,
-} from "@custodian/crypto-shred";
-import { admissibleProof, DATA_MAP, runErasure } from "@custodian/erasure";
-import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
+} from "@custodian/custody";
+import { admissibleProof, DATA_MAP, runErasure } from "@custodian/custody";
+import { cacheKeyFor, InMemoryResponseCache } from "@custodian/serving";
 import {
   InMemoryVectorIndex,
   namespaceFor,
   sealEmbedding,
   verifyTenantClaim,
   type ClaimVerifier,
-} from "@custodian/knowledge-base";
-import { bucketFor } from "@custodian/retention";
+} from "@custodian/knowledge";
+import { bucketFor } from "@custodian/primitives";
 import {
   Sha256ContentHasher,
   subjectsIn,
   verifyRunLog,
   type LoggedEntry,
-} from "@custodian/execution-log";
-import { serveCompletion } from "@custodian/gateway";
-import { parseRequestHash, SqliteIdempotencyStore } from "@custodian/idempotency";
+} from "@custodian/evidence";
+import { serveCompletion } from "@custodian/serving";
+import { parseRequestHash, SqliteIdempotencyStore } from "@custodian/serving";
 
 function principal(tenant: TenantId): Principal {
   const id = parsePrincipalId("p_operator");

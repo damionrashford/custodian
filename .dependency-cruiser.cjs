@@ -20,7 +20,7 @@ module.exports = {
       from: { path: "^src/[^/]+/domain/", pathNot: "\\.test\\.ts$" },
       to: {
         dependencyTypes: ["core", "npm", "npm-dev", "npm-optional", "npm-peer", "npm-bundled"],
-        pathNot: "^src/(domain-primitives/index\\.ts$|[^/]+/domain/)",
+        pathNot: "^src/(primitives/index\\.ts$|[^/]+/domain/)",
       },
     },
     {
@@ -41,10 +41,10 @@ module.exports = {
       // form works and the special case is gone.
       to: {
         path: "^src/[^/]+/index\\.ts$",
-        // The pure-vocabulary components: barrels exporting domain only. scripts/check-structure.ts
+        // The pure-vocabulary component: the one barrel exporting domain only. scripts/check-structure.ts
         // fails the build if either ever exports from infrastructure/ or application/, so this list
         // cannot silently rot into the hole it was written to close.
-        pathNot: "^src/(domain-primitives|retention)/index\\.ts$",
+        pathNot: "^src/primitives/index\\.ts$",
       },
     },
     {

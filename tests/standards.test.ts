@@ -131,58 +131,13 @@ test("the layering gate sees type-only imports", async () => {
  * more fails too rather than rotting into a permission nobody meant to grant.
  */
 const COMPONENT_DEPENDENCIES: Readonly<Record<string, readonly string[]>> = {
-  "agent-loop": [],
-  "agent-runtime": [
-    "agent-loop",
-    "config-registry",
-    "context-assembly",
-    "crypto-shred",
-    "domain-primitives",
-    "execution-log",
-    "gateway",
-    "guardrails",
-    "idempotency",
-    "knowledge-base",
-    "metering",
-    "retention",
-    "retrieval",
-    "routing",
-    "tool-registry",
-  ],
-  "config-registry": ["domain-primitives"],
-  "context-assembly": ["domain-primitives"],
-  "crypto-shred": ["domain-primitives"],
-  "domain-primitives": [],
-  "durable-execution": ["domain-primitives"],
-  erasure: ["domain-primitives"],
-  eval: [],
-  "event-delivery": ["domain-primitives"],
-  "execution-log": ["crypto-shred", "domain-primitives", "retention"],
-  gateway: [
-    "config-registry",
-    "crypto-shred",
-    "domain-primitives",
-    "execution-log",
-    "idempotency",
-    "knowledge-base",
-    "retention",
-    "routing",
-  ],
-  guardrails: [],
-  idempotency: ["domain-primitives"],
-  identity: ["domain-primitives"],
-  "knowledge-base": ["crypto-shred", "domain-primitives"],
-  memory: ["domain-primitives", "retention"],
-  metering: ["domain-primitives"],
-  observability: ["domain-primitives", "execution-log", "reconciliation"],
-  oversight: [],
-  reconciliation: [],
-  "response-cache": ["domain-primitives", "retention"],
-  retention: ["domain-primitives"],
-  retrieval: ["domain-primitives"],
-  routing: ["domain-primitives"],
-  streaming: ["domain-primitives"],
-  "tool-registry": ["domain-primitives"],
+  agent: ["custody", "evidence", "governance", "knowledge", "primitives", "serving"],
+  custody: ["primitives"],
+  evidence: ["custody", "primitives"],
+  governance: ["primitives"],
+  knowledge: ["custody", "primitives"],
+  primitives: [],
+  serving: ["custody", "evidence", "governance", "knowledge", "primitives"],
 };
 
 async function importsByComponent(): Promise<Map<string, Set<string>>> {
@@ -264,7 +219,7 @@ test("no subject key store holds its own keys", async () => {
 });
 
 test("the vector index stores sealed embeddings, never bare vectors", async () => {
-  const source = await readRepoFile("src/knowledge-base/infrastructure/in-memory-vector-index.ts");
+  const source = await readRepoFile("src/knowledge/infrastructure/in-memory-vector-index.ts");
 
   // Scoped to the stored type, not the whole file. `sealEmbedding` legitimately *takes* a bare
   // vector — it is the thing being sealed — so a file-wide match would fail on correct code, and a
@@ -290,11 +245,11 @@ test("type assertions are exempt in exactly the two pinned source files", async 
   // by moving one folder deeper. Every brand is now built through `brand()`, so the list is one
   // entry — and growing it back is a decision someone has to make in this test first.
   expect(exempt.map((m) => m[1])).toEqual([
-    "src/domain-primitives/domain/language/brand.ts",
+    "src/primitives/domain/language/brand.ts",
     // A single-purpose row parser whose one assertion is hash-verified before anything returns —
     // a parser exemption in the standard's own sense, made deliberately here (LD-11: growing this
     // list is a decision, not a drive-by), and scoped to the parser file so the sqlite adapter
     // itself stays under the assertion ban.
-    "src/execution-log/infrastructure/parse-stored-entry.ts",
+    "src/evidence/infrastructure/parse-stored-entry.ts",
   ]);
 });

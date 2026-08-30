@@ -77,15 +77,15 @@ export default defineConfig(
     files: [
       "**/*.test.ts",
       "tests/**/*.ts",
-      "src/domain-primitives/domain/language/brand.ts",
-      "src/execution-log/infrastructure/parse-stored-entry.ts",
+      "src/primitives/domain/language/brand.ts",
+      "src/evidence/infrastructure/parse-stored-entry.ts",
     ],
     rules: { "@typescript-eslint/consistent-type-assertions": "off" },
   },
   {
     // `brand`'s caller-chosen return type is the assertion, which is what the rule is detecting.
     // Keeping it caller-chosen is the whole design: it is what makes the carrier type checked.
-    files: ["src/domain-primitives/domain/language/brand.ts"],
+    files: ["src/primitives/domain/language/brand.ts"],
     rules: { "@typescript-eslint/no-unnecessary-type-parameters": "off" },
   },
   {

@@ -22,8 +22,8 @@ import {
   HttpVaultTransport,
   SqliteDeletionRegistry,
   VaultTransitKeyCustodian,
-} from "@custodian/crypto-shred";
-import { parseRetentionBucket, parseSubjectId } from "@custodian/domain-primitives";
+} from "@custodian/custody";
+import { parseRetentionBucket, parseSubjectId } from "@custodian/primitives";
 
 function required(name: string): string {
   const value = Bun.env[name];

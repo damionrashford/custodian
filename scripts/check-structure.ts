@@ -45,9 +45,9 @@ for await (const file of new Bun.Glob("src/*/**/*.ts").scan(".")) {
  * the exemption becomes a route from domain to an adapter, so the claim is checked rather than
  * trusted.
  */
-const PURE_VOCABULARY_PACKAGES: readonly string[] = ["domain-primitives", "retention"];
+const PURE_VOCABULARY_COMPONENTS: readonly string[] = ["primitives"];
 
-for (const name of PURE_VOCABULARY_PACKAGES) {
+for (const name of PURE_VOCABULARY_COMPONENTS) {
   const barrel = Bun.file(`src/${name}/index.ts`);
   const source = await barrel.text();
   if (/from "\.\/(infrastructure|application)\//.test(source)) {

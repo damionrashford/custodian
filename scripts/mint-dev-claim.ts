@@ -9,8 +9,8 @@
  *   bun scripts/mint-dev-claim.ts t_01jd7k9h2m4n6p8r0s2t4v6x8z
  */
 import { generateKeyPairSync, sign } from "node:crypto";
-import { parseTenantId } from "@custodian/domain-primitives";
-import { MAX_CLAIM_LIFETIME_MS } from "@custodian/knowledge-base";
+import { parseTenantId } from "@custodian/primitives";
+import { MAX_CLAIM_LIFETIME_MS } from "@custodian/knowledge";
 
 const requested = Bun.argv[2] ?? "t_01jd7k9h2m4n6p8r0s2t4v6x8z";
 const tenant = parseTenantId(requested);

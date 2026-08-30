@@ -3,15 +3,26 @@ import { parseTenantId } from "@custodian/domain-primitives";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
 import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
 
+const NOW = new Date("2026-08-29T12:00:00.000Z");
+
 const verifier: ClaimVerifier = {
   verify: (token) => {
     const parsed = parseTenantId(token);
-    return parsed.ok ? parsed : { ok: false, error: { kind: "signature-invalid" } };
+    return parsed.ok
+      ? {
+          ok: true,
+          value: {
+            tenant: parsed.value,
+            issuedAt: "2026-08-29T11:45:00.000Z",
+            expiresAt: "2026-08-29T12:15:00.000Z",
+          },
+        }
+      : { ok: false, error: { kind: "signature-invalid" } };
   },
 };
 
 function namespace(id: string) {
-  const claim = verifyTenantClaim(id, verifier);
+  const claim = verifyTenantClaim(id, { verifier, now: NOW });
   if (!claim.ok) throw new Error("fixture: claim rejected");
   return namespaceFor(claim.value);
 }

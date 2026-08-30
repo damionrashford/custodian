@@ -22,7 +22,7 @@
 .claude/skills/keep-changelog/
 .claude/skills/readme-wizard/
 .claude/skills/typescript-7/
-.claude/skills/playwright/
+.claude/skills/bun-webview/
 .claude/skills/graphify/
 
 # Tool config, not platform knowledge. Parsed as JSON AST, these dominate the graph:

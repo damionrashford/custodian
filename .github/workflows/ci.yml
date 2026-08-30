@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun ci
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      # Bun.WebView drives an installed Chrome-family browser via CDP on Linux.
+      # ubuntu-latest ships google-chrome-stable pre-installed; if that ever
+      # changes, add an explicit browser-install step here.
+      - name: Run tests
+        run: bun run test

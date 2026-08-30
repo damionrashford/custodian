@@ -1,0 +1,67 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Tenant knowledge bases are isolated per namespace, and a namespace can only be derived from a
+  verified tenant claim — there is no way to name another tenant's namespace.
+- Data-subject erasure destroys the encryption key rather than deleting rows, so a restore from a
+  backup taken before the request cannot resurrect the subject. Every storage location has a named
+  erasure mechanism and a missing one is reported as a defect.
+- Erasure runs as a nine-step workflow: an ambiguous identity escalates to human review instead of
+  proceeding, a legal hold blocks and records its basis, and a repeat request returns the original
+  proof.
+- The execution log records what the agent did, with what data, on whose behalf, as a hash-chained
+  append-only sequence. A mutated entry, a deleted entry and a rewritten link are each detectable.
+- Requests are routed only to providers that both process and store in the tenant's region. When
+  none is eligible the request is refused rather than sent across the boundary.
+- Repeated delivery of the same request returns the first outcome instead of calling a provider
+  twice, and the claim is recorded before any provider call so a failover cannot slip past it.
+- Agent runs stop on a hard iteration ceiling, on repeated steps that change nothing, on a per-run
+  cost ceiling, and before acting on an unverified result.
+- Tool definitions load on demand. Sessions start with names and one-line summaries only, scoped to
+  the task at hand, and the catalogue reports how many tools must be removed when it grows past
+  budget.
+- Long-running responses can resume from where a dropped connection stopped, without re-running the
+  work or charging for it twice.
+- Retrieved documents pass a guardrail rail before entering a prompt, so an instruction hidden in a
+  fetched document is blocked even when the user's own message is benign.
+- Safety and policy text is pinned and survives context compaction. Compaction that cannot fit the
+  pinned text fails rather than dropping it.
+- Agent memory records where each entry came from and demotes untrusted origins when recalling, in
+  addition to refusing to persist them.
+- Release gates report pass^k rather than pass@k, so an agent that succeeds intermittently fails the
+  gate instead of clearing it.
+- Prompt rollback repoints a deployment label at an existing version and names the caches that must
+  be invalidated as part of the rollback.
+- Approvals are tiered by risk, and a timeout on anything but the lowest tier denies rather than
+  proceeding.
+- Cost is reconciled across the provider invoice, metered events and the internal ledger at zero
+  tolerance; a mismatched billing period is reported as incomparable rather than as a discrepancy.
+
+### Fixed
+
+- Document chunks no longer exceed the configured token budget. Overlap was being added on top of an
+  already-full chunk.
+- An identical request repeated after the idempotency window now executes instead of silently
+  returning a stale answer for work that never ran.
+
+### Security
+
+- Tenant claims are rejected unless they are signed, currently valid, not future-dated, and bounded
+  to at most one hour of total lifetime. Previously a captured tenant claim — the credential that
+  decides whose data a query may read — was valid indefinitely.
+- Every store holding model content now holds ciphertext, and cache keys are digests rather than the
+  prompt itself. Previously a completion could be crypto-shredded while the cache index still
+  recorded what had been asked.
+- The idempotency store is covered by the erasure data map. Completions held there were previously
+  unreachable by an erasure request.
+- Cached completions expire on the retention schedule instead of being kept indefinitely.
+
+[unreleased]: https://github.com/damionrashford/custodian/commits/main

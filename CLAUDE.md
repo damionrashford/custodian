@@ -33,6 +33,46 @@ suffixes holding an unfinished migration open (`.claude/rules/change-discipline.
 
 TypeScript + Bun runtime. Python tooling, where needed, via `uv` with PEP 723 inline metadata.
 
+## Mandatory skills — not suggestions
+
+Every row below is a **MUST**. These instructions already existed in prose further down and were
+ignored across an entire build (25 packages shipped with zero code review, an empty CHANGELOG, and
+the spec corpus read by hand instead of through `research`). They are a table now because a rule
+buried in a paragraph is a rule that gets skipped.
+
+**The test for every row: if you are about to do the thing in the left column and you have not
+invoked the skill in the right column this session, you are doing it wrong. Stop and invoke it.**
+
+| About to… | MUST invoke first |
+|---|---|
+| Answer "what does the spec say about X", or implement anything from `.research/` | `research` — never read `.research/*.txt` directly to answer a spec question |
+| Create a new platform component's folders | `scaffold-component` — hand-rolling the 4 layers is a violation even when the result looks right |
+| Plan any multi-step work | `superpowers:writing-plans` |
+| Execute a written plan | `superpowers:executing-plans` or `superpowers:subagent-driven-development` |
+| Lock in an architectural decision the spec left open | `adversaria:devils-advocate` before it becomes a Non-negotiable |
+| Land code in a component | The **review pipeline** below, in order — all of it |
+| Claim anything passed, shipped, or is done | `superpowers:verification-before-completion` — assert nothing you have not run |
+| Record a shipped change | `keep-changelog` — `CHANGELOG.md` is a release artefact, not an afterthought |
+| Touch `README.md`, or ship a change that dates it | `readme-wizard` |
+| Write or run anything under `tests/` | `testing` |
+| Drive a browser, fetch a page, or search the web | `bun-webview` — `WebFetch`/`WebSearch`/`curl` are denied on purpose; this is the one path |
+| Answer a Bun / TypeScript-7 / React-Router / `gh` question | `bun-docs` / `typescript-7` / `react-router` / `gh` — never from training memory |
+| Ask how parts of this codebase relate | `graphify` first, when `graphify-out/` exists |
+| Build any UI surface | `studio` (design system) with `frontend-design` |
+
+### Review pipeline — every component, in this order, before merge
+
+1. `code-simplifier:code-simplifier` agent — clarity
+2. bundled `code-review` skill — bugs and security on the diff
+3. `layer-reviewer` subagent — layering, banned constructs, naming
+4. `compliance-reviewer` subagent — **required** whenever the change touches personal data, memory,
+   retrieval, caching or logging. This is the reviewer that catches an unsealed store or a location
+   missing from the erasure data map, and skipping it is how those reach `main`.
+5. `code-review@claude-plugins-official` `/code-review` — final gate, PR-only, posts via `gh`
+
+Do not confuse step 5 with step 2; they share a name. `.research/Plugin_and_MCP_Reference.md` §3
+lists the full collision set.
+
 ## Working in this repo
 
 - New research drops land as `.docx` in `.research/` — run the `research` skill (or the `research` subagent for a heavier pass, which can also chase down external prior art the corpus doesn't cover) to convert and verify.

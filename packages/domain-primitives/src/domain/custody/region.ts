@@ -1,4 +1,5 @@
-import { brand, type Brand, err, ok, type Result } from "@custodian/domain-primitives";
+import { brand, type Brand } from "../language/brand";
+import { err, ok, type Result } from "../language/result";
 
 export type Region = Brand<string, "Region">;
 

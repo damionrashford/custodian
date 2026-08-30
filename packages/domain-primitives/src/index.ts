@@ -19,10 +19,15 @@ export { REPLAY_WINDOW_MS } from "./domain/metering/replay-window";
 export type { InvalidRunId, RunId } from "./domain/identity/run-id";
 export { parseRunId } from "./domain/identity/run-id";
 export type { ErasureProof } from "./domain/custody/erasure-proof";
-export type {
-  CompletionUsage,
-  InvalidModelSnapshot,
-  ModelSnapshot,
-} from "./domain/metering/model-snapshot";
-export { parseModelSnapshot } from "./domain/metering/model-snapshot";
+export type { InvalidModelSnapshot, ModelSnapshot } from "./domain/configuration/model-snapshot";
+export { parseModelSnapshot } from "./domain/configuration/model-snapshot";
+export type { InvalidPromptVersion, PromptVersion } from "./domain/configuration/prompt-version";
+export { parsePromptVersion } from "./domain/configuration/prompt-version";
+export type { CompletionUsage } from "./domain/metering/completion-usage";
+export type { InvalidPrincipalId, Principal, PrincipalId } from "./domain/identity/principal";
+export { parsePrincipalId } from "./domain/identity/principal";
+export type { InvalidToolName, ToolName } from "./domain/identity/tool-name";
+export { parseToolName } from "./domain/identity/tool-name";
+export type { InvalidRegion, Region } from "./domain/custody/region";
+export { parseRegion } from "./domain/custody/region";
 export type { KeyStoreFailure } from "./domain/custody/key-store-failure";

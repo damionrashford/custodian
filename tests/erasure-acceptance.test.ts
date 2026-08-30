@@ -1,6 +1,13 @@
 import { expect, test } from "bun:test";
 import {
-  parseRetentionBucket,
+  parsePrincipalId,
+  parseRegion,
+  type Principal,
+  type Region,
+  type TenantId,
+  parseModelSnapshot,
+  parseProviderId,
+  parsePromptVersion,
   parseRunId,
   parseSubjectId,
   parseTenantId,
@@ -10,12 +17,25 @@ import { DATA_MAP, runErasure } from "@custodian/erasure";
 import { cacheKeyFor, InMemoryResponseCache } from "@custodian/response-cache";
 import { namespaceFor, verifyTenantClaim, type ClaimVerifier } from "@custodian/knowledge-base";
 import {
-  appendEntry,
   Sha256ContentHasher,
   subjectsIn,
   verifyRunLog,
   type LoggedEntry,
 } from "@custodian/execution-log";
+import { serveCompletion } from "@custodian/gateway";
+import { InMemoryIdempotencyStore, parseRequestHash } from "@custodian/idempotency";
+
+function principal(tenant: TenantId): Principal {
+  const id = parsePrincipalId("p_operator");
+  if (!id.ok) throw new Error("fixture: bad principal");
+  return { kind: "human", id: id.value, tenant };
+}
+
+function region(): Region {
+  const parsed = parseRegion("eu-west-1");
+  if (!parsed.ok) throw new Error("fixture: bad region");
+  return parsed.value;
+}
 
 /**
  * The release gate from Data_Protection_and_Retention.txt:112-113. Create a synthetic data subject,
@@ -37,28 +57,71 @@ function parsedOrThrow<T>(parsed: { ok: true; value: T } | { ok: false }, label:
 test("erasure gate: a crypto-shredded subject is unrecoverable from storage and from a pre-request backup", async () => {
   const store = new AesGcmSubjectKeyStore({ now: () => new Date("2026-08-29T00:00:00.000Z") });
   const subject = parsedOrThrow(parseSubjectId("s_01jd7k9h2m4n6p8r0s2t4v6x8z"), "subject");
-  const bucket = parsedOrThrow(parseRetentionBucket("content-2026-08"), "bucket");
   const tenant = parsedOrThrow(parseTenantId("t_01jd7k9h2m4n6p8r0s2t4v6x8z"), "tenant");
   const runId = parsedOrThrow(parseRunId("r_01jd7k9h2m4n6p8r0s2t4v6x8z"), "run");
 
-  // 1. Seed: the subject's personal data reaches the execution log.
-  const sealed = await store.seal({ subject, bucket, plaintext: PERSONAL_DATA });
-  if (!sealed.ok) throw new Error("seal failed");
-
-  const appended = appendEntry(
-    [],
-    {
-      kind: "run-started",
-      principal: "p_operator",
-      tenant,
-      region: "eu-west-1",
-      legalBasisPolicy: "tenant-contract",
-      request: sealed.value,
+  // 1. Seed through the production writer, not by hand. A hand-built entry proves only that
+  // appendEntry seals what it is given; it cannot catch serveCompletion sealing the wrong thing —
+  // which is exactly the defect that made this gate pass vacuously while the log held the prompt
+  // template instead of the request (LD-11: plant the idiomatic form).
+  const provider = parsedOrThrow(parseProviderId("eu-primary"), "provider");
+  const served = await serveCompletion({
+    runId,
+    principal: principal(tenant),
+    tenant,
+    tenantRegion: region(),
+    legalBasisPolicy: "tenant-contract",
+    requiresZeroRetention: true,
+    prompt: {
+      version: parsedOrThrow(parsePromptVersion("pv_01jd7k9h2m4n6p8r0s2t4v6x8z"), "version"),
+      text: "answer the customer's question",
+      model: parsedOrThrow(parseModelSnapshot("frontier-1.5-20260801"), "model"),
+      parameters: { temperature: 0.2 },
+      changeSource: "ticket CUS-118",
+      rationale: "erasure gate fixture",
+      evalPassCaret: 0.9,
+      createdAt: "2026-08-29T00:00:00.000Z",
     },
-    { runId, at: "2026-08-29T00:00:00.000Z", hasher },
-  );
-  if (!appended.ok) throw new Error("append failed");
-  const log: readonly LoggedEntry[] = appended.value;
+    input: PERSONAL_DATA,
+    maxOutputTokens: 100,
+    log: [],
+    requestHash: parsedOrThrow(parseRequestHash("b".repeat(64)), "hash"),
+    candidates: [
+      {
+        id: provider,
+        processingRegion: region(),
+        storageRegion: region(),
+        zeroRetention: true,
+        healthy: true,
+      },
+    ],
+    providers: [
+      {
+        id: provider,
+        complete: () =>
+          Promise.resolve({
+            ok: true as const,
+            value: { text: PERSONAL_DATA, usage: { inputTokens: 10, outputTokens: 5 } },
+          }),
+      },
+    ],
+    idempotency: new InMemoryIdempotencyStore({ onWrite: () => undefined }),
+    hasher,
+    at: "2026-08-29T00:00:00.000Z",
+    jitter: 0,
+    keys: store,
+    subject,
+    costMicros: () => 195,
+  });
+  if (!served.ok) throw new Error("fixture: serveCompletion failed");
+  const log: readonly LoggedEntry[] = served.value.log;
+
+  const opening = log[0];
+  if (opening?.event.kind !== "run-started") throw new Error("the writer skipped field group 1");
+  const sealed = { ok: true as const, value: opening.event.request };
+
+  // The gate is only meaningful if what the writer sealed is the personal data.
+  expect(await store.unseal(sealed.value)).toEqual({ ok: true, value: PERSONAL_DATA });
 
   // The data map must know this entry touches the subject, or erasure would miss it.
   const first = log[0];

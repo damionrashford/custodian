@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
 import {
+  parsePrincipalId,
+  parseRegion,
+  type Principal,
+  type Region,
+  type TenantId,
   parseRetentionBucket,
   parseRunId,
   parseSubjectId,
@@ -13,6 +18,18 @@ import {
   verifyRunLog,
   type LoggedEntry,
 } from "@custodian/execution-log";
+
+function principal(tenant: TenantId): Principal {
+  const id = parsePrincipalId("p_operator");
+  if (!id.ok) throw new Error("fixture: bad principal");
+  return { kind: "human", id: id.value, tenant };
+}
+
+function region(): Region {
+  const parsed = parseRegion("eu-west-1");
+  if (!parsed.ok) throw new Error("fixture: bad region");
+  return parsed.value;
+}
 
 const hasher = new Sha256ContentHasher();
 
@@ -35,9 +52,9 @@ test("expiring a bucket removes the content and leaves the chain verifiable", as
     [],
     {
       kind: "run-started",
-      principal: "p_operator",
+      principal: principal(tenant),
       tenant,
-      region: "eu-west-1",
+      region: region(),
       legalBasisPolicy: "tenant-contract",
       request: sealed.value,
     },

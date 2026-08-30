@@ -107,10 +107,12 @@
       "name": "@custodian/gateway",
       "version": "0.0.0",
       "dependencies": {
+        "@custodian/config-registry": "workspace:*",
         "@custodian/crypto-shred": "workspace:*",
         "@custodian/domain-primitives": "workspace:*",
         "@custodian/execution-log": "workspace:*",
         "@custodian/idempotency": "workspace:*",
+        "@custodian/retention": "workspace:*",
         "@custodian/routing": "workspace:*",
       },
     },

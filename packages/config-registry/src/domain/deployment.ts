@@ -1,5 +1,5 @@
-import { err, ok, type Result } from "@custodian/domain-primitives";
-import type { PromptSnapshot, PromptVersion } from "./prompt-version";
+import { err, ok, type PromptVersion, type Result } from "@custodian/domain-primitives";
+import type { PromptSnapshot } from "./prompt-snapshot";
 
 /** The mutable half: a label declaring what production currently runs. */
 export type DeploymentLabel = "production" | "canary" | "shadow";

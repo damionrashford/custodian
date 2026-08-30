@@ -5,7 +5,8 @@ import type {
   ToolDefinition,
   ToolSummary,
 } from "../domain/tool-catalogue";
-import type { TaskClass, ToolName } from "../domain/tool-name";
+import type { ToolName } from "@custodian/domain-primitives";
+import type { TaskClass } from "../domain/task-class";
 
 export type CatalogueContents = {
   readonly definitions: readonly ToolDefinition[];

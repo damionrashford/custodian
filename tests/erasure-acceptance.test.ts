@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { parseRetentionBucket, parseSubjectId, parseTenantId } from "@custodian/domain-primitives";
 import { AesGcmSubjectKeyStore } from "@custodian/crypto-shred";
+import { DATA_MAP, runErasure } from "@custodian/erasure";
 import {
   appendEntry,
   parseRunId,
@@ -61,9 +62,22 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   // 2. Backup: a snapshot taken BEFORE the erasure request, serialised as bytes on disk would be.
   const backup = JSON.stringify(log);
 
-  // 3. Erase.
-  const proof = await store.destroySubjectKey(subject);
-  expect(proof.ok).toBe(true);
+  // 3. Erase — through the workflow, not by calling the key store directly, so the gate exercises
+  // the identity, legal-hold and data-map steps that guard the destruction.
+  const erased = await runErasure(
+    {
+      subject,
+      receivedAt: "2026-08-29T00:00:00.000Z",
+      identityAmbiguous: false,
+      legalHold: undefined,
+      coveredLocations: DATA_MAP,
+    },
+    store,
+  );
+  if (!erased.ok || erased.value.kind !== "erased")
+    throw new Error("erasure workflow did not erase");
+  const proof = { ok: true as const, value: erased.value.proof };
+  expect(erased.value.invalidated).toEqual(DATA_MAP);
 
   // 4a. Recovery attempt from live storage.
   expect(await store.unseal(sealed.value)).toEqual({

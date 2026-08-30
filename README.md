@@ -79,7 +79,7 @@ key reaches the log, the cache and the idempotency store at once.
 ## Project structure
 
 ```
-packages/          25 packages, one per platform component
+src/               27 components, each with four layers and one barrel
   crypto-shred/      per-subject and per-bucket envelope encryption
   execution-log/     hash-chained, append-only record of every run
   erasure/           the nine-step data-subject erasure workflow
@@ -87,11 +87,18 @@ packages/          25 packages, one per platform component
   gateway/           model-provider port, retries, budgets
   …
 scripts/           repository checks no linter covers
-tests/             every test, mirrored one folder per package
+tests/             every test, mirrored one folder per component
 ```
 
-Tests live under `tests/`, not beside their source, and import the package barrel — so the tested
-surface and the supported surface stay identical.
+Each component is imported as `@custodian/<component>`, mapped to `src/<component>/index.ts` by
+`tsconfig` `paths`. That barrel is the component's whole public surface: a file may import another
+component's barrel and never its internals, and never its own — enforced by `dependency-cruiser`.
+
+Which component may depend on which is a table in `tests/standards.test.ts`, checked in both
+directions, so an undeclared import and an unused declaration each fail the build.
+
+Tests live under `tests/`, not beside their source, and import the barrel — so the tested surface and
+the supported surface stay identical.
 
 ## Documentation
 

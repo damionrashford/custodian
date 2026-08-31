@@ -2,7 +2,11 @@
 
 An autonomous AI agent platform. `.research/` holds the spec corpus and is the source of truth for *what to build* (search it with the `research` skill/subagent rather than reading this file for what it says); this file and `.claude/` are the scaffolding.
 
-**Implementation status.** Stages 0–3 are built: toolchain gates, foundations F1–F3, serving core (C1, C2, C3, C4, C21) and knowledge/context (C5, C6, C7, C8). Seven components under `src/`, 355 tests, seven CI gates plus a standing erasure gate, all behind `bun run verify`. Stage plans live in `.research/superpowers/plans/` (git-ignored) and each carries an execution status header. Architectural decisions the spec left open are recorded in `.claude/rules/locked-decisions.md` — **read that before re-deciding anything**, because the reasoning is not obvious from the code.
+**Implementation status.** Eight components under `src/`, behind `bun run verify` (typecheck, lint, layering, dead code, structure, format, tests) plus a standing erasure gate, a non-blocking sandbox job and a non-blocking docker job.
+
+Read that as *domain-layer coverage*, not as shipped capability, because the gap between the two is the thing most likely to mislead. A conformance pass against the corpus found several components fully modelled, unit-tested and **unreachable**: `runErasure` is exported and never invoked, so an Article 17 request has no code path; the live-state channel has no socket route and nothing announces into it; the run-timeline projection has no route. Component status therefore belongs in that audit rather than in a line here that ages badly — this file previously claimed seven components and 355 tests while the tree held eight and 536.
+
+Stage plans live in `.research/superpowers/plans/` (git-ignored) and each carries an execution status header. Architectural decisions the spec left open are recorded in `.claude/rules/locked-decisions.md` — **read that before re-deciding anything**, because the reasoning is not obvious from the code.
 
 ## Rules
 

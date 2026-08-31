@@ -9,13 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- An operator can review a completed run step by step: what the agent did, in what order, and
-  whether the record has been tampered with. The record is shown without decrypting anything, so a
-  run belonging to someone who has since been erased still shows that the steps happened without
-  bringing back what they said.
-- A viewer can watch a run as it happens rather than waiting for it to finish, and is told when a
-  frame was dropped instead of silently missing it. A viewer can only watch runs belonging to their
-  own tenant, and asking for someone else's run reveals nothing about whether it exists.
+- A read model that projects the execution log into a reviewable run timeline: what the agent did,
+  in what order, and whether the hash chain verified. It never decrypts, so a run belonging to
+  someone since erased still shows that the steps happened without bringing back what they said.
+  **Not yet reachable** — no route exposes it, so this is the projection, not an operator console.
+- The channel a viewer will watch a run over: state frames carrying the run's progress, a sequence
+  number so a dropped frame is noticed rather than silently missed, and tenant scoping under which
+  asking for someone else's run reveals nothing about whether it exists. **Not yet reachable** — the
+  service exposes no socket route and nothing in a run announces its state, so this is the transport
+  and its guarantees, not a feature a user can use.
 
 - The agent can run a shell command, read and write files in its workspace, fetch a page, and render
   one in a browser. Each declares what class of action it performs, and anything that cannot be

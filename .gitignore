@@ -6,8 +6,14 @@ node_modules/
 # bun test
 /coverage/
 
-# Not tracked in this repo (local machine setup / working state, kept on disk only)
-/.claude/
+# Machine setup stays local; the standards and reviewer definitions do not. Everything under
+# /.claude/ that carries an absolute path — settings.json (GRAPHIFY_OUT), hooks/ (a binary path),
+# skills/ (103M of vendored corpus), worktrees/ — is local. rules/ and agents/ are the rules a
+# change is judged against, and a clone that cannot read them cannot follow them.
+/.claude/*
+!/.claude/rules/
+!/.claude/agents/
+CLAUDE.local.md
 /.research/
 /.graphify/
 

@@ -125,6 +125,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Container build and compose stack moved into `docker/`, which now carries its own instructions.
+  Running the stack is `docker compose -f docker/compose.yaml ...`; the build context is still the
+  repository root, because the image copies the source tree.
+
 - Claim signing keys can be rotated without invalidating claims already in flight. A claim now names
   the key that signed it and the platform holds a ring of trusted keys, so a rotation adds the new
   key, switches issuance to it, and retires the old one only once the longest live claim has

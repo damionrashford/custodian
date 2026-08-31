@@ -35,6 +35,10 @@ suffixes holding an unfinished migration open (`.claude/rules/change-discipline.
 
 TypeScript + Bun runtime. Python tooling, where needed, via `uv` with PEP 723 inline metadata.
 
+Container build and compose stack live in `docker/`, which carries its own `CLAUDE.md` — read that
+before changing anything in there. The build context is the repository root, not that folder, and
+renaming a file the `Dockerfile` copies is a change to `docker/` too.
+
 ## Mandatory skills — not suggestions
 
 Every row below is a **MUST**. These instructions already existed in prose further down and were

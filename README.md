@@ -82,7 +82,20 @@ src/               8 components, each with four layers and one barrel
   surfaces/          agent states, the live channel, copy catalogue, vocabulary gates
 scripts/           repository checks no linter covers
 tests/             every test, mirrored one folder per component
+docker/            the runtime image and compose stack, with its own CLAUDE.md
 ```
+
+## Running it
+
+```bash
+bun run verify                                          # every gate
+bun run agent                                           # the agent, locally
+docker compose -f docker/compose.yaml --profile dev up  # the stack, with a throwaway Vault
+```
+
+The dev profile brings up a Vault in dev mode, which keeps its keys in memory — every restart makes
+every sealed row permanently unreadable. That is why it is behind a profile and not the default;
+`docker/CLAUDE.md` has the rest.
 
 Each component is imported as `@custodian/<component>`, mapped to `src/<component>/index.ts` by
 `tsconfig` `paths`. That barrel is the component's whole public surface: a file may import another

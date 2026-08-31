@@ -119,6 +119,9 @@
     ]
   },
   "env": {
-    "GRAPHIFY_QUERY_BUDGET": "16000"
+    "GRAPHIFY_HOOK_STRICT": "1",
+    "GRAPHIFY_OUT": ".graphify",
+    "GRAPHIFY_QUERY_BUDGET": "16000",
+    "GRAPHIFY_VIZ_NODE_LIMIT": "0"
   }
 }

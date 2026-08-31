@@ -141,9 +141,26 @@ All 17 components + F1–F3 deployed and passing their eval gate; idempotency/au
 
 ## graphify
 
-The standing knowledge graph lives at **`.graphify/`** — the path `GRAPHIFY_OUT` sets in
-`.claude/settings.local.json`. Every command inherits that variable and resolves it; you never pass
-a path.
+The standing knowledge graph lives at **`.graphify/`**, set by `GRAPHIFY_OUT` in the tracked
+`.claude/settings.json`. Every command inherits that variable and resolves it; you never pass a path.
+
+It is tracked, and relative, on purpose. It was previously set nowhere at all — only exported in one
+shell — so any fresh session silently fell back to graphify's default `graphify-out/` and diverged
+from every rule in this file. Four settings now travel with the repo:
+
+| Setting | Why |
+|---|---|
+| `GRAPHIFY_OUT=.graphify` | So the location is a fact of the repo rather than of one terminal |
+| `GRAPHIFY_QUERY_BUDGET=16000` | The stock 2000 reported 57 of 144 matching nodes and named no way to see the rest |
+| `GRAPHIFY_HOOK_STRICT=1` | Makes graphify-first mechanical instead of declared — see below |
+| `GRAPHIFY_VIZ_NODE_LIMIT=0` | Stops writing a 1.9MB `graph.html` on every commit that nothing in this workflow ever opens |
+
+**Strict mode is safe to leave on.** The first raw `Read` of an indexed, fresh, in-project file in a
+session is refused with a reason naming the exact next action. It fires **at most once per session**,
+claimed atomically through a marker file, and every later read in that session falls back to the soft
+nudge. It cannot fire at all when the graph is missing or stale for that file — both cases return
+earlier and softer — and any internal error fails open. So the worst case is one redirected read per
+session, and the failure direction is toward letting work through.
 
 ### Use the whole tool, not just `query`
 

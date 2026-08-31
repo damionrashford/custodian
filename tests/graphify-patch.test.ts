@@ -21,8 +21,15 @@ async function installedCli(): Promise<string | undefined> {
   const home = Bun.env["HOME"];
   if (home === undefined) return undefined;
   const root = `${home}/.local/share/uv/tools/graphifyy/lib`;
-  for await (const path of new Bun.Glob(CLI_GLOB).scan(root)) {
-    return `${root}/${path}`;
+  // Scanning a directory that does not exist rejects rather than yielding nothing, so a CI runner
+  // with no graphify install failed this test instead of skipping it — the skip path was itself
+  // untested, which is the same shape as a gate nobody has watched fail.
+  try {
+    for await (const path of new Bun.Glob(CLI_GLOB).scan(root)) {
+      return `${root}/${path}`;
+    }
+  } catch {
+    return undefined;
   }
   return undefined;
 }

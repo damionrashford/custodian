@@ -9,5 +9,5 @@ The parts most often skipped, in the order they get skipped:
 2. **The mandatory-skills table.** Every row is a MUST, not a suggestion.
 3. **The review pipeline**, in order, before merge — including `compliance-reviewer` for any change
    touching personal data, memory, retrieval, caching or logging.
-4. **`.claude/rules/locked-decisions.md`** — architectural decisions already stress-tested. It is
-   machine-local and absent from a fresh clone; the reasoning is in the commit messages.
+4. **`.claude/rules/locked-decisions.md`** — architectural decisions already stress-tested, with
+   what would reopen each. Tracked, so a clone has it; read it before re-deciding anything.

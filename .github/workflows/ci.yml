@@ -32,13 +32,44 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
+          # Through env rather than inline `${{ }}`: a branch name is attacker-controlled on a
+          # public repo, and inline interpolation splices it into the shell before the shell ever
+          # sees a quote. As `$HEAD_REF` it is one argument whatever it contains.
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           children=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
-            --base "${{ github.event.pull_request.head.ref }}" --json number --jq 'length')
+            --base "$HEAD_REF" --json number --jq 'length')
           if [ "$children" != "0" ]; then
             echo "::error::$children open PR(s) target this branch. Retarget them to main first:"
             gh pr list --repo "$GITHUB_REPOSITORY" --state open \
-              --base "${{ github.event.pull_request.head.ref }}" --json number,title
+              --base "$HEAD_REF" --json number,title
+            exit 1
+          fi
+
+      # CLAUDE.md has said "CHANGELOG.md is a release artefact, not an afterthought" since the
+      # beginning, and an entire build shipped with an empty changelog anyway. A rule nobody can
+      # skip beats a rule everybody agrees with.
+      #
+      # Keep a Changelog is explicit that internal refactors are not notable, so this has an escape
+      # hatch rather than forcing a noise entry: label the PR `no-changelog`. The label is the
+      # record of that judgement, which is the point — the decision becomes visible instead of
+      # being made silently by omission.
+      - name: Require a changelog entry for source changes
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json labels \
+               --jq '.labels[].name' | grep -qx 'no-changelog'; then
+            echo "Skipped: PR is labelled no-changelog."
+            exit 0
+          fi
+          files=$(gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only)
+          if echo "$files" | grep -q '^src/' && ! echo "$files" | grep -qx 'CHANGELOG.md'; then
+            echo "::error::This pull request changes src/ but not CHANGELOG.md."
+            echo "Add an entry under ## [Unreleased], or label the PR no-changelog if the change"
+            echo "is not notable to a reader of the public surface."
             exit 1
           fi
 

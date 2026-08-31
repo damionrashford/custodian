@@ -52,10 +52,7 @@
       "Bash(brew *)",
       "Bash(npm install -g*)"
     ],
-    "ask": [
-      "Edit(.research/*.txt)",
-      "Write(.research/*.txt)"
-    ],
+    "ask": ["Edit(.research/*.txt)", "Write(.research/*.txt)"],
     "deny": [
       "WebFetch",
       "WebSearch",

@@ -1,4 +1,4 @@
-import { brand, type Brand, err, ok, type Result } from "@custodian/primitives";
+import { brand, type Brand, err, ok, type Namespace, type Result } from "@custodian/primitives";
 
 /**
  * A URL that has been checked against the egress policy and may be fetched.
@@ -81,6 +81,31 @@ export type EgressPolicy = {
    */
   readonly allowedHosts: readonly string[];
 };
+
+/**
+ * What a tenant nobody granted egress to gets. Named rather than written inline at each call site,
+ * because the empty allowlist is the *decision* — an unconfigured agent has no web access — and a
+ * decision that only exists as a `?? { allowedHosts: [] }` is one a later refactor reads as a
+ * placeholder.
+ */
+const NO_EGRESS: EgressPolicy = { allowedHosts: [] };
+
+/**
+ * Which hosts this tenant may reach.
+ *
+ * Keyed by `Namespace` for the same reason the workspace root is: the only constructor takes a
+ * verified claim, so a run cannot name — and therefore cannot inherit — another tenant's allowlist.
+ * A miss is `NO_EGRESS` rather than a shared default, which makes "not configured" and "configured
+ * to reach nothing" the same outcome. Deny-by-default with an allowlist is what the corpus asks for,
+ * and it asks for it as something tested adversarially rather than configured once
+ * (Test_and_Security_Assurance.txt:95).
+ */
+export function egressFor(
+  policies: ReadonlyMap<Namespace, EgressPolicy>,
+  namespace: Namespace,
+): EgressPolicy {
+  return policies.get(namespace) ?? NO_EGRESS;
+}
 
 /**
  * Decides whether a URL may be fetched, given where its host actually resolves.

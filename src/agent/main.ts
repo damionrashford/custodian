@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import {
   parseModelSnapshot,
   parsePrincipalId,
@@ -8,6 +9,7 @@ import {
   parseTenantId,
   parseToolName,
   type ModelSnapshot,
+  type Namespace,
   type Principal,
 } from "@custodian/primitives";
 import { DEFAULT_LOOP_LIMITS } from "./domain/loop-controls";
@@ -38,7 +40,11 @@ import { priceCompletion, type PriceTable } from "@custodian/evidence";
 import { HashEmbedder } from "@custodian/knowledge";
 import type { ProviderProfile } from "@custodian/serving";
 import { parseTaskClass } from "./domain/task-class";
+import { assertWithinBudget } from "./domain/catalogue-budget";
+import type { EgressPolicy } from "./domain/url-policy";
 import { InMemoryToolCatalogue } from "./infrastructure/in-memory-tool-catalogue";
+import { agentToolset } from "./infrastructure/agent-toolset";
+import { DockerCodeExecutor } from "./infrastructure/docker-code-executor";
 import { custodyDecision } from "./application/custody-decision";
 import { runAgent } from "./application/run-agent";
 import { kbDocumentKey, KbSearchTool, type KbDocument } from "./infrastructure/kb-search-tool";
@@ -74,18 +80,24 @@ const operator: Principal = {
 };
 
 const PROMPT_TEXT =
-  "You are a careful assistant answering questions from this workspace's knowledge base. " +
-  "Use the search_kb tool to find evidence before answering; answer only from retrieved evidence. " +
-  'Reply with exactly one JSON object per turn: {"action":"use-tool","tool":"search_kb","arguments":{"query":"..."}} ' +
+  "You are a careful assistant working inside one workspace. Use the tools listed in each turn to " +
+  "gather evidence before answering, and answer only from what a tool returned. Use only the tools " +
+  "listed; anything else is unavailable, and some listed tools need a person to approve them first. " +
+  'Reply with exactly one JSON object per turn: {"action":"use-tool","tool":"<name>","arguments":{...}} ' +
   'or {"action":"answer","text":"..."}.';
 
+/**
+ * A new version rather than an edit in place. The text changed because the agent now holds several
+ * tools rather than one, and a registry whose entries are edited under a fixed version cannot answer
+ * "which prompt produced this run" — which is the whole reason the run log records a prompt version.
+ */
 const snapshot: PromptSnapshot = {
-  version: must(parsePromptVersion("pv_01jd7k9h2m4n6p8r0s2t4v6x8z"), "prompt version"),
+  version: must(parsePromptVersion("pv_01jd7k9h2m4n6p8r0s2t4v6y0a"), "prompt version"),
   text: PROMPT_TEXT,
   model,
   parameters: { temperature: 0 },
-  changeSource: "agent-runtime slice composition",
-  rationale: "first end-to-end agent",
+  changeSource: "acting-tool composition",
+  rationale: "the agent holds acting tools, not only retrieval",
   evalPassCaret: 0,
   createdAt: new Date().toISOString(),
 };
@@ -184,17 +196,45 @@ const subject = must(
   "subject",
 );
 
-const catalogue = new InMemoryToolCatalogue({
-  definitions: [
-    {
-      name: searchKb,
-      summary: "Search the workspace knowledge base.",
-      schema: '{"query":"string"}',
-      serverId: "kb",
-    },
-  ],
-  allowlists: new Map([[taskClass, [searchKb]]]),
-});
+const SEARCH_KB = {
+  name: searchKb,
+  summary: "Search the workspace knowledge base.",
+  schema: '{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}',
+  serverId: "kb",
+};
+
+/**
+ * One directory per tenant lives under this, and no tenant's own directory is ever named here.
+ *
+ * The base is the only half of a workspace root that configuration gets to choose. The other half
+ * is the run's `Namespace`, derived from its verified claim, and the file tools take the two
+ * separately for that reason — handing them a finished root would let one deployment serve every
+ * tenant out of one directory without a single check looking wrong.
+ */
+const WORKSPACE_BASE = resolve(Bun.env["CUSTODIAN_WORKSPACE_BASE"] ?? "custodian-workspace");
+
+/** Images for the development sandboxes. Both are unreachable unless CUSTODIAN_DEV_MODE=1. */
+const SANDBOX_IMAGE = Bun.env["CUSTODIAN_SANDBOX_IMAGE"] ?? "alpine:3.20";
+const BROWSER_IMAGE = Bun.env["CUSTODIAN_BROWSER_IMAGE"] ?? "zenika/alpine-chrome:124";
+
+/**
+ * Hosts this deployment's tenant may reach, as a comma-separated list.
+ *
+ * Unset means the empty allowlist, which means no web access at all — the only setting that needs
+ * no justification, and the corpus requirement that egress is deny-by-default with an allowlist
+ * (Test_and_Security_Assurance.txt:95). It is read as a plain list rather than as a map keyed by
+ * tenant because a `Namespace` cannot be minted from configuration text: its one constructor takes
+ * a verified claim, deliberately, so that no caller has vocabulary for another tenant's scope. The
+ * map below is therefore built from the namespace of the boot claim, and every other tenant that
+ * presents a valid claim falls through to `NO_EGRESS`. Granting a second tenant egress needs a
+ * policy store read by claim, not another environment variable.
+ */
+function allowedHosts(configured: string | undefined): readonly string[] {
+  return (configured ?? "")
+    .split(",")
+    .map((host) => host.trim())
+    .filter((host) => host.length > 0);
+}
 
 const logStore = new SqliteExecutionLogStore(
   Bun.env["CUSTODIAN_LOG_DB"] ?? "custodian-log.sqlite",
@@ -308,14 +348,58 @@ async function main(): Promise<void> {
   for (const document of indexed) {
     index.upsert(document);
   }
-  const tool = new KbSearchTool({ name: searchKb, embedder, index, documents, topK: 4 });
+  const search = new KbSearchTool({ name: searchKb, embedder, index, documents, topK: 4 });
+
+  // The egress map is keyed by a namespace derived the only sanctioned way — `namespaceFor` over a
+  // verified claim. That is what makes another tenant's allowlist unnameable here rather than
+  // merely absent: there is no expression in this file that produces a key for one.
+  const egress = new Map<Namespace, EgressPolicy>([
+    [seedNamespace, { allowedHosts: allowedHosts(Bun.env["CUSTODIAN_EGRESS_ALLOWLIST"]) }],
+  ]);
+
+  const toolset = agentToolset({
+    retrieval: [{ tool: search, definition: SEARCH_KB }],
+    workspaceBase: WORKSPACE_BASE,
+    egress,
+    executor: new DockerCodeExecutor({ image: SANDBOX_IMAGE }),
+    browserImage: BROWSER_IMAGE,
+    devMode: Bun.env["CUSTODIAN_DEV_MODE"],
+  });
+  // Said out loud, per withheld tool. A composition that quietly drops the sandboxed tools looks
+  // identical to one that never had them, and the first thing anyone does with a tool that appears
+  // to be missing is add it back — to the wrong place.
+  for (const item of toolset.withheld) {
+    console.error(`${String(item.name)} is not composed. ${item.reason}`);
+  }
+
+  // Selection accuracy falls off a cliff as the catalogue grows, so the count is a gate rather than
+  // a note (Agent_Architecture_Addendum.txt:128).
+  const budget = assertWithinBudget(toolset.definitions.length);
+  if (!budget.ok) {
+    console.error(
+      `The tool catalogue holds ${String(budget.error.count)} tools against a budget of ` +
+        `${String(budget.error.budget)}. Remove ${String(budget.error.mustRemove)} and start again.`,
+    );
+    process.exit(1);
+  }
+
+  // Definitions and runnable tools come from one list, so the catalogue cannot advertise a tool the
+  // runtime would then deny, or hide one it holds.
+  const catalogue = new InMemoryToolCatalogue({
+    definitions: toolset.definitions,
+    allowlists: new Map([[taskClass, toolset.definitions.map((definition) => definition.name)]]),
+  });
 
   const handler = runsHandler({
     run: (request) =>
       runAgent(request, {
         registry,
         catalogue,
-        tools: [tool],
+        // No `approvals` gate is composed, and that is the state this deployment is in rather than
+        // an omission: `seekApproval` reads an absent gate as nobody answering, which denies every
+        // lane but the fast one. So the acting tools are present, listed, and unrunnable until a
+        // reviewer exists — composing them and granting them are separate changes on purpose.
+        tools: toolset.tools,
         // A rail with no classifier admits everything; an empty list here would make the screening
         // the changelog claims a gate that never fires (LD-2).
         classifiers: [new PhraseInjectionClassifier()],

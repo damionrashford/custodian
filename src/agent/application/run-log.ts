@@ -12,17 +12,27 @@ import {
   type LoopContext,
 } from "./agent-run";
 
-export function toolCalled(
-  tool: ToolName,
-  sealedArguments: SealedContent,
-  status: "succeeded" | "failed" | "denied",
-): ExecutionEvent {
+/**
+ * One tool call as a log event.
+ *
+ * `sideEffectsCommitted` is a parameter rather than the empty array it used to be hardcoded to.
+ * That was harmless while the only composed tool retrieved; with a file write, a shell run and an
+ * outbound request in the catalogue it would have left the log's answer to "what did this run
+ * actually do out there" systematically empty, which is the half of a failure report a user cannot
+ * get anywhere else (Design_Interface_Standards.txt, the Failed state).
+ */
+export function toolCalled(call: {
+  readonly tool: ToolName;
+  readonly sealedArguments: SealedContent;
+  readonly status: "succeeded" | "failed" | "denied";
+  readonly committed: readonly string[];
+}): ExecutionEvent {
   return {
     kind: "tool-called",
-    tool,
-    arguments: sealedArguments,
-    status,
-    sideEffectsCommitted: [],
+    tool: call.tool,
+    arguments: call.sealedArguments,
+    status: call.status,
+    sideEffectsCommitted: call.committed,
   };
 }
 
@@ -33,6 +43,8 @@ export type RetrievalOutcome = {
   readonly admitted: readonly RetrievedRecord[];
   /** False when no classifier ran, so no "allowed" entry claims a screening that never happened. */
   readonly screened: boolean;
+  /** What the call changed outside this process. Empty for a retrieval, which changes nothing. */
+  readonly committed: readonly string[];
 };
 
 /**
@@ -63,7 +75,12 @@ export function retrievalEvents(outcome: RetrievalOutcome): readonly ExecutionEv
       classification: record.classification,
       provenance: record.provenance,
     })),
-    toolCalled(outcome.tool, outcome.sealedArguments, "succeeded"),
+    toolCalled({
+      tool: outcome.tool,
+      sealedArguments: outcome.sealedArguments,
+      status: "succeeded",
+      committed: outcome.committed,
+    }),
   ];
 }
 

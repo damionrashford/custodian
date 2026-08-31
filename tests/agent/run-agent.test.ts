@@ -534,7 +534,10 @@ function irreversibleTool(ran: { value: boolean }): Tool {
       ran.value = true;
       return Promise.resolve({
         ok: true as const,
-        value: { kind: "acted" as const, receipt: { summary: "did it", output: "" } },
+        value: {
+          kind: "acted" as const,
+          receipt: { summary: "did it", output: "", committed: ["did it"] },
+        },
       });
     },
   };
@@ -575,6 +578,37 @@ test("an irreversible tool runs once a reviewer approves it", async () => {
 
   expect(ran.value).toBe(true);
 });
+
+test("what an acting tool committed reaches the log, and a denied call commits nothing", async () => {
+  // Field group 4 asks for the side effects of every tool call, and the log is the only place a
+  // user can find out what already happened when a run dies partway. Hardcoding this to an empty
+  // array was harmless while the only composed tool retrieved; with a file write and a shell run in
+  // the catalogue it would have left that answer systematically blank.
+  const approved = fixture({
+    tool: irreversibleTool({ value: false }),
+    approvals: {
+      request: () =>
+        Promise.resolve({ kind: "approved" as const, reviewer: "p_operator", tookMs: 500 }),
+    },
+  });
+  await runAgent(request(), approved.deps);
+  expect(await committedBy(approved.logStore)).toEqual([["did it"]]);
+
+  // And approval runs before execution, so a denied call has nothing to record.
+  const denied = fixture({ tool: irreversibleTool({ value: false }) });
+  await runAgent(request(), denied.deps);
+  expect(await committedBy(denied.logStore)).toEqual([[]]);
+});
+
+async function committedBy(
+  logStore: InMemoryExecutionLogStore,
+): Promise<readonly (readonly string[])[]> {
+  const read = await logStore.read(namespaceFor(claim()), runIdValue);
+  if (!read.ok) throw new Error("log missing");
+  return read.value.flatMap((entry) =>
+    entry.event.kind === "tool-called" ? [entry.event.sideEffectsCommitted] : [],
+  );
+}
 
 test("a reviewer's rejection stops the tool", async () => {
   const ran = { value: false };

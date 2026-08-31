@@ -18,6 +18,19 @@ export type RetrievedRecord = {
 export type ActionReceipt = {
   readonly summary: string;
   readonly output: string;
+  /**
+   * What this call changed outside this process, in the platform's own words — one line per effect,
+   * empty when it changed nothing.
+   *
+   * Separate from `summary` rather than derived from it, because a read and a write both produce a
+   * summary and only one of them committed anything. The execution log's field group 4 asks for the
+   * side effects of every tool call, and it is the field a failure message has to answer from: a
+   * run that dies after a write and reports only that it failed sends the user somewhere else to
+   * find out what already happened, which is where trust breaks rather than at the failure
+   * (Design_Interface_Standards.txt, the Failed state). A read logged as a committed effect would
+   * make that answer wrong in the direction that matters, so this is a decision each tool takes.
+   */
+  readonly committed: readonly string[];
 };
 
 /**

@@ -1,0 +1,56 @@
+# Files carried into every worktree Claude Code creates (gitignore syntax; only files that match
+# a pattern AND are gitignored are copied).
+#
+# This repo needs one because the directories that govern how work is done here are all
+# git-ignored — `/.claude/` and `/.research/` in .gitignore. A worktree is a fresh checkout of
+# *tracked* files, so without this file every subagent worktree starts without the locked
+# decisions, the engineering standards, the reviewer agents, or the spec corpus, and re-derives
+# them from whatever the spawning prompt happened to say. Four agents ran that way before this
+# file existed.
+#
+# Patterns name the ignored directory directly rather than starting with `**/`, because a `**/`
+# pattern only reaches inside a wholly-ignored directory when the first name after it is part of
+# that directory's path.
+
+# The rules a change is judged against, and the reviewers that judge it.
+.claude/rules/**
+.claude/agents/**
+.claude/hooks/**
+.claude/settings.json
+
+# The spec corpus. Top level only: `.research/*.txt` is the corpus, everything below it is
+# superpowers working state.
+.research/*.txt
+
+# Plans an agent may be executing. Specs and reports stay in the main checkout.
+.research/superpowers/plans/**
+
+# Skills, enumerated rather than globbed. `studio` is deliberately absent: its embedded book
+# corpus is 103M, and a partial copy is worse than none, since its own SKILL.md requires every
+# design decision to go through a search over that corpus. Run UI work from the main checkout.
+.claude/skills/research/**
+.claude/skills/testing/**
+.claude/skills/scaffold-component/**
+.claude/skills/keep-changelog/**
+.claude/skills/readme-wizard/**
+.claude/skills/graphify/**
+.claude/skills/bun-docs/**
+.claude/skills/bun-webview/**
+.claude/skills/typescript-7/**
+.claude/skills/react-router/**
+.claude/skills/gh/**
+
+# Deliberately NOT copied:
+#
+# `.env`             — a worktree that needs Vault credentials is doing integration work that
+#                      belongs in the main checkout. Copying secrets widens where they sit on disk
+#                      for the convenience of an agent that should not have them.
+# `.graphify/`       — 7.5M, and unnecessary: GRAPHIFY_OUT in .claude/settings.json is an absolute
+#                      path, so a worktree session reads the main checkout's graph. The guard hook
+#                      falls back to a path relative to itself only when that variable is unset.
+# `node_modules/`    — worktrees live under `.claude/worktrees/` inside the repo, and Bun's
+#                      resolution walks upward, so the root install already serves them. This is
+#                      the same upward walk LD-14 records as defeating package isolation; here it
+#                      happens to be the behaviour we want.
+# `.claude/worktrees/` — copying it into a worktree would nest every existing worktree inside the
+#                      new one.

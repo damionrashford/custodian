@@ -4,8 +4,12 @@
 # and bring up `agent` alone. That is the production shape, and it is the default precisely so that
 # nobody deploys the convenience below by accident.
 #
-#   docker compose up agent                     # against a Vault you operate
-#   docker compose --profile dev up             # throwaway local Vault, see the warning on it
+#   docker compose -f docker/compose.yaml up agent           # against a Vault you operate
+#   docker compose -f docker/compose.yaml --profile dev up    # throwaway local Vault, see below
+#
+# The build context is the repository root, one level up, because the image copies src/. The
+# Dockerfile and its ignore file live here beside this file; BuildKit reads
+# docker/Dockerfile.dockerignore in preference to a root .dockerignore.
 #
 # Why the local Vault is not the default: it runs in dev mode, which keeps its storage IN MEMORY.
 # Every restart destroys every key-encryption key, and every sealed row on the agent's volume becomes
@@ -16,7 +20,9 @@
 
 services:
   agent:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     ports: ["8787:8787"]
     environment:
       # No `:?` guard here. Compose interpolates every service's variables regardless of profile, so
@@ -80,7 +86,9 @@ services:
   # than an override, so the production composition cannot inherit a dev default by omission.
   agent-dev:
     profiles: [dev]
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     depends_on:
       vault: { condition: service_healthy }
       vault-init: { condition: service_completed_successfully }

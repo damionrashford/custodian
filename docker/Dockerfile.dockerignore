@@ -33,9 +33,9 @@ CHANGELOG.md
 README.md
 LICENSE.md
 CLAUDE.md
-Dockerfile
-compose.yaml
-.dockerignore
+docker/
+
+
 .gitignore
 .prettierrc.json
 .dependency-cruiser.cjs

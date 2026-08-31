@@ -21,7 +21,11 @@ WORKDIR /usr/src/app
 # tsconfig comes along because it is load-bearing at runtime, not just at build: `paths` maps
 # @custodian/* onto src/*/index.ts, and Bun resolves those at import time. Without it the process
 # cannot find a single component.
-COPY package.json tsconfig.json tsconfig.base.json ./
+#
+# One file, not two. tsconfig.base.json was merged into tsconfig.json when the 27 workspace packages
+# collapsed; this COPY still named it for one commit, and the build broke with nothing to catch it
+# because CI did not build the image. It does now.
+COPY package.json tsconfig.json ./
 COPY src ./src
 
 # Every durable store lands in one mounted directory. Scattered across the image they are lost on

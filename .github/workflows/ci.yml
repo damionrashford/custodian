@@ -121,3 +121,45 @@ jobs:
         run: bun ci
       - name: Sandbox isolation tests
         run: bun run test:sandbox
+
+  # Deliberately a separate job, and deliberately not a required check — the same reasoning as
+  # `sandbox` above. A docker build pulls a base image over the network, and LD-10 is explicit that
+  # a network dependency in a blocking position is worse than no gate: one that fires at random
+  # teaches people to click through red CI and costs every gate beside it its credibility.
+  #
+  # The blocking half lives in `tests/docker.test.ts`, which reads the Dockerfile as text and checks
+  # that every path it copies exists. That is the defect that actually got through — a COPY naming
+  # tsconfig.base.json survived the file being merged away, the build broke, and nothing noticed
+  # because CI did not build the image at all.
+  docker:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the image
+        run: docker build -f docker/Dockerfile -t custodian:ci .
+
+      # A build that succeeds and an image that cannot start are different claims. This asserts the
+      # second: the process reaches its own boot gate and refuses a missing configuration, rather
+      # than crashing on a missing file or a bad entrypoint.
+      - name: The image starts and refuses an unconfigured boot
+        run: |
+          output=$(docker run --rm custodian:ci 2>&1 || true)
+          echo "$output"
+          if ! echo "$output" | grep -q "is not set"; then
+            echo "::error::The image did not reach its boot gate."
+            exit 1
+          fi
+
+      # The context excludes the spec corpus, machine-local decisions and any sealed database. A
+      # regression here ships them inside a published artefact, which is not recoverable by deleting
+      # the tag.
+      - name: The image ships nothing it must not
+        run: |
+          for path in tests scripts .research .claude node_modules; do
+            if docker run --rm --entrypoint sh custodian:ci -c "[ -e /usr/src/app/$path ]"; then
+              echo "::error::$path leaked into the image."
+              exit 1
+            fi
+          done

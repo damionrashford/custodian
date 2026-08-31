@@ -1,8 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "BASH_DEFAULT_TIMEOUT_MS": "600000",
-    "BASH_MAX_OUTPUT_LENGTH": "150000"
+    "GRAPHIFY_HOOK_STRICT": "1",
+    "GRAPHIFY_OUT": ".graphify",
+    "GRAPHIFY_QUERY_BUDGET": "16000",
+    "GRAPHIFY_VIZ_NODE_LIMIT": "0"
   },
   "worktree": {
     "baseRef": "head"
@@ -150,18 +152,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/typecheck-async.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/fast-gates-async.sh",
             "args": [],
             "async": true
           }
         ]
       }
     ]
-  },
-  "env": {
-    "GRAPHIFY_HOOK_STRICT": "1",
-    "GRAPHIFY_OUT": ".graphify",
-    "GRAPHIFY_QUERY_BUDGET": "16000",
-    "GRAPHIFY_VIZ_NODE_LIMIT": "0"
   }
 }

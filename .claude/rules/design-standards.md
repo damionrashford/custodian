@@ -1,3 +1,10 @@
+---
+paths:
+  - "src/surfaces/**/*.ts"
+  - "src/**/interface/**/*.{ts,tsx}"
+  - "**/*.{tsx,css,html}"
+---
+
 # Design & Interface Standards
 
 The interface is the accountability layer between user intent and autonomous action, not a presentation surface applied after the model works. Full detail: `.research/Design_Interface_Standards.txt`.

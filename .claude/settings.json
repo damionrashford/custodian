@@ -1,5 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "GRAPHIFY_HOOK_STRICT": "1",
+    "GRAPHIFY_OUT": ".graphify",
+    "GRAPHIFY_QUERY_BUDGET": "16000",
+    "GRAPHIFY_VIZ_NODE_LIMIT": "0"
+  },
   "worktree": {
     "baseRef": "head"
   },
@@ -54,6 +60,7 @@
     ],
     "ask": ["Edit(.research/*.txt)", "Write(.research/*.txt)"],
     "deny": [
+      "Read(./.claude/skills/studio/knowledge/books/**)",
       "WebFetch",
       "WebSearch",
       "Bash(curl *)",
@@ -115,13 +122,42 @@
             "args": ["hook-guard", "read"]
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git checkout *)",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-git-restore.sh",
+            "args": []
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git restore *)",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-git-restore.sh",
+            "args": []
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/fast-gates-async.sh",
+            "args": [],
+            "async": true
+          }
+        ]
       }
     ]
-  },
-  "env": {
-    "GRAPHIFY_HOOK_STRICT": "1",
-    "GRAPHIFY_OUT": ".graphify",
-    "GRAPHIFY_QUERY_BUDGET": "16000",
-    "GRAPHIFY_VIZ_NODE_LIMIT": "0"
   }
 }

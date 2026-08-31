@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "worktree": {
+    "baseRef": "head"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(bun *)",
+      "Bash(bunx *)",
+      "Bash(npx *)",
+      "Bash(npm *)",
+      "Bash(uv *)",
+      "Bash(node *)",
+      "Bash(python3 *)",
+      "Bash(rg *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(diff *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(jq *)",
+      "Bash(echo *)",
+      "Bash(printf *)",
+      "Bash(test *)",
+      "Bash(which *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(touch *)",
+      "Bash(rm *)",
+      "Bash(textutil *)",
+      "Bash(sleep *)",
+      "Write",
+      "Edit",
+      "Skill",
+      "Workflow",
+      "Write(.research/*.txt)",
+      "Bash(git push --force-with-lease*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -*)",
+      "Bash(gh pr merge *)",
+      "Bash(gh release *)",
+      "Bash(brew *)",
+      "Bash(npm install -g*)"
+    ],
+    "ask": [
+      "Edit(.research/*.txt)",
+      "Write(.research/*.txt)"
+    ],
+    "deny": [
+      "WebFetch",
+      "WebSearch",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(gh repo delete*)",
+      "Bash(gh secret *)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Read(./secrets/**)",
+      "Read(./credentials/**)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/id_rsa*)",
+      "Read(**/id_ed25519*)",
+      "Write(./secrets/**)",
+      "Write(./credentials/**)",
+      "Write(.env)",
+      "Write(.env.*)",
+      "Edit(./secrets/**)",
+      "Edit(./credentials/**)",
+      "Edit(.env)",
+      "Edit(.env.*)"
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "jq -r '\"[\\(.model.display_name)] \\(.context_window.used_percentage // 0)% context\"'",
+    "padding": 2
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "adversaria@damionrashford-adversaria": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/graphify-guard.sh search"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/graphify-guard.sh read"
+          }
+        ]
+      }
+    ]
+  }
+}

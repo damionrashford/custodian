@@ -1,10 +1,10 @@
 # Custodian
 
-Enterprise-grade autonomous AI agent platform. `.research/` holds the spec corpus and is the source of truth for *what to build* (search it with the `research` skill/subagent rather than reading this file for what it says); this file and `.claude/` are the scaffolding.
+An autonomous AI agent platform. `.research/` holds the spec corpus and is the source of truth for *what to build* (search it with the `research` skill/subagent rather than reading this file for what it says); this file and `.claude/` are the scaffolding.
 
 **Implementation status.** Stages 0–3 are built: toolchain gates, foundations F1–F3, serving core (C1, C2, C3, C4, C21) and knowledge/context (C5, C6, C7, C8). Seven components under `src/`, 355 tests, seven CI gates plus a standing erasure gate, all behind `bun run verify`. Stage plans live in `.research/superpowers/plans/` (git-ignored) and each carries an execution status header. Architectural decisions the spec left open are recorded in `.claude/rules/locked-decisions.md` — **read that before re-deciding anything**, because the reasoning is not obvious from the code.
 
-**What is tracked, and what is not.** `.claude/rules/` and `.claude/agents/` are tracked: they are the standards a change is judged against and the reviewers that judge it, and a clone that cannot read them cannot follow them. Everything else under `.claude/` is machine setup carrying absolute paths — `settings.json`, `hooks/`, `skills/`, `worktrees/` — and stays local, alongside a git-ignored `CLAUDE.local.md` for personal preferences. `.research/` is local too, which is why `.worktreeinclude` exists: a worktree is a checkout of tracked files, so anything ignored has to be copied in deliberately or every subagent works without it.
+**What is tracked, and what is not.** `.claude/rules/`, `.claude/agents/`, `.claude/hooks/` and `.claude/settings.json` are tracked — the standards a change is judged against, the reviewers that judge it, the guards, and the permissions. A clone that cannot read them cannot follow them. What stays local is only what is true of one machine: `.claude/settings.local.json` (absolute paths — `GRAPHIFY_OUT`, one deny rule), `.claude/skills/` (112M of vendored corpus), `.claude/worktrees/`, and a `CLAUDE.local.md` for personal notes and setup steps. `.research/` is local too, which is why `.worktreeinclude` exists: a worktree is a checkout of *tracked* files, so anything ignored has to be copied in deliberately or every subagent works without it.
 
 ## Non-negotiables
 

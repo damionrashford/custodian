@@ -13,6 +13,10 @@ node_modules/
 /.claude/*
 !/.claude/rules/
 !/.claude/agents/
+!/.claude/hooks/
+!/.claude/settings.json
+/.claude/settings.local.json
+/.claude/settings.json.graphify-bak
 CLAUDE.local.md
 /.research/
 /.graphify/

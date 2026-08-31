@@ -101,7 +101,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/graphify-guard.sh search"
+            "command": "graphify",
+            "args": ["hook-guard", "search"]
           }
         ]
       },
@@ -110,10 +111,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/graphify-guard.sh read"
+            "command": "graphify",
+            "args": ["hook-guard", "read"]
           }
         ]
       }
     ]
+  },
+  "env": {
+    "GRAPHIFY_QUERY_BUDGET": "16000"
   }
 }

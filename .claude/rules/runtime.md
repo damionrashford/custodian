@@ -28,7 +28,7 @@ real gap shows up (routing, streaming, WebSocket, and TLS are all built in).
 
 ## Real-time / streaming — maps directly onto the 7 agent states
 
-Design & Interface Standards' agent states (Queued/Thinking/Acting/Awaiting approval/Streaming/
+The interface standards' agent states (Queued/Thinking/Acting/Awaiting approval/Streaming/
 Recovering/Failed) need a live channel to the UI. Two native primitives cover it, no library:
 
 - **Streaming state** (partial output rendered progressively): return a `Response` whose body is an

@@ -46,7 +46,7 @@ a warning tier:
 | Re-export alias keeping a renamed symbol alive | A rename that didn't rename anything |
 | `@deprecated` on internal code | Internal code has no deprecation tier — delete it |
 | Widening a type (`unknown`, optional field, union member) so old callers still compile | Postpones the error to runtime, in production |
-| Disabling a lint rule or strict flag at the call site | Loosening the config is a rollback (Engineering Standards) |
+| Disabling a lint rule or strict flag at the call site | Loosening the config is a rollback (`typescript.md`) |
 
 **The one exception, already carved out:** published boundaries — the tenant-facing API, webhook
 payloads, and durable workflow definitions — are versioned and retired on a schedule, because a

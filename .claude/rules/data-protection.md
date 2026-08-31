@@ -1,4 +1,8 @@
-# Compliance & Data Protection
+# Data Protection
+
+> **Deliberately unscoped.** A `paths:` glob that missed a store would stop this loading for exactly
+> the change that needed it, and the failure would be a compliance defect rather than a slow session.
+> Forty-seven lines on every session is the right trade.
 
 Position in one sentence: the platform encrypts personal data per data subject, erases by destroying the key, and can prove it did so. Full detail: `.research/Data_Protection_and_Retention.txt`, `.research/Compliance_and_Certification.txt`.
 
@@ -36,7 +40,7 @@ Scope-limited write policy (explicit allowlist of what may persist — everythin
 
 ## Article 50 transparency (already enforceable)
 
-Disclosure must be perceivable in the interaction itself — see `.claude/rules/design-standards.md` for the interface requirements. Deployers cannot rely on provider-side marking to discharge their own duty; if this platform is deployed white-label, the contract must state who discharges which obligation.
+Disclosure must be perceivable in the interaction itself — see `.claude/rules/interface-standards.md` for the interface requirements. Deployers cannot rely on provider-side marking to discharge their own duty; if this platform is deployed white-label, the contract must state who discharges which obligation.
 
 ## SOC 2 posture
 

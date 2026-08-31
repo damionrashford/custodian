@@ -1,5 +1,10 @@
 # Locked Decisions
 
+> **Deliberately unscoped.** These decisions cut across every layer — routing, durable execution,
+> credentials, storage, retention, process, packaging — so no single glob represents "an
+> architectural decision", and `CLAUDE.md` tells every reader to consult this before re-deciding
+> anything. Scoping it would make that instruction conditional on which file happened to be open.
+
 Architectural decisions the spec left open, resolved during implementation. Each was stress-tested
 before being locked, and each records **what would reopen it** — a locked decision is not a
 permanent one, it is one that costs a deliberate act to change rather than an accident.
@@ -307,7 +312,7 @@ credibility of every gate beside it. Neither belongs in a blocking position.
 
 **What could not become a test.** Stacked-PR merge order is a `gh` behaviour, not a repo invariant —
 `gh pr merge --delete-branch` closes a child PR rather than retargeting it, and a closed PR whose
-base is gone cannot be reopened. That is recorded in `.claude/rules/stacked-pr-workflow.md` instead,
+base is gone cannot be reopened. That is recorded in `.claude/rules/pull-requests.md` instead,
 along with the ordering that works.
 
 **Permissions.** `.claude/settings.json` had `WebFetch` in both `allow` and `deny` — deny wins, so

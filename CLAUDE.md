@@ -4,7 +4,30 @@ An autonomous AI agent platform. `.research/` holds the spec corpus and is the s
 
 **Implementation status.** Stages 0–3 are built: toolchain gates, foundations F1–F3, serving core (C1, C2, C3, C4, C21) and knowledge/context (C5, C6, C7, C8). Seven components under `src/`, 355 tests, seven CI gates plus a standing erasure gate, all behind `bun run verify`. Stage plans live in `.research/superpowers/plans/` (git-ignored) and each carries an execution status header. Architectural decisions the spec left open are recorded in `.claude/rules/locked-decisions.md` — **read that before re-deciding anything**, because the reasoning is not obvious from the code.
 
-**What is tracked, and what is not.** `.claude/rules/`, `.claude/agents/`, `.claude/hooks/` and `.claude/settings.json` are tracked — the standards a change is judged against, the reviewers that judge it, the guards, and the permissions. A clone that cannot read them cannot follow them. What stays local is only what is true of one machine: `.claude/settings.local.json` (absolute paths — `GRAPHIFY_OUT`, one deny rule), `.claude/skills/` (112M of vendored corpus), `.claude/worktrees/`, and a `CLAUDE.local.md` for personal notes and setup steps. `.research/` is local too, which is why `.worktreeinclude` exists: a worktree is a checkout of *tracked* files, so anything ignored has to be copied in deliberately or every subagent works without it.
+## Rules
+
+Ten files in `.claude/rules/`. Seven are **path-scoped** — they load only when Claude works with
+files matching their `paths:` frontmatter — so a session editing a README does not carry the
+interface standards, and one editing a store does not carry the Bun runtime notes.
+
+| Rule | Covers | Loads when |
+|---|---|---|
+| `architecture.md` | The four layers, folders, naming, size budgets, barrels, PR gates | Any `.ts` under `src/`, `tests/`, `scripts/` |
+| `typescript.md` | The compiler floor, banned constructs, type discipline, comments | Any `.ts`/`.tsx`, `tsconfig.json`, `eslint.config.js` |
+| `change-discipline.md` | What a *complete* change is — blast radius, no plugs, renames | Source, tests, scripts, `package.json` |
+| `verification.md` | Proving a gate can fail, plant passes, flaky gates, clean trees | Tests, scripts, workflows, gate configs |
+| `security.md` | Untrusted CI input, artefact contents, credentials, dependencies | Workflows, `docker/`, infrastructure, interface |
+| `interface-standards.md` | Article 50 disclosure, the seven agent states, tokens, vocabulary | Surfaces, interface layers, `.tsx`/`.css`/`.html` |
+| `runtime.md` | Bun decisions — `Bun.serve`, streaming, signals, frontend | Infrastructure, interface, scripts, `docker/` |
+| `data-protection.md` | Erasure, retention, residency, memory governance | **Always** — a missed glob here is a compliance defect |
+| `locked-decisions.md` | LD-1..LD-14, with what would reopen each | **Always** — they cut across every layer |
+| `pull-requests.md` | Stacked-PR merge order, which is silent and unrecoverable when wrong | **Always** — it governs a command sequence, not a file |
+
+`tests/rules.test.ts` fails when a rule points at a sibling that does not exist, when one declares
+`paths:` with no patterns (which looks scoped and matches nothing), or when an always-loaded rule
+does not say why it is not scoped.
+
+**What is tracked, and what is not.** `.claude/rules/`, `.claude/agents/`, `.claude/hooks/` and `.claude/settings.json` are tracked — the standards a change is judged against, the reviewers that judge it, the guards, and the permissions. A clone that cannot read them cannot follow them. What stays local is only what is true of one machine: `.claude/settings.local.json` (anything true of one machine), `.claude/skills/` (112M of vendored corpus), `.claude/worktrees/`, and a `CLAUDE.local.md` for personal notes and setup steps. `.research/` is local too, which is why `.worktreeinclude` exists: a worktree is a checkout of *tracked* files, so anything ignored has to be copied in deliberately or every subagent works without it.
 
 ## Non-negotiables
 
@@ -21,7 +44,7 @@ Findings that override intuition — check before designing around them. Decisio
 
 ## Architecture spine
 
-Four layers, dependencies point inward only (full detail: `.claude/rules/engineering-standards.md`):
+Four layers, dependencies point inward only (full detail: `.claude/rules/architecture.md`):
 
 `domain` (zero I/O) ← `application` (use cases) ← `infrastructure` (adapters) ← `interface` (HTTP/workers/CLI)
 

@@ -1,4 +1,8 @@
-# Stacked PR workflow
+# Pull Requests
+
+> **Deliberately unscoped.** `paths:` triggers on the files Claude reads, and this governs a `gh`
+> command *sequence* rather than a file. There is no edit whose target should remind you of the
+> merge order.
 
 Custodian ships in stages, and each stage branches off the previous one, so PRs stack. This file
 records the order that works, because getting it wrong is silent and unrecoverable.

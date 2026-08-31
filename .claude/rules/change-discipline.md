@@ -1,6 +1,14 @@
+---
+paths:
+  - "src/**/*.ts"
+  - "tests/**/*.ts"
+  - "scripts/**/*.ts"
+  - "package.json"
+---
+
 # Change Discipline
 
-Applies to all first-party platform source. Companion to `.claude/rules/engineering-standards.md` —
+Applies to all first-party platform source. Companion to `.claude/rules/architecture.md` —
 that file defines what good code looks like at rest; this one defines what a complete *change* looks
 like. The repo has one implementation of anything at any moment. There is no old path, no new path
 behind a flag, no shim between them.
@@ -60,7 +68,7 @@ gate, not a cleanup ticket.
 ## File size and folder conventions
 
 Budgets, naming conventions, prohibited names (`utils`, `helpers`, `common`, `shared`, `misc`,
-`manager`, `data`), and the barrel-file policy live in `.claude/rules/engineering-standards.md` —
+`manager`, `data`), and the barrel-file policy live in `.claude/rules/architecture.md` —
 that table is authoritative, don't restate it elsewhere. Three additions specific to how changes
 land:
 

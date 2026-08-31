@@ -1,4 +1,12 @@
-# Bun runtime — backend & frontend decisions
+---
+paths:
+  - "src/**/infrastructure/**/*.ts"
+  - "src/*/interface/**/*.ts"
+  - "scripts/**/*.ts"
+  - "docker/**"
+---
+
+# Runtime
 
 Custodian is pre-implementation (see `CLAUDE.md`) — nothing below is built yet. This documents the
 concrete decisions for when Phase 1+ actually needs a server or a UI, so they don't get re-derived
@@ -50,8 +58,7 @@ don't treat it as decided.
 ## Process & environment
 
 - **Env vars**: `Bun.env`/`process.env`/`import.meta.env` are all the same object — `.env` files
-  load automatically, no `dotenv` package. (Already the project's stated preference in
-  `~/.claude/rules/code-style.md`.)
+  load automatically, no `dotenv` package. (This matches the machine-level preference too, but it holds here regardless of who is working.)
 - **Signal handling**: `process.on("SIGTERM"|"SIGINT", ...)` — Bun implements Node's `process`
   global. Neither `beforeExit` nor `exit` fires if the process is killed by a signal with no
   listener, so a signal you want to clean up on needs an explicit listener that calls

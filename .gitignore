@@ -19,7 +19,7 @@ node_modules/
 /.claude/settings.json.graphify-bak
 CLAUDE.local.md
 /.research/
-/.graphify/
+/graphify-out/
 
 # superpowers plugin working state. .superpowers/brainstorm/ holds a live session
 # token (.last-token); the plugin only self-ignores .superpowers/sdd/, so ignore the root.

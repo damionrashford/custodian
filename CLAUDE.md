@@ -4,7 +4,7 @@ An autonomous AI agent platform. `.research/` holds the spec corpus and is the s
 
 **Implementation status.** Stages 0–3 are built: toolchain gates, foundations F1–F3, serving core (C1, C2, C3, C4, C21) and knowledge/context (C5, C6, C7, C8). Seven components under `src/`, 355 tests, seven CI gates plus a standing erasure gate, all behind `bun run verify`. Stage plans live in `.research/superpowers/plans/` (git-ignored) and each carries an execution status header. Architectural decisions the spec left open are recorded in `.claude/rules/locked-decisions.md` — **read that before re-deciding anything**, because the reasoning is not obvious from the code.
 
-**What is tracked, and what is not.** `.claude/rules/`, `.claude/agents/`, `.claude/hooks/` and `.claude/settings.json` are tracked — the standards a change is judged against, the reviewers that judge it, the guards, and the permissions. A clone that cannot read them cannot follow them. What stays local is only what is true of one machine: `.claude/settings.local.json` (absolute paths — `GRAPHIFY_OUT`, one deny rule), `.claude/skills/` (112M of vendored corpus), `.claude/worktrees/`, and a `CLAUDE.local.md` for personal notes and setup steps. `.research/` is local too, which is why `.worktreeinclude` exists: a worktree is a checkout of *tracked* files, so anything ignored has to be copied in deliberately or every subagent works without it.
+**What is tracked, and what is not.** `.claude/rules/`, `.claude/agents/`, `.claude/hooks/` and `.claude/settings.json` are tracked — the standards a change is judged against, the reviewers that judge it, the guards, and the permissions. A clone that cannot read them cannot follow them. What stays local is only what is true of one machine: `.claude/settings.local.json` (anything true of one machine), `.claude/skills/` (112M of vendored corpus), `.claude/worktrees/`, and a `CLAUDE.local.md` for personal notes and setup steps. `.research/` is local too, which is why `.worktreeinclude` exists: a worktree is a checkout of *tracked* files, so anything ignored has to be copied in deliberately or every subagent works without it.
 
 ## Non-negotiables
 
@@ -59,7 +59,7 @@ invoked the skill in the right column this session, you are doing it wrong. Stop
 | Write or run anything under `tests/` | `testing` |
 | Drive a browser, fetch a page, or search the web | `bun-webview` — `WebFetch`/`WebSearch`/`curl` are denied on purpose; this is the one path |
 | Answer a Bun / TypeScript-7 / React-Router / `gh` question | `bun-docs` / `typescript-7` / `react-router` / `gh` — never from training memory |
-| Ask how parts of this codebase relate | `graphify` first — the graph is at `.graphify/`, per `GRAPHIFY_OUT` |
+| Ask how parts of this codebase relate | `graphify` first — the graph is at `graphify-out/` |
 | Build any UI surface | `studio` (design system) with `frontend-design` |
 
 ### Review pipeline — every component, in this order, before merge
@@ -128,7 +128,7 @@ claim a gate passes before running it. Nothing else.
 ## Working in this repo
 
 - New research drops land as `.docx` in `.research/` — run the `research` skill (or the `research` subagent for a heavier pass, which can also chase down external prior art the corpus doesn't cover) to convert and verify.
-- Before answering "what does the spec say about X" or before implementing anything, use the `research` skill/subagent rather than guessing — the corpus is large (11 docs, ~2,500 lines) and has already resolved most open questions. For "how does X relate to Y" architecture questions, query the standing knowledge graph first — it is cheaper than re-exploring. It lives at **`.graphify/`**, the path `GRAPHIFY_OUT` in `.claude/settings.json` sets, **not** `graphify-out/`. Gating on `graphify-out/` made the skill unreachable for an entire build, because that directory never exists under this configuration.
+- Before answering "what does the spec say about X" or before implementing anything, use the `research` skill/subagent rather than guessing — the corpus is large (11 docs, ~2,500 lines) and has already resolved most open questions. For "how does X relate to Y" architecture questions, query the standing knowledge graph first — it is cheaper than re-exploring. It lives at `graphify-out/`.
 - **Superpowers writes every document it produces under `.research/superpowers/`**, never `docs/superpowers/`. Same subfolders and filename convention as the plugin's own layout, different root: `superpowers:brainstorming` → `.research/superpowers/specs/YYYY-MM-DD-<topic>-design.md`, `superpowers:writing-plans` → `.research/superpowers/plans/YYYY-MM-DD-<feature>.md`. Every downstream reference (SDD plan paths, `requesting-code-review` `PLAN_OR_REQUIREMENTS`) uses the `.research/superpowers/` path. This is not the spec corpus: the corpus is `.research/*.txt` at top level only. All of `.research/` is git-ignored on purpose, so **skip the "and commit" step** both skills end with — the artefact is the file on disk, and reporting a commit that git ignored is a false completion claim. Three superpowers outputs stay outside `.research/` because the plugin hardcodes their paths in scripts, not prose: the SDD workspace (`.superpowers/sdd/<plan-slug>/` — ledger, briefs, reports), the visual-companion session dir (`.superpowers/brainstorm/<id>/` — mockups; pass `--project-dir` at the *repo root* so they persist past `/tmp`), and worktrees (`.worktrees/`). All three are git-ignored.
 - Before scaffolding anything, use the `superpowers:writing-plans` skill to turn the spec section into a concrete plan — `scaffold-component` lays out folders, it doesn't replace planning. For any *new* architectural decision not already resolved in `Gap_Register_v2.txt` (a routing-model choice, a caching strategy), run the `adversaria:devils-advocate` skill against it before it becomes a locked entry in Non-negotiables above.
 - Scaffolding a new platform component (Phase 1–5 or the addendum's C18–C23): use the `scaffold-component` skill — it lays out the 4-layer folders and stub port/adapter per Engineering Standards.
@@ -141,11 +141,34 @@ All 17 components + F1–F3 deployed and passing their eval gate; idempotency/au
 
 ## graphify
 
-This project has a knowledge graph at **`.graphify/`** — the path `GRAPHIFY_OUT` in `.claude/settings.json` sets, **not** `graphify-out/`. Every `graphify` command inherits that variable and resolves it automatically; you never pass a path. It holds god nodes, community structure and cross-file relationships for all 25 packages.
+This project has a knowledge graph at **`graphify-out/`**, which is graphify's own default. It holds
+god nodes, community structure and cross-file relationships for the whole tree.
+
+The directory used to be a dot-prefixed one, set by a `GRAPHIFY_OUT` override, and that one cosmetic
+choice cost more than it is possible to justify. `graphify hook-guard` hardcodes
+`graphify-out/graph.json` into the advice it injects on every Read and Bash, so under the override
+it told every session and subagent to look at a directory that did not exist. Two code reviewers in
+one session read that text, disbelieved it, and ignored the guard entirely. The repair was a wrapper
+script that re-pinned the variable and rewrote the path with `sed`, plus the same pin repeated in
+`.git/hooks/post-commit` and `post-checkout` because git hooks do not inherit settings env, plus a
+paragraph here explaining all of it.
+
+Using the tool's default name deletes all five: the wrapper, both git-hook pins, the settings
+override, and the explanation. The advice is now true as written.
 
 Rules:
-- For codebase questions, run `graphify query "<question>"` **first**, before grepping. A PreToolUse hook enforces this. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If `.graphify/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
-- Read `.graphify/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` (AST-only, no API cost). The post-commit hook does this automatically; both hooks pin `GRAPHIFY_OUT` because they run outside the Claude session, where `.claude/settings.json` env does not apply.
-- The `PreToolUse` guards run through `.claude/hooks/graphify-guard.sh`, not `graphify hook-guard` directly. Upstream hardcodes `graphify-out/graph.json` into the advice it injects on every Read and Bash — a path that does not exist under this configuration — so the wrapper pins `GRAPHIFY_OUT` and rewrites that path. Left unwrapped, the guard tells every session and subagent to look somewhere empty; two code reviewers in one session read it, disbelieved it, and ignored the guard entirely. **`.claude/hooks/` stays git-ignored** — it hardcodes a binary path — so a fresh clone gets the misleading text back until the wrapper is recreated. `CLAUDE.local.md` carries the recreation steps.
+
+- For codebase questions, run `graphify query "<question>"` **first**, before grepping. A PreToolUse
+  hook enforces this. Use `graphify path "<A>" "<B>"` for relationships and
+  `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much
+  smaller than `GRAPH_REPORT.md` or raw grep output.
+- If `graphify-out/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
+- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review, or when query, path and
+  explain do not surface enough context.
+- After modifying code, run `graphify update .` (AST-only, no API cost). The post-commit hook does
+  this automatically.
+
+**The general lesson, which is the reusable part.** Renaming a tool's output to suit local taste
+looks free and is not: every place the tool names its own path becomes a lie, and each repair is a
+new thing to maintain and re-derive on a fresh clone. Take the default unless there is a reason
+worth five workarounds.

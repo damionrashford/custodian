@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 /**
- * Engineering_Standards.txt:30-60 — "this is the floor, not a starting point for negotiation".
+ * engineering-standards.txt:30-60 — "this is the floor, not a starting point for negotiation".
  * Loosening the config is a rollback of the standard, so it fails a test rather than passing
  * silently in a pull request nobody reads closely.
  */
@@ -418,7 +418,7 @@ test("the vector index stores sealed embeddings, never bare vectors", async () =
   );
 
   // The data map gives the vector index exactly one erasure mechanism: key destruction, because
-  // "soft delete is insufficient" (Data_Protection_and_Retention.txt:49-50). A bare number[] here
+  // "soft delete is insufficient" (data-protection-and-retention.txt:49-50). A bare number[] here
   // is a fragment that survives erasure, which is precisely what the release gate exists to fail.
   expect(declaration).toContain("readonly embedding: SealedContent");
   expect(declaration).not.toMatch(/readonly embedding:\s*readonly number\[\]/);

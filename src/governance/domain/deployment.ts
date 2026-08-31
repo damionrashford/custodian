@@ -25,7 +25,7 @@ export type Rollback = {
   /**
    * Cache and routing-memory invalidation are steps in the rollback, not follow-up cleanup. A
    * documented incident had the semantic cache serving the bad answer for forty minutes after the
-   * rollback (Reliability_and_Operations.txt:116-117).
+   * rollback (reliability-and-operations.txt:116-117).
    */
   readonly mustInvalidate: readonly ["response-cache", "routing-memory"];
 };
@@ -64,7 +64,7 @@ export function resolvePromptVersion(
 /**
  * Rollback is repointing a label, which is why the SLO is achievable: one documented migration took
  * rollback from 14 minutes to 8 seconds by moving the prompt out of the container image and into a
- * registry alias (AI_Agent_Implementation_Plan_v2.txt:232). The target is under 60 seconds.
+ * registry alias (implementation-plan.txt:232). The target is under 60 seconds.
  */
 export function rollback(
   registry: Registry,

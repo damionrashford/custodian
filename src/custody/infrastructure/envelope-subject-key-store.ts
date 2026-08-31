@@ -22,7 +22,7 @@ const IV_BYTES = 12;
 /**
  * Envelope encryption, as the corpus specifies it: a fresh content key per seal, wrapped by a
  * key-encryption key that lives in the KMS and never leaves it
- * (Data_Protection_and_Retention.txt:74). Only key material crosses the wire — the content is
+ * (data-protection-and-retention.txt:74). Only key material crosses the wire — the content is
  * encrypted here, so a large completion is not a large request to the KMS.
  *
  * Two envelopes rather than one, because the two destructions are independent: Article 17 erasure
@@ -135,7 +135,7 @@ export class EnvelopeSubjectKeyStore implements SubjectKeyStore {
 
   /**
    * Idempotent across restarts, because the registry outlives the process: "a repeat request is a
-   * no-op returning the original proof" (Data_Protection_and_Retention.txt:95-96). Asking the KMS
+   * no-op returning the original proof" (data-protection-and-retention.txt:95-96). Asking the KMS
    * again cannot satisfy that — the key is gone, so there is nothing there to answer with.
    */
   async #destroy(name: CustodyKeyName): Promise<Result<ErasureProof, KeyStoreFailure>> {

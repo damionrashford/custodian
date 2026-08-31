@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { GEN_AI_ATTRIBUTE, GEN_AI_CONVENTIONS_PIN } from "@custodian/evidence";
 
 test("the pinned attribute names transcribe the adopted convention snapshot", () => {
-  // The pin is the deliverable (AI_Agent_Implementation_Plan_v2.txt:262): the conventions are
+  // The pin is the deliverable (implementation-plan.txt:262): the conventions are
   // pre-stable and names churn — gen_ai.system has already become gen_ai.provider.name — so what
   // Custodian emits changes only when this test is deliberately edited (the LD-9 pattern).
   expect(GEN_AI_ATTRIBUTE).toEqual({

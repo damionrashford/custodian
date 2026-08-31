@@ -3,7 +3,7 @@ import type { Region } from "@custodian/primitives";
 
 /**
  * Storage location and processing location are recorded separately because they are independent
- * facts and a single "EU" claim conflates them (Data_Protection_and_Retention.txt:143). A provider
+ * facts and a single "EU" claim conflates them (data-protection-and-retention.txt:143). A provider
  * that stores in region but processes elsewhere is not in region.
  */
 export type ProviderProfile = {

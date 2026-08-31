@@ -11,7 +11,7 @@ research when the corpus doesn't cover a question. The corpus is an 11-document 
 `.research/*.txt`: the Implementation Plan v2, the Agent Architecture Addendum, Engineering
 Standards, Design & Interface Standards, Gap Register v2, and four companion documents (Compliance
 & Certification, Data Protection & Retention, Reliability & Operations, Test & Security Assurance).
-`AI_Agent_Implementation_Plan.txt` and `Gap_Register.txt` are v1 and superseded — never cite them
+`implementation-plan-v1.txt` and `gap-register-v1.txt` are v1 and superseded — never cite them
 as current. Three modes:
 
 ## Ingest
@@ -26,7 +26,7 @@ Follow the `research` skill's Lookup step: search across the relevant documents 
 guessing from training knowledge — this corpus has already resolved most open questions about this
 platform's design. Prefer a `_v2` document's position over `_v1` when both exist and state that it
 changed. If the corpus doesn't answer, say so and check whether it's listed as an open gap in
-`Gap_Register_v2.txt` before falling through to Research mode below. Answer with the resolved
+`gap-register.txt` before falling through to Research mode below. Answer with the resolved
 position first, cite every supporting passage as `file.txt:line`, and return a direct answer with
 citations — not a survey of everything you found.
 

@@ -2,7 +2,7 @@
  * Report pass^k, not pass@k. pass@k asks whether *any* of k attempts succeeded — a generous metric
  * that flatters. pass^k asks whether *all* k succeeded, which is the question production actually
  * poses, because in deployment the agent runs once
- * (Test_and_Security_Assurance.txt:30).
+ * (test-and-security-assurance.txt:30).
  *
  * The collapse is not theoretical: one evaluated agent fell from pass₁ = 29.6% to pass₅ = 8.0%, and
  * the failures were silent — no tool error marked a violating run.

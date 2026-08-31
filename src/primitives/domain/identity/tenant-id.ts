@@ -12,7 +12,7 @@ const TENANT_ID_PATTERN = /^t_[0-9a-z]{26}$/;
 
 /**
  * The single boundary where an unvalidated string becomes a TenantId. The assertion is the parser
- * exception the standard names (Engineering_Standards.txt:82) — no other module can construct one,
+ * exception the standard names (engineering-standards.txt:82) — no other module can construct one,
  * which is the whole point.
  */
 export function parseTenantId(value: string): Result<TenantId, InvalidTenantId> {

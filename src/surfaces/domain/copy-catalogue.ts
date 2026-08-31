@@ -5,7 +5,7 @@ import type { Surface } from "./vocabulary";
  *
  * Perceivable in the interaction surface itself, at first contact, in the same visual weight as
  * other primary text — not a tooltip, a footer, or a settings page
- * (Design_Interface_Standards.txt:26-37). A vague "assistant" reference or a mention in terms and
+ * (interface-standards.txt:26-37). A vague "assistant" reference or a mention in terms and
  * conditions does not discharge the duty, and a deployer cannot rely on the provider's marking to
  * discharge theirs.
  *

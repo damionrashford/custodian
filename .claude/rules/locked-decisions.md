@@ -25,7 +25,7 @@ that does not survive in the code.
 
 **Decided:** 2026-08-29, Stage 2. Stress-tested with `adversaria:devils-advocate`.
 
-**The question the spec left open.** `AI_Agent_Implementation_Plan_v2.txt:106` frames build-versus-buy
+**The question the spec left open.** `implementation-plan.txt:106` frames build-versus-buy
 as "a latency and operations question" and stops short of deciding.
 
 **The case for buying, at its strongest.** The latency objection is dead — roughly 0.7 ms added p99
@@ -61,7 +61,7 @@ did as of August 2026.
 
 **Decided:** 2026-08-29, Stage 0.
 
-`Engineering_Standards.txt:133` offers `eslint-plugin-boundaries` *or* `dependency-cruiser`. The
+`engineering-standards.txt:133` offers `eslint-plugin-boundaries` *or* `dependency-cruiser`. The
 plugin was tried first and removed: under v7, element patterns match folders rather than files, and
 every cross-layer import in this layout resolved as `unknown`, so the rule passed a planted
 `domain → infrastructure` violation.
@@ -79,7 +79,7 @@ is not worth a rule that silently passes.
 ## LD-3 — Tests live under `tests/`, mirrored by package
 
 **Decided:** 2026-08-29, Stage 1. Direct user instruction, overriding
-`Engineering_Standards.txt:149` which specifies siblings.
+`engineering-standards.txt:149` which specifies siblings.
 
 `tests/<package>/<unit>.test.ts`, importing `@custodian/<package>` rather than reaching into `src/`.
 The package must appear in the root `package.json` `devDependencies` as `workspace:*`.
@@ -109,7 +109,7 @@ Proven so far:
 | Constraint pinning | Treat pins as ordinary messages | 2 compaction tests fail |
 | Toolchain gates | `any`, `enum`, default export, `as`, `domain → node:fs`, prohibited folder name | Each fails its own rule |
 
-This is not ceremony. `Test_and_Security_Assurance.txt:86` makes the same point about red teams: a
+This is not ceremony. `test-and-security-assurance.txt:86` makes the same point about red teams: a
 report with zero findings means the test was too weak.
 
 ---
@@ -136,7 +136,7 @@ supports it. Re-check at the start of each stage; the pin is a cost, not a prefe
 compliance-critical decision — which provider gets called next. A durable execution engine decides
 *when to retry a step*. It does not decide which provider, which tenant, or whether a residency
 boundary may be crossed. Nothing compliance-critical is surrendered, and
-`AI_Agent_Implementation_Plan_v2.txt:194` is explicit that the common outcome of building is that
+`implementation-plan.txt:194` is explicit that the common outcome of building is that
 teams write half a durable execution engine themselves.
 
 **The four counters, and what happened to them.**
@@ -176,7 +176,7 @@ in a way sealing does not cover, or a candidate failing the version-skew gate wi
 **The finding.** The platform had its controls inverted. The **agent card** — an agent proving
 identity for a handoff — carried three controls: signature, freshness window, and a nonce replay
 ledger. The **tenant claim** — the token deciding whose data a query may read, and the boundary
-whose breach `Reliability_and_Operations.txt:84-86` says pages and is treated as a breach until
+whose breach `reliability-and-operations.txt:84-86` says pages and is treated as a breach until
 disproven — carried one: a signature. No expiry, no replay defence. A captured tenant token was
 valid forever.
 
@@ -251,7 +251,7 @@ until justified.
 
 **How this was found.** Same method as LD-7 and LD-8: enumerate a category of boundary and diff the
 members. Here the category was retention, and the diff was against the seven-row table in
-`Data_Protection_and_Retention.txt:114-140`.
+`data-protection-and-retention.txt:114-140`.
 
 **What the audit found.** The spec defines seven retention classes. The code had four scattered
 magic numbers referencing nothing, and **three classes encoded nowhere**:
@@ -395,7 +395,7 @@ per plant, say — would make the clean-tree requirement unnecessary rather than
 **Decided:** 2026-08-30, by the repo owner, from a four-way comparison. Unblocks the durable subject
 key store and per-subject erasure of vector-index embeddings.
 
-**The question the spec left open.** `Data_Protection_and_Retention.txt:74` fixes the *shape* — a
+**The question the spec left open.** `data-protection-and-retention.txt:74` fixes the *shape* — a
 per-subject DEK wrapped by a KEK in the KMS, with the KMS destruction record as the audit artefact —
 and names no product.
 
@@ -475,7 +475,7 @@ on the confirmation read exactly as described.
 the proof carry a genuinely Vault-issued record id and make `external` a stronger claim than a
 confirmed absence. Or an AWS/GCP change offering immediate, non-cancellable destruction.
 
-**Still open, deliberately deferred.** Key *rotation* (`Gap_Register_v2.txt:269-273`). Transit's
+**Still open, deliberately deferred.** Key *rotation* (`gap-register.txt:269-273`). Transit's
 `rotate` + `rewrap` is the mechanism, and the tenant claim's missing `kid` is the same gap from the
 other side — both belong in one rotation change.
 

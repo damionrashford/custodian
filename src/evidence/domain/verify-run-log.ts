@@ -11,7 +11,7 @@ export type LogIntegrityFailure =
   | { readonly kind: "hash-mismatch"; readonly seq: number };
 
 /**
- * An audit log engineers can edit is not evidence (Compliance_and_Certification.txt:59). Each entry
+ * An audit log engineers can edit is not evidence (compliance-and-certification.txt:59). Each entry
  * commits to its predecessor's hash, so a mutated payload, a deleted entry and a rewritten link are
  * all detectable — and each reports the sequence number where the chain first diverges.
  */

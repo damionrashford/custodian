@@ -19,7 +19,7 @@ Writing a check is half the work. Before it is trusted, break the property it gu
 check fails — **and that it is the only one that fails.** A test that goes red for the wrong reason
 is not evidence about the property it names.
 
-This is not ceremony. `Test_and_Security_Assurance.txt:86` makes the same point about red teams: a
+This is not ceremony. `test-and-security-assurance.txt:86` makes the same point about red teams: a
 report with zero findings means the test was too weak.
 
 ## Plant the idiomatic violation, not the convenient one

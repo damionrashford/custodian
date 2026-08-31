@@ -32,7 +32,7 @@ export function bucketKeyName(bucket: RetentionBucket): CustodyKeyName {
  * A single-use content key: `plaintext` encrypts, `wrapped` is the same key sealed under the KEK and
  * is what gets persisted. The plaintext is never stored, so destroying the KEK makes every `wrapped`
  * value ever issued under it undecryptable — which is the whole mechanism
- * (Data_Protection_and_Retention.txt:74).
+ * (data-protection-and-retention.txt:74).
  */
 export type DataKey = {
   readonly plaintext: Uint8Array;

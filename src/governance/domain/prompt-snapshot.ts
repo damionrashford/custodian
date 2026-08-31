@@ -2,7 +2,7 @@ import type { ModelSnapshot, PromptVersion } from "@custodian/primitives";
 
 /**
  * A complete version captures text, model, parameters, change source, rationale and eval result.
- * Omitting any of these means rolling back blindly (AI_Agent_Implementation_Plan_v2.txt:233) — which
+ * Omitting any of these means rolling back blindly (implementation-plan.txt:233) — which
  * is why every field is required rather than optional. A half-recorded version is not a cheaper
  * version, it is an unusable one.
  */

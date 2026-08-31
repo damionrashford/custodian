@@ -6,7 +6,7 @@ import { screen, type Classifier, type GuardrailVerdict } from "./screen";
  * Indirect injection arrives through content the model *reads* — a retrieved document, a fetched
  * page, a tool result — and input-only classifiers do not catch it. A retrieval rail that filters or
  * truncates context chunks before they enter the prompt is required, not optional
- * (AI_Agent_Implementation_Plan_v2.txt:229).
+ * (implementation-plan.txt:229).
  *
  * Screening the user's message and calling that "guardrails" is precisely the deployment this
  * finding describes as unprotected.

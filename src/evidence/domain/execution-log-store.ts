@@ -22,7 +22,7 @@ export type LogStoreFailure =
 /**
  * Append-only storage for the execution log. `verifyRunLog` detects tampering after the fact; this
  * port refuses it at write time, which is the other half of what
- * Compliance_and_Certification.txt:59 asks for — an audit log engineers can edit is not evidence,
+ * compliance-and-certification.txt:59 asks for — an audit log engineers can edit is not evidence,
  * and detection alone still allows the edit.
  *
  * Reads are scoped by namespace, derivable only from a verified tenant claim. A run identifier

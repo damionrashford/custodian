@@ -135,7 +135,7 @@ test("a second turn continues the run without opening it again", async () => {
   });
   if (!second.ok) throw new Error("turn 2 failed");
 
-  // Field group 1 is per run, not per provider call (Compliance_and_Certification.txt:50): a
+  // Field group 1 is per run, not per provider call (compliance-and-certification.txt:50): a
   // multi-turn loop threading the log through serveCompletion must not re-attribute the run.
   const opened = second.value.log.filter((entry) => entry.event.kind === "run-started");
   expect(opened).toHaveLength(1);

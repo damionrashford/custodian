@@ -52,7 +52,7 @@ function region(): Region {
 }
 
 /**
- * The release gate from Data_Protection_and_Retention.txt:112-113. Create a synthetic data subject,
+ * The release gate from data-protection-and-retention.txt:112-113. Create a synthetic data subject,
  * exercise the pipeline until the subject appears in every storage layer, issue an erasure request,
  * then attempt recovery from raw storage, from every cache, and from a backup taken before the
  * request. Any recovered fragment fails the gate.
@@ -184,7 +184,7 @@ test("erasure gate: a crypto-shredded subject is unrecoverable from storage and 
   expect(String(key)).not.toContain("jane@example.test");
 
   // 1c. And the vector index. The data map gives this location one erasure mechanism — "Key
-  // destruction — soft delete is insufficient" (Data_Protection_and_Retention.txt:49-50) — so the
+  // destruction — soft delete is insufficient" (data-protection-and-retention.txt:49-50) — so the
   // embedding is sealed under the same subject key rather than merely deleted. A bare vector would
   // survive the erasure, and embedding inversion makes that a recoverable fragment, not a detail.
   const embedding = [0.4242424242, 0.1717171717, 0.9191919191];

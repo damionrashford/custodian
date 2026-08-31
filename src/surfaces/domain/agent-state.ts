@@ -4,7 +4,7 @@ import type { ToolName } from "@custodian/primitives";
  * The seven states an agent run can be in, as a union where each carries what the interface is
  * obliged to show for it.
  *
- * The obligations are not advice. `Design_Interface_Standards.txt:174-193` names, per state, what
+ * The obligations are not advice. `interface-standards.txt:174-193` names, per state, what
  * the user must see — and the reason they live in the type rather than in a checklist is that a
  * checklist is satisfied by remembering. A screen that renders `failed` without saying what was
  * already committed should not compile.

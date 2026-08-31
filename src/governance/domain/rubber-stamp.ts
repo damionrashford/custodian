@@ -3,11 +3,11 @@ import type { ReviewOutcome } from "./decision-lane";
 /**
  * A reviewer approving 99% of decisions at under ten seconds average review time is clicking, not
  * reviewing. This belongs on the same dashboard as the SLOs, because degraded oversight is a
- * reliability failure (Reliability_and_Operations.txt:211).
+ * reliability failure (reliability-and-operations.txt:211).
  *
  * Measure the outcome, not the affordance: reviewers given clear explanations of an AI's reasoning
  * deferred MORE heavily to it, so better explainability can substitute for oversight rather than
- * support it (Gap_Register_v2.txt:314). Explanation quality is not evidence that oversight works.
+ * support it (gap-register.txt:314). Explanation quality is not evidence that oversight works.
  */
 const RUBBER_STAMP_APPROVAL_RATE = 0.99;
 const RUBBER_STAMP_MEDIAN_MS = 10_000;

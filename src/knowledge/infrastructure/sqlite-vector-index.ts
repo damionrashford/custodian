@@ -32,7 +32,7 @@ type DocumentRow = {
  *
  * Embeddings are stored sealed, never as vectors, because the data map gives this location exactly
  * one erasure mechanism: "Key destruction — soft delete is insufficient"
- * (Data_Protection_and_Retention.txt:49-50).
+ * (data-protection-and-retention.txt:49-50).
  */
 export class SqliteVectorIndex implements VectorIndex {
   readonly #db: Database;

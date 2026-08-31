@@ -8,7 +8,7 @@ type Scorable = Omit<MemoryEntry, "text"> | Omit<MemoryCandidate, "text">;
  * Do not score recall on embedding similarity alone. The influential design weighs recency
  * (exponential decay), relevance (similarity) and importance (self-assessed); this platform adds a
  * fourth term — provenance — so untrusted-origin entries are demoted at retrieval rather than only
- * at write (Agent_Architecture_Addendum.txt:152).
+ * at write (architecture-addendum.txt:152).
  *
  * Retrieving the wrong memory is indistinguishable to the model from having no memory, and worse
  * than none when the memory is stale.
@@ -67,7 +67,7 @@ export function scoreRecall(input: RecallInput): number {
 /**
  * Decay handles low-relevance memories. A high-relevance memory that has become false is
  * confidently retrieved and confidently wrong, so factual entries expire on a shorter schedule
- * rather than being left to decay (Agent_Architecture_Addendum.txt:153).
+ * rather than being left to decay (architecture-addendum.txt:153).
  *
  * The outer bound is not defined here — it comes from the platform retention schedule, so the
  * legal position lives in one place instead of as a number in this file that happens to agree.

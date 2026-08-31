@@ -94,7 +94,7 @@ test("a repeat erasure returns the original proof", async () => {
   const second = await store.destroySubjectKey(subject);
 
   // "Idempotent; a repeat request is a no-op returning the original proof"
-  // (Data_Protection_and_Retention.txt:95-96). A fresh proof would be a second audit record of a
+  // (data-protection-and-retention.txt:95-96). A fresh proof would be a second audit record of a
   // single destruction, carrying a timestamp the destruction did not happen at.
   expect(second).toEqual(first);
 });

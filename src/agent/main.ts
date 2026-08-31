@@ -173,12 +173,12 @@ const embedder = new HashEmbedder();
  * identity and cannot mint it. The shared secret this replaces made every party that could verify
  * a claim able to forge one, and a leak of it was an unexpiring credential — the shape LD-7 names.
  * The corpus specifies "a signed JWT claim carrying the tenant ID"
- * (AI_Agent_Implementation_Plan_v2.txt:156) but no algorithm or key distribution, so Ed25519 and
+ * (implementation-plan.txt:156) but no algorithm or key distribution, so Ed25519 and
  * an issuer-held private key are decisions taken here. `scripts/mint-dev-claim.ts` mints both.
  *
  * A ring rather than a key, because rotation is otherwise a cutover that invalidates every claim in
  * flight. Adding the next key here is step one of three; the issuer switches to it second, and it
- * leaves the ring only once the longest live claim has expired (Gap_Register_v2.txt:272).
+ * leaves the ring only once the longest live claim has expired (gap-register.txt:272).
  */
 const keyRing = parseKeyRing(required("CUSTODIAN_CLAIM_KEYS"));
 if (!keyRing.ok) {
@@ -222,7 +222,7 @@ const BROWSER_IMAGE = Bun.env["CUSTODIAN_BROWSER_IMAGE"] ?? "zenika/alpine-chrom
  *
  * Unset means the empty allowlist, which means no web access at all — the only setting that needs
  * no justification, and the corpus requirement that egress is deny-by-default with an allowlist
- * (Test_and_Security_Assurance.txt:95). It is read as a plain list rather than as a map keyed by
+ * (test-and-security-assurance.txt:95). It is read as a plain list rather than as a map keyed by
  * tenant because a `Namespace` cannot be minted from configuration text: its one constructor takes
  * a verified claim, deliberately, so that no caller has vocabulary for another tenant's scope. The
  * map below is therefore built from the namespace of the boot claim, and every other tenant that
@@ -324,7 +324,7 @@ async function main(): Promise<void> {
     }
     // The embedding is sealed under the authoring subject's key, because the data map gives the
     // vector index one erasure mechanism and it is key destruction
-    // (Data_Protection_and_Retention.txt:49-50). A bare vector would survive the subject's erasure.
+    // (data-protection-and-retention.txt:49-50). A bare vector would survive the subject's erasure.
     const sealed = await sealEmbedding(keys, {
       subject,
       bucket: bucketFor("prompts-and-completions", new Date().toISOString()),
@@ -373,7 +373,7 @@ async function main(): Promise<void> {
   }
 
   // Selection accuracy falls off a cliff as the catalogue grows, so the count is a gate rather than
-  // a note (Agent_Architecture_Addendum.txt:128).
+  // a note (architecture-addendum.txt:128).
   const budget = assertWithinBudget(toolset.definitions.length);
   if (!budget.ok) {
     console.error(

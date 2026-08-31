@@ -1,7 +1,7 @@
 /**
  * An uncalibrated judge produces numbers that feel like measurement. Target a Pearson correlation
  * above 0.7 between judge scores and domain-expert verdicts
- * (Test_and_Security_Assurance.txt:62).
+ * (test-and-security-assurance.txt:62).
  */
 export const MIN_JUDGE_CORRELATION = 0.7;
 
@@ -38,7 +38,7 @@ function pearson(pairs: readonly ScoredPair[]): number | undefined {
 /**
  * Correlation against expert labels, never agreement rate. Agreement is a trap on imbalanced data:
  * a judge that stamps every output "pass" achieves 90% agreement on a set where 10% should fail, and
- * reports itself as 90% accurate while being useless (Test_and_Security_Assurance.txt:64-65).
+ * reports itself as 90% accurate while being useless (test-and-security-assurance.txt:64-65).
  *
  * A judge with no variance in its scores is exactly that judge, and it is reported as indeterminate
  * rather than as a correlation of zero — zero would read as "measured and poor" when the truth is

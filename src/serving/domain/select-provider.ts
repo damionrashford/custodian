@@ -28,10 +28,10 @@ function isEligible(provider: ProviderProfile, request: RoutingRequest): boolean
  * Residency is a routing constraint, not a configuration flag. The fallback chain must not silently
  * route an EU tenant to a non-EU provider during a failover, so exhausting the in-region set
  * returns a refusal rather than widening the candidate set
- * (Data_Protection_and_Retention.txt:145-150).
+ * (data-protection-and-retention.txt:145-150).
  *
  * The rationale is not decoration: the execution log records the router decision and its rationale
- * for every call (Compliance_and_Certification.txt:55).
+ * for every call (compliance-and-certification.txt:55).
  */
 export function selectProvider(request: RoutingRequest): RoutingDecision {
   const eligible = request.candidates.filter((provider) => isEligible(provider, request));

@@ -34,7 +34,7 @@ function isTransient(failure: ProviderFailure): boolean {
 /**
  * Pure. Jitter is not optional — if ten thousand deliveries fail during a
  * brief outage, unjittered retries all fire at the same interval and create a thundering herd
- * (AI_Agent_Implementation_Plan_v2.txt:203).
+ * (implementation-plan.txt:203).
  */
 export type RetryContext = {
   readonly attempt: number;

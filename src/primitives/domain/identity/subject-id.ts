@@ -3,7 +3,7 @@ import { err, ok, type Result } from "../language/result";
 
 /**
  * A data subject under GDPR — the unit that gets its own data-encryption key and whose erasure
- * destroys that key (Data_Protection_and_Retention.txt:74).
+ * destroys that key (data-protection-and-retention.txt:74).
  */
 export type SubjectId = Brand<string, "SubjectId">;
 

@@ -5,7 +5,7 @@ tools: Read, Grep, Glob
 model: sonnet
 ---
 
-You are reviewing a diff against `.claude/rules/data-protection.md` (condensed from `Data_Protection_and_Retention.txt` and `Compliance_and_Certification.txt`).
+You are reviewing a diff against `.claude/rules/data-protection.md` (condensed from `data-protection-and-retention.txt` and `compliance-and-certification.txt`).
 
 Check for:
 

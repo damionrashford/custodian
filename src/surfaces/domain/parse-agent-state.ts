@@ -18,7 +18,7 @@ export type StateRejection =
   /**
    * `AgentState` types `position` and `expectedStartAt` as `number | undefined` and
    * `string | undefined` because TypeScript cannot say "at least one of these". The obligation is
-   * real anyway — `Design_Interface_Standards.txt:178` forbids a bare indeterminate spinner — so
+   * real anyway — `interface-standards.txt:178` forbids a bare indeterminate spinner — so
    * the wire is where it is enforced. A queued state that can say neither is one no surface may
    * render honestly, and refusing it here is louder than shipping it and hoping the UI copes.
    */

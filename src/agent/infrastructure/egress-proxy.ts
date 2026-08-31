@@ -9,7 +9,7 @@ import { permitHost, permitUrl, type EgressPolicy } from "../domain/url-policy";
  * load-bearing rather than aspirational, and it has to be enforced somewhere the page cannot reach
  * around — so the container gets no route to the internet and this is the only address it can talk
  * to. "Network egress from the sandbox is deny-by-default with an allowlist, tested adversarially"
- * (Test_and_Security_Assurance.txt:95).
+ * (test-and-security-assurance.txt:95).
  *
  * Enforcing at the proxy rather than at the tool matters because the tool only ever sees the URL the
  * model asked for. A page then requests its own scripts, images and beacons, and those are chosen by

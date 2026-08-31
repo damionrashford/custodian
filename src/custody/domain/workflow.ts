@@ -29,7 +29,7 @@ export type WorkflowPayload = {
 /**
  * A durable workflow may outlive the API version that started it, so the definition carries its own
  * version plane, separate from the public API and the webhook payload
- * (Compliance_and_Certification.txt:98, 116).
+ * (compliance-and-certification.txt:98, 116).
  */
 export type WorkflowDefinition = {
   readonly name: string;

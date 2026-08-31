@@ -2,7 +2,7 @@ import type { ActionClass } from "@custodian/primitives";
 
 /**
  * Risk-tiered decision lanes with SLAs. On timeout, fail safe to denied and capture partial context
- * for audit (Gap_Register_v2.txt:317, Reliability_and_Operations.txt:193-208).
+ * for audit (gap-register.txt:317, reliability-and-operations.txt:193-208).
  *
  * The volume arithmetic is why lanes exist at all: fifty agents at twenty tool calls an hour produce
  * a thousand approval-eligible events an hour, and routing even 10% to human review consumes more

@@ -14,7 +14,7 @@ export const DEFAULT_BACKOFF: BackoffPolicy = { maxAttempts: 6, baseDelayMs: 1_0
 /**
  * Jitter is not optional. If ten thousand deliveries fail during a brief consumer outage,
  * unjittered retries all fire at the same interval and create a thundering herd
- * (AI_Agent_Implementation_Plan_v2.txt:203). `jitter` is supplied in [0, 1) so this stays pure.
+ * (implementation-plan.txt:203). `jitter` is supplied in [0, 1) so this stays pure.
  */
 export function nextDeliveryAttempt(
   attempt: number,
@@ -39,7 +39,7 @@ export type DeadLetter = {
  * event, fixes the handler defect and redrives it; because events are keyed on a stable idempotent
  * ID, replaying one already processed is safe. Manual replay is the single most requested webhook
  * feature by consuming developers, so it is scoped into v1
- * (AI_Agent_Implementation_Plan_v2.txt:204).
+ * (implementation-plan.txt:204).
  */
 export function redrive(letters: readonly DeadLetter[], id: EventId): DeadLetter | undefined {
   return letters.find((letter) => letter.event.id === id);

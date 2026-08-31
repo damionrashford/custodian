@@ -25,7 +25,7 @@ const NOT_DECRYPTABLE: ReadonlySet<number> = new Set([400, 404]);
  * Transit was chosen over AWS KMS, GCP Cloud KMS and Azure Managed HSM on one property: its delete
  * is immediate. AWS schedules deletion 7–30 days out and permits cancellation throughout; GCP's
  * floor is 24 hours with the version restorable until then. Either would have forced the release
- * gate at Data_Protection_and_Retention.txt:110-112 — erase, then attempt recovery, and any
+ * gate at data-protection-and-retention.txt:110-112 — erase, then attempt recovery, and any
  * recovered fragment fails — to be rewritten into an assertion about a scheduled intent rather than
  * about irrecoverability.
  */

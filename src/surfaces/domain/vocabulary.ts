@@ -1,6 +1,6 @@
 /**
  * The audience a string is written for. Vocabulary is scoped by surface, not by product
- * (Design_Interface_Standards.txt:208-227): the same fact is written four ways, and a term that is
+ * (interface-standards.txt:208-227): the same fact is written four ways, and a term that is
  * precise on the operator console is an obstacle on an approval screen someone opens on a phone.
  *
  * The test that settles disputes: can the reader take the correct action without knowing how the

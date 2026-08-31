@@ -3,10 +3,10 @@ import { brand, type Brand, err, ok, type Result, type TenantId } from "@custodi
 /**
  * A tenant identity that has been cryptographically verified AND is currently valid. Isolation is
  * enforced at the query layer using a signed claim carrying the tenant ID — never by instructing the
- * model (AI_Agent_Implementation_Plan_v2.txt:156).
+ * model (implementation-plan.txt:156).
  *
  * Any retrieval returning another tenant's namespace pages and is treated as a breach until
- * disproven (Reliability_and_Operations.txt:84-86), so this is the highest-stakes boundary in the
+ * disproven (reliability-and-operations.txt:84-86), so this is the highest-stakes boundary in the
  * platform and it is verified accordingly.
  */
 export type VerifiedTenantClaim = Brand<
@@ -28,7 +28,7 @@ export type ClaimContents = {
  * verifier holds a ring and accepts any key in it, so a rotation becomes: add the new key to every
  * ring, start issuing under it, and retire the old one only once the longest live claim has expired
  * — the overlap the corpus prescribes, "publish the key ID in the signature header, accept both keys
- * during the overlap window, and only then retire the old one" (Gap_Register_v2.txt:272).
+ * during the overlap window, and only then retire the old one" (gap-register.txt:272).
  */
 export type SigningKeyId = Brand<string, "SigningKeyId">;
 

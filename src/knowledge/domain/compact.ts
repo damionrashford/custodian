@@ -16,7 +16,7 @@ function tokensOf(items: readonly ContextItem[], countTokens: TokenCounter): num
  * Compaction is a deliberate response to a named constraint, not a default. Under modern prompt
  * caching, keeping the full history beat every summarisation strategy tested on cost, latency and
  * memory recall simultaneously, because summarising rewrites the cached prefix and forfeits the
- * discount on everything it was meant to save (AI_Agent_Implementation_Plan_v2.txt:167). So a
+ * discount on everything it was meant to save (implementation-plan.txt:167). So a
  * context that already fits is returned unchanged.
  *
  * Pinned constraints are never candidates for eviction. If they alone exceed the budget this fails

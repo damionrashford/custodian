@@ -3,7 +3,7 @@ import type { RunId } from "@custodian/primitives";
 /**
  * One meter event per usage-recorded execution-log entry. Cost is already a pure function of
  * tokens and the price table (@custodian/evidence); the event carries the result so billing can be
- * recomputed offline from the log alone (AI_Agent_Implementation_Plan_v2.txt:121) — which is what
+ * recomputed offline from the log alone (implementation-plan.txt:121) — which is what
  * makes the log the source for reconcile()'s meter-events side.
  */
 export type MeterEvent = {

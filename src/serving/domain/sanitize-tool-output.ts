@@ -31,9 +31,9 @@ const INVISIBLE_CHARACTERS = new RegExp(
 /**
  * The MCP reference SDK implements neither server-side output sanitisation nor client-side result
  * validation despite the specification requiring both, so this is the platform's responsibility
- * (AI_Agent_Implementation_Plan_v2.txt:77). The provenance tag is equally load-bearing: external
+ * (implementation-plan.txt:77). The provenance tag is equally load-bearing: external
  * content must never be treated as equivalent to authenticated user input in a memory write
- * decision (Data_Protection_and_Retention.txt:160-161).
+ * decision (data-protection-and-retention.txt:160-161).
  */
 export function sanitizeToolOutput(raw: string): ProvenancedContent {
   const stripped = raw

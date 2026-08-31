@@ -1,12 +1,12 @@
 /**
  * Agent loops break at the perceive or observe step rather than at reasoning. The three dominant
  * production failure modes are runaway repetition, context degrading across iterations, and action
- * taken on unverified output (Agent_Architecture_Addendum.txt:120).
+ * taken on unverified output (architecture-addendum.txt:120).
  *
  * The pathology worth instrumenting specifically: the agent repeats a failed action sequence
  * without verifying whether the expected state transition actually occurred, producing prolonged
  * stagnation. These are runtime controls, not dashboard metrics
- * (Reliability_and_Operations.txt:91).
+ * (reliability-and-operations.txt:91).
  */
 export type RunState = {
   readonly iteration: number;

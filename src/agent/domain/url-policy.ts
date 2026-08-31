@@ -76,7 +76,7 @@ export type EgressPolicy = {
   /**
    * Hosts this agent may reach. Deny-by-default with an allowlist is the corpus requirement, and it
    * is stated as something to test adversarially rather than to configure once
-   * (Test_and_Security_Assurance.txt:95). An empty allowlist means no web access, which is the only
+   * (test-and-security-assurance.txt:95). An empty allowlist means no web access, which is the only
    * setting that needs no justification.
    */
   readonly allowedHosts: readonly string[];
@@ -98,7 +98,7 @@ const NO_EGRESS: EgressPolicy = { allowedHosts: [] };
  * A miss is `NO_EGRESS` rather than a shared default, which makes "not configured" and "configured
  * to reach nothing" the same outcome. Deny-by-default with an allowlist is what the corpus asks for,
  * and it asks for it as something tested adversarially rather than configured once
- * (Test_and_Security_Assurance.txt:95).
+ * (test-and-security-assurance.txt:95).
  */
 export function egressFor(
   policies: ReadonlyMap<Namespace, EgressPolicy>,

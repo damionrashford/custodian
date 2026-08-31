@@ -11,7 +11,7 @@
  *
  * To rehearse a rotation, run it twice with different key ids and merge the two rings: a verifier
  * holding both accepts claims minted under either, which is the overlap window that makes rotation
- * safe (Gap_Register_v2.txt:272). Retire the old key only once the longest live claim has expired.
+ * safe (gap-register.txt:272). Retire the old key only once the longest live claim has expired.
  */
 import { generateKeyPairSync } from "node:crypto";
 import { parseTenantId } from "@custodian/primitives";

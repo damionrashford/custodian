@@ -7,7 +7,7 @@ const DIMENSIONS = 64;
  * A deterministic character-trigram embedder for composition roots that need retrieval to *work*
  * before it needs to be *good* — retrieval quality is explicitly not what a deployment using this
  * adapter is claiming, and the backbone model has limited impact next to chunking anyway
- * (AI_Agent_Implementation_Plan_v2.txt:150). No network, no key, no clock: the same text embeds
+ * (implementation-plan.txt:150). No network, no key, no clock: the same text embeds
  * to the same unit vector forever, which is also what makes it usable in offline tests.
  */
 export class HashEmbedder implements Embedder {

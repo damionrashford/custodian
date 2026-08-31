@@ -15,7 +15,7 @@ import type { LogIntegrityFailure } from "./verify-run-log";
 
 /**
  * The seven states every interface must design, including failure and recovery
- * (Design_Interface_Standards.txt:174-193).
+ * (interface-standards.txt:174-193).
  *
  * Deliberately a local copy rather than an import. `COMPONENT_DEPENDENCIES` in
  * tests/standards.test.ts gives `evidence` exactly two dependencies — `custody` and `primitives` —

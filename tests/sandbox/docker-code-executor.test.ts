@@ -42,7 +42,7 @@ test(
   "the sandbox has no network",
   async () => {
     // Deny-by-default egress is the one control that turns an escape into a crash rather than an
-    // exfiltration (Test_and_Security_Assurance.txt:95).
+    // exfiltration (test-and-security-assurance.txt:95).
     const outcome = await executor.execute({
       runtime: "python",
       source:

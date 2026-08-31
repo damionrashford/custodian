@@ -4,7 +4,30 @@ An autonomous AI agent platform. `.research/` holds the spec corpus and is the s
 
 **Implementation status.** Stages 0–3 are built: toolchain gates, foundations F1–F3, serving core (C1, C2, C3, C4, C21) and knowledge/context (C5, C6, C7, C8). Seven components under `src/`, 355 tests, seven CI gates plus a standing erasure gate, all behind `bun run verify`. Stage plans live in `.research/superpowers/plans/` (git-ignored) and each carries an execution status header. Architectural decisions the spec left open are recorded in `.claude/rules/locked-decisions.md` — **read that before re-deciding anything**, because the reasoning is not obvious from the code.
 
-**What is tracked, and what is not.** `.claude/rules/`, `.claude/agents/`, `.claude/hooks/` and `.claude/settings.json` are tracked — the standards a change is judged against, the reviewers that judge it, the guards, and the permissions. A clone that cannot read them cannot follow them. What stays local is only what is true of one machine: `.claude/settings.local.json` (absolute paths — `GRAPHIFY_OUT`, one deny rule), `.claude/skills/` (112M of vendored corpus), `.claude/worktrees/`, and a `CLAUDE.local.md` for personal notes and setup steps. `.research/` is local too, which is why `.worktreeinclude` exists: a worktree is a checkout of *tracked* files, so anything ignored has to be copied in deliberately or every subagent works without it.
+## Rules
+
+Ten files in `.claude/rules/`. Seven are **path-scoped** — they load only when Claude works with
+files matching their `paths:` frontmatter — so a session editing a README does not carry the
+interface standards, and one editing a store does not carry the Bun runtime notes.
+
+| Rule | Covers | Loads when |
+|---|---|---|
+| `architecture.md` | The four layers, folders, naming, size budgets, barrels, PR gates | Any `.ts` under `src/`, `tests/`, `scripts/` |
+| `typescript.md` | The compiler floor, banned constructs, type discipline, comments | Any `.ts`/`.tsx`, `tsconfig.json`, `eslint.config.js` |
+| `change-discipline.md` | What a *complete* change is — blast radius, no plugs, renames | Source, tests, scripts, `package.json` |
+| `verification.md` | Proving a gate can fail, plant passes, flaky gates, clean trees | Tests, scripts, workflows, gate configs |
+| `security.md` | Untrusted CI input, artefact contents, credentials, dependencies | Workflows, `docker/`, infrastructure, interface |
+| `interface-standards.md` | Article 50 disclosure, the seven agent states, tokens, vocabulary | Surfaces, interface layers, `.tsx`/`.css`/`.html` |
+| `runtime.md` | Bun decisions — `Bun.serve`, streaming, signals, frontend | Infrastructure, interface, scripts, `docker/` |
+| `data-protection.md` | Erasure, retention, residency, memory governance | **Always** — a missed glob here is a compliance defect |
+| `locked-decisions.md` | LD-1..LD-14, with what would reopen each | **Always** — they cut across every layer |
+| `pull-requests.md` | Stacked-PR merge order, which is silent and unrecoverable when wrong | **Always** — it governs a command sequence, not a file |
+
+`tests/rules.test.ts` fails when a rule points at a sibling that does not exist, when one declares
+`paths:` with no patterns (which looks scoped and matches nothing), or when an always-loaded rule
+does not say why it is not scoped.
+
+**What is tracked, and what is not.** `.claude/rules/`, `.claude/agents/`, `.claude/hooks/` and `.claude/settings.json` are tracked — the standards a change is judged against, the reviewers that judge it, the guards, and the permissions. A clone that cannot read them cannot follow them. What stays local is only what is true of one machine: `.claude/settings.local.json` (anything true of one machine), `.claude/skills/` (112M of vendored corpus), `.claude/worktrees/`, and a `CLAUDE.local.md` for personal notes and setup steps. `.research/` is local too, which is why `.worktreeinclude` exists: a worktree is a checkout of *tracked* files, so anything ignored has to be copied in deliberately or every subagent works without it.
 
 ## Non-negotiables
 
@@ -21,7 +44,7 @@ Findings that override intuition — check before designing around them. Decisio
 
 ## Architecture spine
 
-Four layers, dependencies point inward only (full detail: `.claude/rules/engineering-standards.md`):
+Four layers, dependencies point inward only (full detail: `.claude/rules/architecture.md`):
 
 `domain` (zero I/O) ← `application` (use cases) ← `infrastructure` (adapters) ← `interface` (HTTP/workers/CLI)
 
@@ -135,7 +158,7 @@ claim a gate passes before running it. Nothing else.
 - Before answering "what does the spec say about X" or before implementing anything, use the `research` skill/subagent rather than guessing — the corpus is large (11 docs, ~2,500 lines) and has already resolved most open questions. For "how does X relate to Y" architecture questions, query the standing knowledge graph first — it is cheaper than re-exploring. It lives at **`.graphify/`**, the path `GRAPHIFY_OUT` in `.claude/settings.json` sets, **not** `graphify-out/`. Gating on `graphify-out/` made the skill unreachable for an entire build, because that directory never exists under this configuration.
 - **Superpowers writes every document it produces under `.research/superpowers/`**, never `docs/superpowers/`. Same subfolders and filename convention as the plugin's own layout, different root: `superpowers:brainstorming` → `.research/superpowers/specs/YYYY-MM-DD-<topic>-design.md`, `superpowers:writing-plans` → `.research/superpowers/plans/YYYY-MM-DD-<feature>.md`. Every downstream reference (SDD plan paths, `requesting-code-review` `PLAN_OR_REQUIREMENTS`) uses the `.research/superpowers/` path. This is not the spec corpus: the corpus is `.research/*.txt` at top level only. All of `.research/` is git-ignored on purpose, so **skip the "and commit" step** both skills end with — the artefact is the file on disk, and reporting a commit that git ignored is a false completion claim. Three superpowers outputs stay outside `.research/` because the plugin hardcodes their paths in scripts, not prose: the SDD workspace (`.superpowers/sdd/<plan-slug>/` — ledger, briefs, reports), the visual-companion session dir (`.superpowers/brainstorm/<id>/` — mockups; pass `--project-dir` at the *repo root* so they persist past `/tmp`), and worktrees (`.worktrees/`). All three are git-ignored.
 - Before scaffolding anything, use the `superpowers:writing-plans` skill to turn the spec section into a concrete plan — `scaffold-component` lays out folders, it doesn't replace planning. For any *new* architectural decision not already resolved in `Gap_Register_v2.txt` (a routing-model choice, a caching strategy), run the `adversaria:devils-advocate` skill against it before it becomes a locked entry in Non-negotiables above.
-- Scaffolding a new platform component (Phase 1–5 or the addendum's C18–C23): use the `scaffold-component` skill — it lays out the 4-layer folders and stub port/adapter per Engineering Standards.
+- Scaffolding a new platform component (Phase 1–5 or the addendum's C18–C23): use the `scaffold-component` skill — it lays out the 4-layer folders and stub port/adapter per `architecture.md`.
 - Review pipeline, in order, once a component has code: the `code-simplifier:code-simplifier` agent (clarity) → bundled `code-review` skill (bugs/security on the diff) → `layer-reviewer` subagent (layering, banned constructs, naming) → `compliance-reviewer` subagent, only if the change touches personal data, memory, retrieval, or logging (crypto-shred usage, execution-log fields, tenant isolation) → the `code-review@claude-plugins-official` plugin's `/code-review` command as the final gate before merge (PR-only, posts via `gh`, fixed 5-agent pipeline — don't confuse it with the bundled skill of the same name, see `.research/Plugin_and_MCP_Reference.md` §3 for the full collision list). Before claiming any of this passed, run the `superpowers:verification-before-completion` skill rather than asserting it.
 - Library docs: `bun-docs`/`react-router`/`typescript-7` skills win for their ecosystems (dedicated, higher-fidelity local caches, offline-survivable); reach for the `context7@claude-plugins-official` MCP server (tools prefixed `mcp__plugin_context7_context7__`) only for a library none of those three cover.
 

@@ -19,7 +19,7 @@ so the guarantee is mechanical rather than a line in the prompt below.
 -->
 
 
-You are reviewing a diff against `.claude/rules/engineering-standards.md` (the condensed Engineering Standards for this platform) and `.claude/rules/change-discipline.md` (what a complete change looks like).
+You are reviewing a diff against `.claude/rules/architecture.md` (the condensed Engineering Standards for this platform) and `.claude/rules/change-discipline.md` (what a complete change looks like).
 
 Check, in order:
 

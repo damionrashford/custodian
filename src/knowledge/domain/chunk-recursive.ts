@@ -9,7 +9,7 @@ export type ChunkingOptions = {
 
 /**
  * Benchmark-validated baseline: recursive character splitting at 512 tokens with 50–100 tokens of
- * overlap, requiring no model calls (AI_Agent_Implementation_Plan_v2.txt:151). Chunking
+ * overlap, requiring no model calls (implementation-plan.txt:151). Chunking
  * configuration influences retrieval quality as much as or more than the choice of embedding model,
  * so this is a starting point for a sweep on our own corpus, not a settled answer.
  */

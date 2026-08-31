@@ -4,7 +4,7 @@ import { err, ok, type Result } from "../language/result";
 /**
  * A version is a snapshot in history. A deployment is a label declaring what production runs.
  * Conflating the two is the most frequent mistake in this area
- * (AI_Agent_Implementation_Plan_v2.txt:233), so they are different types here and a version has no
+ * (implementation-plan.txt:233), so they are different types here and a version has no
  * mutable field at all.
  */
 export type PromptVersion = Brand<string, "PromptVersion">;

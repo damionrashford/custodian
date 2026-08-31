@@ -35,7 +35,7 @@ export async function applyToolStep(
   scope: ToolStepScope,
 ): Promise<Result<StepEffect, AgentRunFailure>> {
   // Progressive disclosure: the full definition enters play only once the model reaches for the
-  // tool by name (Agent_Architecture_Addendum.txt:145). The slice has one tool, so the definition
+  // tool by name (architecture-addendum.txt:145). The slice has one tool, so the definition
   // is not re-injected into context — that wiring lands with the second tool.
   const definition = await scope.deps.catalogue.define(scope.request.taskClass, scope.step.tool);
   const tool = scope.deps.tools.find((candidate) => candidate.name === scope.step.tool);
@@ -141,7 +141,7 @@ async function runTool(
 
   // An acting tool's bytes are railed like a retrieved chunk before any of it reaches the model.
   // A shell's stdout or a fetched page is content the model reads, which is the channel indirect
-  // injection arrives through (AI_Agent_Implementation_Plan_v2.txt:229) — that this platform asked
+  // injection arrives through (implementation-plan.txt:229) — that this platform asked
   // for it makes it no more trustworthy than a document someone else wrote.
   const observation = executed.value;
   const admitted =

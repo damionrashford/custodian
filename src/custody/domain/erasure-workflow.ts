@@ -9,7 +9,7 @@ import {
 
 /**
  * Every location personal data reaches. Any location not in this map is a defect, logged as such
- * (Data_Protection_and_Retention.txt:92-93) — which is why this is an exhaustive union rather than
+ * (data-protection-and-retention.txt:92-93) — which is why this is an exhaustive union rather than
  * a list of strings.
  */
 export const DATA_MAP = [
@@ -121,7 +121,7 @@ function missingFrom(covered: readonly ErasureLocation[]): readonly ErasureLocat
 }
 
 /**
- * The nine steps from Data_Protection_and_Retention.txt:79-108, as a state machine so the ordering
+ * The nine steps from data-protection-and-retention.txt:79-108, as a state machine so the ordering
  * and the failure handling are provable without a workflow engine. Only execution is bought (LD-6);
  * the logic is ours.
  *
@@ -175,7 +175,7 @@ export type InadmissibleProof = { readonly kind: "self-attested"; readonly targe
  * A proof fit to show someone who was not present at the erasure.
  *
  * The corpus names the artefact "independently verifiable"
- * (Data_Protection_and_Retention.txt:74) without ever stating that the erasing party must be unable
+ * (data-protection-and-retention.txt:74) without ever stating that the erasing party must be unable
  * to forge it. That step is ours, and it is what this function encodes: a record the destroyer
  * wrote about its own destruction may be perfectly true and is still not evidence, so the release
  * gate refuses it rather than passing against a path whose defining property is absent.

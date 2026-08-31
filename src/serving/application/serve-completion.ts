@@ -47,7 +47,7 @@ export type ServeRequest = {
   readonly prompt: PromptSnapshot;
   /**
    * The triggering request, which is what field group 1 requires the log to seal
-   * (Compliance_and_Certification.txt:51). Sealing `prompt.text` instead would record the template
+   * (compliance-and-certification.txt:51). Sealing `prompt.text` instead would record the template
    * — byte-identical for every run on that version, and already named by `promptVersion`.
    */
   readonly input: string;
@@ -92,7 +92,7 @@ export type ServeRejection =
 /**
  * A failure carries the run's log, not just the reason. A residency refusal is the single event
  * most in need of evidence — it is the one the fallback chain exists to produce
- * (Data_Protection_and_Retention.txt:145-150) — and returning only an error would leave the run
+ * (data-protection-and-retention.txt:145-150) — and returning only an error would leave the run
  * that was refused indistinguishable in the record from one that never started.
  */
 export type ServeFailure = {
@@ -103,7 +103,7 @@ export type ServeFailure = {
 /**
  * Residency is re-evaluated on every attempt rather than once at the start, because a failover that
  * skips the check is exactly the silent cross-border call the spec forbids
- * (Data_Protection_and_Retention.txt:145-150). The claim is written before any provider call, so
+ * (data-protection-and-retention.txt:145-150). The claim is written before any provider call, so
  * dedupe precedes failover rather than racing it.
  */
 type AttemptOutcome =
@@ -188,12 +188,12 @@ async function attemptOnce(
 /**
  * Field group 1, written before the first provider call so that a run failing on every attempt
  * still has an entry naming the principal, tenant, region and legal basis it was refused under
- * (Compliance_and_Certification.txt:51). A failed run with no such entry is unattributable.
+ * (compliance-and-certification.txt:51). A failed run with no such entry is unattributable.
  */
 async function openRun(serve: ServeRequest): Promise<Result<readonly LoggedEntry[], ServeFailure>> {
   // Field group 1 is per run, not per provider call. The agent runtime calls serveCompletion once
   // per loop turn; re-opening on every turn would write a second attribution record the
-  // accounting unit does not have (Compliance_and_Certification.txt:50 — "per agent session").
+  // accounting unit does not have (compliance-and-certification.txt:50 — "per agent session").
   if (serve.log.some((entry) => entry.event.kind === "run-started")) {
     return ok(serve.log);
   }
@@ -254,7 +254,7 @@ async function failRun(
 
 /**
  * Field group 8: token counts and cost, reconcilable to the billing ledger
- * (Compliance_and_Certification.txt:58). Without this entry the log has no usage record for a call
+ * (compliance-and-certification.txt:58). Without this entry the log has no usage record for a call
  * the provider did bill, so reconcile() can never close cleanly on gateway traffic.
  */
 async function closeRun(

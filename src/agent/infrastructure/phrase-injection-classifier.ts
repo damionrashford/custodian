@@ -2,7 +2,7 @@ import type { Classifier, GuardrailVerdict, Stage } from "../domain/screen";
 
 /**
  * The fast first-pass injection classifier the layered pattern calls for
- * (AI_Agent_Implementation_Plan_v2.txt:228) — string matching, tens of microseconds, in front of
+ * (implementation-plan.txt:228) — string matching, tens of microseconds, in front of
  * whatever heavier hazard classifier a deployment adds.
  *
  * It is deliberately shallow: it catches the published phrasings that dominate indirect-injection

@@ -15,7 +15,7 @@ export type CatalogueContents = {
 
 /**
  * Servers are scoped per task class and individual tools filtered by allowlist, rather than whole
- * servers being exposed (Agent_Architecture_Addendum.txt:146).
+ * servers being exposed (architecture-addendum.txt:146).
  */
 export class InMemoryToolCatalogue implements ToolCatalogue {
   readonly #definitions: ReadonlyMap<string, ToolDefinition>;

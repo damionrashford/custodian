@@ -21,7 +21,7 @@ type RunKeyRow = { readonly namespace: string; readonly runId: string };
 
 /**
  * The durable half of C15 — "doubles as the compliance log store"
- * (AI_Agent_Implementation_Plan_v2.txt:249).
+ * (implementation-plan.txt:249).
  *
  * What the read path proves, precisely: every row re-verifies against its own hash and the whole
  * result re-verifies as a chain (verifyRunLog), so an entry edited in the database, a row whose

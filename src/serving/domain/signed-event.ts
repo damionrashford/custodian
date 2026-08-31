@@ -4,7 +4,7 @@ import { brand, type Brand, err, ok, REPLAY_WINDOW_MS, type Result } from "@cust
  * Every major provider delivers at least once and none delivers exactly once, which makes
  * idempotency the consumer's responsibility rather than something any vendor can ship. The
  * published contract therefore carries a stable event ID and documents the deduplication
- * expectation (AI_Agent_Implementation_Plan_v2.txt:202).
+ * expectation (implementation-plan.txt:202).
  */
 export type EventId = Brand<string, "EventId">;
 

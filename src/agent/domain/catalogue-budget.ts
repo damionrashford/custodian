@@ -2,7 +2,7 @@ import { err, ok, type Result } from "@custodian/primitives";
 
 /**
  * Tool count is a quality metric, not a feature count — selection accuracy fell from 43% to below
- * 14% as the catalogue grew (Agent_Architecture_Addendum.txt:128). Adding past the budget requires
+ * 14% as the catalogue grew (architecture-addendum.txt:128). Adding past the budget requires
  * a removal, which is why this returns how many must go rather than a bare boolean.
  */
 export const TOOL_CATALOGUE_BUDGET = 40;

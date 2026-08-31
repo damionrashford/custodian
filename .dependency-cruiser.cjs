@@ -2,7 +2,7 @@ module.exports = {
   forbidden: [
     {
       name: "no-circular",
-      comment: "Engineering_Standards.txt:230 — cycles at any depth fail the build.",
+      comment: "engineering-standards.txt:230 — cycles at any depth fail the build.",
       severity: "error",
       from: {},
       to: { circular: true },

@@ -12,7 +12,7 @@ import type {
 } from "@custodian/primitives";
 
 /**
- * The eight field groups required per agent session by Compliance_and_Certification.txt:50-58.
+ * The eight field groups required per agent session by compliance-and-certification.txt:50-58.
  * Content that may contain personal data is a SealedContent reference, never a plaintext string —
  * that separation is what lets metadata survive 24 months while content expires at 30 days.
  */
@@ -82,7 +82,7 @@ export type ExecutionEvent =
       /**
        * `refused` is distinct from `failed` because the two are opposite events: a refusal is the
        * platform working — a residency boundary the fallback chain declined to cross
-       * (Data_Protection_and_Retention.txt:145-150) — and it is the outcome most in need of
+       * (data-protection-and-retention.txt:145-150) — and it is the outcome most in need of
        * evidence. Recording it as a failure would file correct behaviour under malfunction.
        */
       readonly outcome: "succeeded" | "failed" | "halted" | "refused";
@@ -90,7 +90,7 @@ export type ExecutionEvent =
 
 /**
  * Subjects whose personal data an event touched, for the erasure data map. Any location not in the
- * map is a defect (Data_Protection_and_Retention.txt:92-93), so this switch is exhaustive by
+ * map is a defect (data-protection-and-retention.txt:92-93), so this switch is exhaustive by
  * construction — adding a variant breaks the build here first.
  */
 export function subjectsIn(event: ExecutionEvent): readonly SubjectId[] {

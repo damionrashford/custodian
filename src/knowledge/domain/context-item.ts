@@ -4,7 +4,7 @@
  *
  * Research on long-horizon agents finds compaction systems optimise for task accuracy or
  * throughput, and none measure whether governance constraints survive the rewrite or whether their
- * deletion causes unsafe tool calls (AI_Agent_Implementation_Plan_v2.txt:169-170).
+ * deletion causes unsafe tool calls (implementation-plan.txt:169-170).
  */
 export type ContextItem =
   | { readonly kind: "pinned-constraint"; readonly text: string }

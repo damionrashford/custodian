@@ -1,6 +1,6 @@
 /**
  * The auditable artefact of a key destruction. In production this is the KMS destruction record —
- * "timestamped, signed and independently verifiable" (Data_Protection_and_Retention.txt:74).
+ * "timestamped, signed and independently verifiable" (data-protection-and-retention.txt:74).
  */
 export type ErasureProof = {
   readonly target: string;

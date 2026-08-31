@@ -27,7 +27,7 @@ export type ActionReceipt = {
    * side effects of every tool call, and it is the field a failure message has to answer from: a
    * run that dies after a write and reports only that it failed sends the user somewhere else to
    * find out what already happened, which is where trust breaks rather than at the failure
-   * (Design_Interface_Standards.txt, the Failed state). A read logged as a committed effect would
+   * (interface-standards.txt, the Failed state). A read logged as a committed effect would
    * make that answer wrong in the direction that matters, so this is a decision each tool takes.
    */
   readonly committed: readonly string[];
@@ -40,7 +40,7 @@ export type ActionReceipt = {
  * What it fixes is that the two shapes were indistinguishable: an acting tool had to return an empty
  * `retrieved` array and smuggle its result through a field named for a retrieval fallback, and the
  * runtime had no way to tell "found nothing" from "ran something". Indirect injection arrives
- * through content the model reads (AI_Agent_Implementation_Plan_v2.txt:229), and keeping the
+ * through content the model reads (implementation-plan.txt:229), and keeping the
  * platform's own summary apart from the program's bytes is what lets only the second half be railed.
  */
 export type ToolObservation =
@@ -62,7 +62,7 @@ export interface Tool {
    *
    * On the tool rather than on the call, because the model must not get to describe its own action
    * as low risk. Autonomy is a spectrum set per action class and per tenant, not a property of the
-   * request (Design_Interface_Standards.txt:200).
+   * request (interface-standards.txt:200).
    */
   readonly actionClass: ActionClass;
   execute(

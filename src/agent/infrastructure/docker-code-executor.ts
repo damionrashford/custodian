@@ -23,7 +23,7 @@ const INTERPRETER: Readonly<Record<Runtime, readonly string[]>> = {
  * DEVELOPMENT ONLY, and the type says so: `isolation` is `shared-kernel`, and `sandboxDecision`
  * refuses to compose it outside development. The corpus is explicit that shared-kernel containers
  * are not defensible for untrusted agent code under SOC 2 or HIPAA, and that microVM isolation
- * (Firecracker / Kata) is the requirement (AI_Agent_Implementation_Plan_v2.txt:184, :198). This
+ * (Firecracker / Kata) is the requirement (implementation-plan.txt:184, :198). This
  * exists so the capability can be built and tested before a Linux host with KVM is available — not
  * because the objection was answered.
  *
@@ -37,7 +37,7 @@ const INTERPRETER: Readonly<Record<Runtime, readonly string[]>> = {
  * Every flag in `isolationFlags` is load-bearing, so none should be dropped as noise:
  *
  * - `--network=none` unless an allowlist is supplied. Deny-by-default egress is the corpus
- *   requirement (Test_and_Security_Assurance.txt:95), and it is the one control that turns an
+ *   requirement (test-and-security-assurance.txt:95), and it is the one control that turns an
  *   escape from an exfiltration into a crash.
  * - `--read-only` with a small `noexec` tmpfs: scratch files are fine, altering the image is not,
  *   and nothing dropped into /tmp can then be executed.

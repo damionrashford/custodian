@@ -88,7 +88,7 @@ test("the sandboxed tools are withheld outside development, and say so", () => {
   const composed = toolset({});
 
   // Shared-kernel containers are not defensible for untrusted agent code
-  // (AI_Agent_Implementation_Plan_v2.txt:184). Composing them anyway and hoping nobody calls them
+  // (implementation-plan.txt:184). Composing them anyway and hoping nobody calls them
   // is the failure `sandboxDecision` exists to prevent.
   expect(names(composed)).not.toContain("run_shell");
   expect(names(composed)).not.toContain("render_page");
@@ -155,7 +155,7 @@ test("the composed egress allowlist is empty, so the fetch tool reaches nothing"
   const fetchUrl = byName(composed.tools, "fetch_url");
 
   // Deny-by-default, and the refusal lands before DNS — the check that costs nothing and leaks
-  // nothing (Test_and_Security_Assurance.txt:95).
+  // nothing (test-and-security-assurance.txt:95).
   const refused = await fetchUrl.execute('{"url":"https://example.com/"}', ACME);
   expect(refused.ok ? "allowed" : refused.error.reason).toBe("host-not-allowlisted");
 });

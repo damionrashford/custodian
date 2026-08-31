@@ -47,7 +47,7 @@ export type ToolsetSettings = {
  * executor's. Supplying a microVM executor would otherwise compose a shared-kernel browser as a
  * side effect of an unrelated upgrade, and a browser running a hostile page is the strongest case
  * for the microVM requirement rather than an exception to it
- * (AI_Agent_Implementation_Plan_v2.txt:184).
+ * (implementation-plan.txt:184).
  */
 const BROWSER_ISOLATION = "shared-kernel" as const;
 

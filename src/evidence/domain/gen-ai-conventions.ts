@@ -1,6 +1,6 @@
 /**
  * The OTel GenAI semantic conventions, adopted with the version pinned as data
- * (AI_Agent_Implementation_Plan_v2.txt:262): the conventions are pre-stable ("development"
+ * (implementation-plan.txt:262): the conventions are pre-stable ("development"
  * stability, now maintained in the dedicated semantic-conventions-genai repository) and attribute
  * names still churn — gen_ai.system has already been superseded by gen_ai.provider.name. What
  * Custodian emits is pinned here; tests/observability/gen-ai-conventions.test.ts transcribes the

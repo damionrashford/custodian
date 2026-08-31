@@ -13,7 +13,7 @@ const SIGNING_ALGORITHM = "EdDSA";
 
 /**
  * Isolation is enforced "at the query layer using a signed JWT claim carrying the tenant ID — never
- * by instructing the model" (AI_Agent_Implementation_Plan_v2.txt:156). This is that verifier.
+ * by instructing the model" (implementation-plan.txt:156). This is that verifier.
  *
  * Asymmetric on purpose. A shared secret makes every party that can *check* a claim also able to
  * *mint* one, so the platform verifying tenant identity could forge tenant identity — and a leaked
@@ -22,7 +22,7 @@ const SIGNING_ALGORITHM = "EdDSA";
  *
  * It holds a *ring* of them, not one. A single key makes rotation a hard cutover that invalidates
  * every claim in flight; a ring makes it the overlap window the corpus asks for
- * (Gap_Register_v2.txt:272). The `kid` in the header selects from that ring and can do nothing
+ * (gap-register.txt:272). The `kid` in the header selects from that ring and can do nothing
  * else — it is attacker-controlled input, so it picks among keys an operator already configured and
  * can never introduce one.
  *

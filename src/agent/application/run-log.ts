@@ -19,7 +19,7 @@ import {
  * That was harmless while the only composed tool retrieved; with a file write, a shell run and an
  * outbound request in the catalogue it would have left the log's answer to "what did this run
  * actually do out there" systematically empty, which is the half of a failure report a user cannot
- * get anywhere else (Design_Interface_Standards.txt, the Failed state).
+ * get anywhere else (interface-standards.txt, the Failed state).
  */
 export function toolCalled(call: {
   readonly tool: ToolName;

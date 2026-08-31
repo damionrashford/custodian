@@ -1,5 +1,5 @@
 /**
- * The retention schedule from Data_Protection_and_Retention.txt:114-140, encoded once as data.
+ * The retention schedule from data-protection-and-retention.txt:114-140, encoded once as data.
  *
  * Two obligations pull in opposite directions: minimisation says delete, AI Act logging says
  * retain. The resolution is to separate content from evidence — retain the record that an action
@@ -50,7 +50,7 @@ export const RETENTION_SCHEDULE: Readonly<Record<RetentionClass, RetentionRule>>
     kind: "duration",
     days: 30,
     // NOT tenant-configurable. The spec grants that only to "prompts and completions"
-    // (Data_Protection_and_Retention.txt:120-122); this class's basis is minimisation with
+    // (data-protection-and-retention.txt:120-122); this class's basis is minimisation with
     // metadata retained, and zeroing it would remove the window Art.73 investigation reads.
     basis: "Minimisation - content redacted, metadata retained",
     tenantConfigurableToZero: false,

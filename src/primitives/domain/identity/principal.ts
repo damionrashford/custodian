@@ -24,7 +24,7 @@ export function parsePrincipalId(value: string): Result<PrincipalId, InvalidPrin
 
 /**
  * Every execution-log entry names the authenticated principal that triggered it — human or agent
- * (Compliance_and_Certification.txt:51). Modelling this as a union rather than a record with
+ * (compliance-and-certification.txt:51). Modelling this as a union rather than a record with
  * nullable columns means "an agent with no card" cannot be constructed.
  *
  * An agent principal deliberately carries no card material. A card is verified once at handoff

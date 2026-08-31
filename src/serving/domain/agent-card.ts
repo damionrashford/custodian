@@ -1,7 +1,7 @@
 /**
  * A2A signed Agent Card. The protocol does not mandate how cards are verified for authenticity,
  * which leaves impersonation, tampering and replay as real risks unless the deployment adds
- * controls (AI_Agent_Implementation_Plan_v2.txt:76). The three below are those controls.
+ * controls (implementation-plan.txt:76). The three below are those controls.
  */
 export type AgentCard = {
   readonly id: string;

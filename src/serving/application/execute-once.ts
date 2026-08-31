@@ -17,7 +17,7 @@ export type ExecuteOnceRequest = {
 /**
  * The claim is written before `invoke` runs, so dedupe happens before failover fires. A retry on a
  * flaky call double-charges the user otherwise, and once that happens the cost dashboard silently
- * lies too (AI_Agent_Implementation_Plan.txt:26-27).
+ * lies too (implementation-plan.txt:65).
  */
 export async function executeOnce(
   request: ExecuteOnceRequest,

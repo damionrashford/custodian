@@ -3,7 +3,7 @@ import { GEN_AI_ATTRIBUTE, type GenAiSpan } from "../domain/gen-ai-conventions";
 
 /**
  * One inference span per model-invoked entry, per the conventions' span shape
- * (Agent_Architecture_Addendum.txt:123). Usage attaches by the invocationSeq the usage-recorded
+ * (architecture-addendum.txt:123). Usage attaches by the invocationSeq the usage-recorded
  * event carries — recorded, never inferred from adjacency — and multiple settlements of one
  * invocation sum, the same arithmetic meterEventsFrom applies, so span telemetry and meter events
  * cannot disagree about the same log.

@@ -7,7 +7,7 @@ paths:
 
 # Interface Standards
 
-The interface is the accountability layer between user intent and autonomous action, not a presentation surface applied after the model works. Full detail: `.research/Design_Interface_Standards.txt`.
+The interface is the accountability layer between user intent and autonomous action, not a presentation surface applied after the model works. Full detail: `.research/interface-standards.txt`.
 
 ## Hard constraint: Article 50 disclosure (already in force, not craft judgement)
 

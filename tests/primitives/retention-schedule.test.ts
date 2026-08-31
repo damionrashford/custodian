@@ -7,7 +7,7 @@ import {
 } from "@custodian/primitives";
 
 /**
- * Transcribed from the table in Data_Protection_and_Retention.txt:114-140. This test exists so the
+ * Transcribed from the table in data-protection-and-retention.txt:114-140. This test exists so the
  * schedule cannot drift away from the document it implements without the build failing — a
  * retention period is a legal position, not a tuning parameter.
  */

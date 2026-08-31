@@ -227,7 +227,7 @@ test("a served call names its principal, tenant, region and legal basis", async 
   if (first?.event.kind !== "run-started") throw new Error("field group 1 missing from the log");
 
   // A run with no run-started entry is unattributable — there is nothing naming who asked, under
-  // which tenant policy, in which region (Compliance_and_Certification.txt:51).
+  // which tenant policy, in which region (compliance-and-certification.txt:51).
   expect(first.event.principal).toEqual(operator);
   expect(first.event.region).toBe(euWest);
   expect(first.event.legalBasisPolicy).toBe("tenant-contract");

@@ -32,7 +32,7 @@ function usageRun(at: string, costs: readonly number[]): readonly LoggedEntry[] 
 test("a run log reconciles against invoice and ledger with zero variance", () => {
   // The Definition of Done line this whole path exists for: "cost dashboard reconciles against the
   // provider invoice and billing ledger with zero unexplained variance"
-  // (AI_Agent_Implementation_Plan_v2.txt:282). Before meterEventsFrom, nothing produced the
+  // (implementation-plan.txt:282). Before meterEventsFrom, nothing produced the
   // meter-events source, so reconcile() could only ever answer not-comparable on gateway traffic.
   const log = usageRun("2026-08-15T12:00:00.000Z", [1200, 800]);
   const meter = sourceTotalFrom(meterEventsFrom(log), START, END);
@@ -47,7 +47,7 @@ test("a run log reconciles against invoice and ledger with zero variance", () =>
 test("a usage event missing from the log alerts instead of reconciling", () => {
   // The gate proven able to fail with its idiomatic violation (LD-4): a lost meter event is the
   // documented real-world failure — "events lost to network partitions"
-  // (AI_Agent_Implementation_Plan_v2.txt:119) — not an artificial one.
+  // (implementation-plan.txt:119) — not an artificial one.
   const log = usageRun("2026-08-15T12:00:00.000Z", [1200]);
   const meter = sourceTotalFrom(meterEventsFrom(log), START, END);
   const outcome = reconcile([

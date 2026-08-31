@@ -48,7 +48,7 @@ test("only usage-recorded entries become meter events, carrying tokens and cost"
 
 test("the period is half-open: a boundary event lands in exactly one window", () => {
   // Double-counting at boundaries is a documented divergence cause
-  // (AI_Agent_Implementation_Plan_v2.txt:119); [start, end) is what prevents it structurally.
+  // (implementation-plan.txt:119); [start, end) is what prevents it structurally.
   const events = meterEventsFrom(usageRun("2026-09-01T00:00:00.000Z", [500]));
   const august = sourceTotalFrom(events, "2026-08-01T00:00:00.000Z", "2026-09-01T00:00:00.000Z");
   const september = sourceTotalFrom(events, "2026-09-01T00:00:00.000Z", "2026-10-01T00:00:00.000Z");

@@ -33,7 +33,7 @@ const RENDER_TIMEOUT_MS = 30_000;
  *
  * DEVELOPMENT ONLY for the same reason as the shell executor: this is a shared-kernel container, and
  * the corpus requires microVM isolation for untrusted code
- * (AI_Agent_Implementation_Plan_v2.txt:184). A browser rendering a hostile page is the strongest
+ * (implementation-plan.txt:184). A browser rendering a hostile page is the strongest
  * case for that requirement, not an exception to it.
  */
 export class DockerBrowserTool implements Tool {

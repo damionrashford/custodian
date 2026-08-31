@@ -37,7 +37,7 @@ export function hashableEntry(entry: Omit<LoggedEntry, "hash">): string {
  * The write-time refusal every ExecutionLogStore adapter applies, in one place so adapters cannot
  * drift apart on the check that makes the store append-only. The caller passes the whole run: a
  * shorter log is a deletion attempt, a diverging continuation is a rewrite, and both are refused
- * rather than merged (Compliance_and_Certification.txt:59). Returns the entries actually new to
+ * rather than merged (compliance-and-certification.txt:59). Returns the entries actually new to
  * the store.
  */
 export function validateAppend(

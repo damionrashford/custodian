@@ -178,7 +178,7 @@ test("a ring holding both keys accepts claims minted under either, which is what
   const verifier = new Ed25519ClaimVerifier(overlap);
 
   // The dual-credential window: "accept both keys during the overlap window, and only then retire
-  // the old one" (Gap_Register_v2.txt:272). Without it, rotating invalidates every claim in flight.
+  // the old one" (gap-register.txt:272). Without it, rotating invalidates every claim in flight.
   for (const [kid, pair] of [
     [ACTIVE, outgoing],
     [NEXT, incoming],

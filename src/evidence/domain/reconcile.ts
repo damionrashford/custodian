@@ -1,12 +1,12 @@
 /**
  * Reconciliation is the load-bearing component, not a closing step
- * (AI_Agent_Implementation_Plan_v2.txt:119). Documented causes of divergence: events lost to network
+ * (implementation-plan.txt:119). Documented causes of divergence: events lost to network
  * partitions, events double-counted from a retry without idempotency, provider changes to
  * token-counting rules, and timezone mismatches at date boundaries.
  *
  * The reconciliation job is the difference between a pipeline that is correct and one that merely
  * believes it is — so a discrepancy alerts rather than logs
- * (AI_Agent_Implementation_Plan_v2.txt:257).
+ * (implementation-plan.txt:257).
  */
 export type CostSource = "provider-invoice" | "meter-events" | "internal-ledger";
 
@@ -43,7 +43,7 @@ const REQUIRED_SOURCES: readonly CostSource[] = [
 /**
  * Zero tolerance by default. The definition of done requires the cost dashboard to reconcile against
  * the provider invoice and billing ledger with **zero unexplained variance** for two consecutive
- * billing cycles (AI_Agent_Implementation_Plan_v2.txt:282), so a non-zero default would be a
+ * billing cycles (implementation-plan.txt:282), so a non-zero default would be a
  * standing exception to the acceptance criterion.
  */
 export const DEFAULT_TOLERANCE = 0;

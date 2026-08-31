@@ -4,7 +4,7 @@
 > the change that needed it, and the failure would be a compliance defect rather than a slow session.
 > Forty-seven lines on every session is the right trade.
 
-Position in one sentence: the platform encrypts personal data per data subject, erases by destroying the key, and can prove it did so. Full detail: `.research/Data_Protection_and_Retention.txt`, `.research/Compliance_and_Certification.txt`.
+Position in one sentence: the platform encrypts personal data per data subject, erases by destroying the key, and can prove it did so. Full detail: `.research/data-protection-and-retention.txt`, `.research/compliance-and-certification.txt`.
 
 ## The execution log is the highest-leverage artefact in the whole programme
 

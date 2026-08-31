@@ -10,7 +10,7 @@ export type BudgetExhausted = {
 /**
  * Refused rather than clamped: a partially-funded call still costs money and still produces a side
  * effect. Cost per resolved interaction is an SLI, so a breach is a signal, not something to
- * silently absorb (Gap_Register_v2.txt:290).
+ * silently absorb (gap-register.txt:290).
  */
 export function chargeBudget(
   spent: number,

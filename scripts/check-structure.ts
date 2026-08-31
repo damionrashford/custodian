@@ -2,7 +2,7 @@
 
 /**
  * No standard linter covers prohibited folder names or folder-count budgets, so this is the
- * repository script Engineering_Standards.txt:215 calls for.
+ * repository script engineering-standards.txt:215 calls for.
  */
 const PROHIBITED_SEGMENTS: ReadonlySet<string> = new Set([
   "utils",

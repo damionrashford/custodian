@@ -6,7 +6,7 @@ import type { DurationClass } from "./retention-schedule";
  * One bucket per retention class per month, so destroying a bucket key destroys exactly one class.
  * Sharing a bucket across classes silently couples their rights: `prompts-and-completions` is
  * tenant-configurable to zero and `execution-log-content` is not
- * (Data_Protection_and_Retention.txt:114-140), so a tenant exercising the first would have
+ * (data-protection-and-retention.txt:114-140), so a tenant exercising the first would have
  * destroyed the Article 73 window with it.
  *
  * Built rather than parsed: every input is a literal from a closed union plus a date, so there is

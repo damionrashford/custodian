@@ -9,7 +9,7 @@ export type Runtime = "bash" | "python" | "node";
 /**
  * Limits every execution runs under. There is no "unlimited" — the type has no way to express it,
  * because the failure being prevented is a model-authored loop consuming a host until something
- * else falls over (Test_and_Security_Assurance.txt:92-95).
+ * else falls over (test-and-security-assurance.txt:92-95).
  */
 export type ExecutionLimits = {
   readonly timeoutMs: number;
@@ -20,7 +20,7 @@ export type ExecutionLimits = {
   /**
    * Hosts the sandbox may reach. Empty means no network at all, which is the default and the only
    * value that needs no justification: "network egress from the sandbox is deny-by-default with an
-   * allowlist, tested adversarially" (Test_and_Security_Assurance.txt:95).
+   * allowlist, tested adversarially" (test-and-security-assurance.txt:95).
    */
   readonly egressAllowlist: readonly string[];
 };
@@ -62,7 +62,7 @@ export type ExecutionFailure =
  * "Untrusted" is not a judgement about the user — it is the standing assumption about anything a
  * model authored. Microsoft disclosed CVEs in May 2026 where prompt injection through an agent
  * framework reached host-level remote code execution
- * (AI_Agent_Implementation_Plan_v2.txt:199), so the threat model here is a hostile author with a
+ * (implementation-plan.txt:199), so the threat model here is a hostile author with a
  * foothold, not a careless one.
  */
 export interface CodeExecutor {
@@ -82,7 +82,7 @@ export type SandboxDecision =
  * Whether an executor may be composed.
  *
  * A shared-kernel container is not defensible for untrusted agent code under SOC 2 or HIPAA
- * (AI_Agent_Implementation_Plan_v2.txt:184, :198). The container-backed executor exists so the
+ * (implementation-plan.txt:184, :198). The container-backed executor exists so the
  * capability can be built and tested before a Linux host with KVM is available; this is the control
  * that stops it shipping. It is the same shape as the key-custody refusal: the weaker component is
  * usable, visible, and cannot be reached in production by omission.

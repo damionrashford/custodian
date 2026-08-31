@@ -5,7 +5,7 @@ import type { Namespace } from "@custodian/primitives";
 /**
  * Exact match only. Semantic caching is NOT built here and must not be added without an eval loop
  * measuring its false-positive rate: at the 0.93-0.95 thresholds needed for a hit rate above 30%,
- * a reported 3-7% of hits return the wrong answer (AI_Agent_Implementation_Plan_v2.txt:159-162).
+ * a reported 3-7% of hits return the wrong answer (implementation-plan.txt:159-162).
  */
 export type CacheKey = Brand<string, "CacheKey">;
 

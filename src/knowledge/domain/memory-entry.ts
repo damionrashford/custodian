@@ -5,7 +5,7 @@ import type { SealedContent, SubjectId } from "@custodian/primitives";
  * creates persistent compromise by decoupling injection from damage across sessions — the injection
  * happens in one session, the damage in another, after the original context is discarded, so
  * single-session monitoring sees nothing suspicious at any point in time (OWASP ASI06,
- * Gap_Register_v2.txt:300).
+ * gap-register.txt:300).
  */
 export type Provenance = "authenticated-user" | "tenant-authored" | "external-untrusted";
 
@@ -33,7 +33,7 @@ export type MemoryCandidate = MemoryMetadata & {
 /**
  * A persisted memory. The text is SealedContent because `agent-memory` is in the erasure data map
  * and the spec promises "key destruction + provenance-indexed purge" for it
- * (Data_Protection_and_Retention.txt:55-57) — a plaintext entry would make `runErasure` report that
+ * (data-protection-and-retention.txt:55-57) — a plaintext entry would make `runErasure` report that
  * location invalidated while nothing was actually shredded, which is a false erasure claim on the
  * platform's own evidentiary artefact.
  *
@@ -47,7 +47,7 @@ export type WritePolicy = {
   /**
    * A conservative, scope-limited write policy defining exactly what may be stored produced
    * markedly lower attack success in comparative testing, and is the simplest first line of defence
-   * (Gap_Register_v2.txt:303). Everything not listed is session-only.
+   * (gap-register.txt:303). Everything not listed is session-only.
    */
   readonly persistableCategories: readonly MemoryCategory[];
 };
@@ -64,7 +64,7 @@ export type WriteVerdict =
 
 /**
  * Source isolation: external content is never treated as equivalent to authenticated user input in
- * a write decision (Data_Protection_and_Retention.txt:160-161). An untrusted-origin write is
+ * a write decision (data-protection-and-retention.txt:160-161). An untrusted-origin write is
  * quarantined rather than merely demoted, because a demoted-but-present poisoned memory is still
  * retrievable.
  */
@@ -82,7 +82,7 @@ export function mayPersist(
 
   // Contradiction checking on write, because decay alone does not catch a high-relevance fact that
   // has become false — the canonical case being a stored employer after a job change
-  // (Agent_Architecture_Addendum.txt:153).
+  // (architecture-addendum.txt:153).
   const conflict = existing.find(
     (other) => other.category === candidate.category && contradicts(other.text, candidate.text),
   );

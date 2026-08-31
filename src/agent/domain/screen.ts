@@ -1,7 +1,7 @@
 /**
  * The workable production pattern is layered: a fast first-pass injection classifier, operating in
  * tens of milliseconds, in front of a heavier hazard classifier
- * (AI_Agent_Implementation_Plan_v2.txt:228). Order is not cosmetic — running the expensive
+ * (implementation-plan.txt:228). Order is not cosmetic — running the expensive
  * classifier on traffic the cheap one already rejected is the cost mistake the layering exists to
  * avoid.
  *

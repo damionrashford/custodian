@@ -3,7 +3,7 @@ import type { CustodyKeyName } from "./key-custodian";
 
 /**
  * Step 8 of the erasure workflow — "emit proof to the deletion registry; the registry entry is the
- * auditable evidence" (Data_Protection_and_Retention.txt:106-107).
+ * auditable evidence" (data-protection-and-retention.txt:106-107).
  *
  * It is also what makes step 5 idempotent, which is a separate obligation: "a repeat request is a
  * no-op returning the original proof" (:95-96). The KMS cannot supply that, because after the key is

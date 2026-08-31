@@ -22,7 +22,7 @@ export type IndexedDocument = {
 
 /**
  * The data map gives the vector index exactly one erasure mechanism: "Key destruction — soft delete
- * is insufficient" (Data_Protection_and_Retention.txt:49-50). A plaintext embedding left behind
+ * is insufficient" (data-protection-and-retention.txt:49-50). A plaintext embedding left behind
  * after key destruction is a recovered fragment, and the release gate at :110-112 fails a release on
  * any recovered fragment — inversion attacks reconstruct enough source text that a bare vector is
  * not defensibly non-personal.

@@ -5,7 +5,7 @@ import { meterTotalMicros, type MeterEvent } from "../domain/meter-event";
 /**
  * The meter-events side of reconcile()'s three required sources, derived from the execution log —
  * the log's usage field group exists to be "reconcilable to the billing ledger"
- * (Compliance_and_Certification.txt:58), and deriving rather than double-writing means the meter
+ * (compliance-and-certification.txt:58), and deriving rather than double-writing means the meter
  * can never disagree with the evidence record about what was metered.
  */
 export function meterEventsFrom(log: readonly LoggedEntry[]): readonly MeterEvent[] {
@@ -29,7 +29,7 @@ export function meterEventsFrom(log: readonly LoggedEntry[]): readonly MeterEven
  * Boundaries compare as instants, not strings — an invoice period written without milliseconds or
  * with a zone offset names the same instant as the log's fixed-width form, and a string comparison
  * would misfile the boundary event. Timezone mismatch at a date boundary is a documented
- * divergence cause (AI_Agent_Implementation_Plan_v2.txt:119).
+ * divergence cause (implementation-plan.txt:119).
  */
 export function sourceTotalFrom(
   events: readonly MeterEvent[],

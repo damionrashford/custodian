@@ -20,7 +20,7 @@ export type UsageRecord = {
 /**
  * Pure by requirement, not by taste: cost must be recomputable offline from raw usage logs, which is
  * what makes the daily reconciliation against the provider invoice possible
- * (AI_Agent_Implementation_Plan_v2.txt:121). No clock, no lookup beyond the supplied table, no
+ * (implementation-plan.txt:121). No clock, no lookup beyond the supplied table, no
  * post-hoc adjustment.
  */
 export function priceCompletion(

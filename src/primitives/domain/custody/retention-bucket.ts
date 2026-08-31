@@ -4,7 +4,7 @@ import { err, ok, type Result } from "../language/result";
 /**
  * A time window whose key is destroyed on the retention schedule. Execution-log content sits in a
  * monthly bucket destroyed at 30 days; metadata carries no bucket and survives 24 months
- * (Data_Protection_and_Retention.txt:117-128).
+ * (data-protection-and-retention.txt:117-128).
  */
 export type RetentionBucket = Brand<string, "RetentionBucket">;
 

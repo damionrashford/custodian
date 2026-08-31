@@ -23,7 +23,7 @@ import { applyToolStep } from "./tool-step";
 
 /**
  * The ReAct loop — C20's default mode ("start with ReAct and let observed failures dictate
- * graduation", Agent_Architecture_Addendum.txt:117) over the platform's existing parts. The loop
+ * graduation", architecture-addendum.txt:117) over the platform's existing parts. The loop
  * owns exactly the glue: the gateway owns provider calls and field groups 1/5/8, the rail owns
  * poisoned content, agent-loop owns the halt decision, and the log store owns the evidence. The
  * whole run's log persists every iteration, so a crash mid-run leaves a verifiable record rather

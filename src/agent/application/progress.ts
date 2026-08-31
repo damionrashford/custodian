@@ -9,7 +9,7 @@ export type StepEffect =
 /**
  * observed-new-evidence is the only effect that counts as progress. A tool that succeeds but
  * returns nothing new is the documented stagnation pathology — repeating a sequence without the
- * state changing (Agent_Architecture_Addendum.txt:120) — and a failed tool leaves the action
+ * state changing (architecture-addendum.txt:120) — and a failed tool leaves the action
  * unverified, which evaluateLoop halts on first because acting on unconfirmed state produces
  * wrong side effects, not just wasted spend.
  */

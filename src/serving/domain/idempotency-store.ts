@@ -5,7 +5,7 @@ import type { RequestHash } from "./request-hash";
  * The recorded body is SealedContent, never plaintext. A completion is personal data, and an
  * idempotency store that holds it in the clear is a location the erasure workflow cannot reach -
  * which the spec calls a defect outright: any location not in the data map is a defect, logged as
- * such (Data_Protection_and_Retention.txt:92-93).
+ * such (data-protection-and-retention.txt:92-93).
  */
 export type RecordedOutcome = {
   readonly status: "succeeded" | "failed";

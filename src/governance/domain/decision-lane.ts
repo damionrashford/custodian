@@ -15,12 +15,26 @@ export type LanePolicy = {
   readonly slaMs: number;
   /** Only the fast lane may auto-approve, and only within its limits. */
   readonly onTimeout: "auto-approve" | "deny";
+  /**
+   * The floor between being shown what an action does and being allowed to approve it. A rejection
+   * has no floor: this exists to stop an approval nobody read, and a rejection is the direction the
+   * whole component already fails in.
+   *
+   * The numbers are anchored to the rubber-stamp detector, which calls a queue clicked-through when
+   * the median decision lands under ten seconds. The high lane's floor sits above that line, so an
+   * irreversible action cannot be approved at rubber-stamping speed at all — the check stops being
+   * a report about last week and becomes a refusal now. The standard lane's sits below it on
+   * purpose: five seconds against a five-minute SLA costs a working reviewer nothing and still
+   * means the screen was open. The fast lane's is a tenth of its SLA, so the floor can never be
+   * what causes the timeout it is fencing.
+   */
+  readonly minConsiderationMs: number;
 };
 
 export const LANE_POLICIES: Readonly<Record<Lane, LanePolicy>> = {
-  fast: { slaMs: 10_000, onTimeout: "auto-approve" },
-  standard: { slaMs: 5 * 60_000, onTimeout: "deny" },
-  high: { slaMs: 30 * 60_000, onTimeout: "deny" },
+  fast: { slaMs: 10_000, onTimeout: "auto-approve", minConsiderationMs: 1_000 },
+  standard: { slaMs: 5 * 60_000, onTimeout: "deny", minConsiderationMs: 5_000 },
+  high: { slaMs: 30 * 60_000, onTimeout: "deny", minConsiderationMs: 15_000 },
 };
 
 export function laneFor(action: ActionClass): Lane {

@@ -1,7 +1,44 @@
 {
-  "extends": "./tsconfig.base.json",
+  // One config, because there is one program. The split into tsconfig.base.json existed so that 27
+  // workspace packages could each extend a shared floor; when the packages collapsed into one tree
+  // the base kept exactly one consumer — this file — and a file with one consumer is a level of
+  // indirection, not a shared floor.
   "compilerOptions": {
+    "target": "ES2023",
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023"],
+    "types": ["bun"],
+
+    // The floor from Engineering Standards, not a starting point. Never disable one of these to
+    // unblock a build — loosening this block is a rollback and carries production-change weight.
+    // tests/standards.test.ts transcribes this list and fails if any of it goes missing.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "forceConsistentCasingInFileNames": true,
+    "erasableSyntaxOnly": true,
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+
     "noEmit": true,
+
     // No `baseUrl`: it is deprecated in TypeScript 6 and removed in 7, and `paths` has resolved
     // relative to this file since 4.4 without it.
     // Every component keeps its published-looking specifier. `@custodian/gateway` reads the same at

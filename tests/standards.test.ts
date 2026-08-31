@@ -37,17 +37,39 @@ function readProperty(source: object, name: string): unknown {
 
 function readCompilerOptions(parsed: unknown): object {
   if (typeof parsed !== "object" || parsed === null) {
-    throw new Error("tsconfig.base.json did not parse to an object");
+    throw new Error("tsconfig.json did not parse to an object");
   }
   const options = readProperty(parsed, "compilerOptions");
   if (typeof options !== "object" || options === null) {
-    throw new Error("tsconfig.base.json has no compilerOptions object");
+    throw new Error("tsconfig.json has no compilerOptions object");
   }
   return options;
 }
 
-test("tsconfig.base.json declares every mandated compiler option", async () => {
-  const parsed: unknown = await Bun.file(new URL("../tsconfig.base.json", import.meta.url)).json();
+/**
+ * `tsconfig.json` is JSONC — TypeScript accepts comments in it, and this one carries the reason the
+ * strict block may not be loosened, which is worth more in the file than in a doc nobody opens
+ * next to it. `Bun.file().json()` is strict JSON and rejects those comments, so the test reads the
+ * file the way the compiler does.
+ *
+ * String-aware rather than a bare `//` regex: a `//` inside a string value is data, and a stripper
+ * that does not know the difference corrupts the config it is trying to read.
+ */
+function stripJsonComments(source: string): string {
+  // One pass, three alternatives in order: a double-quoted string with escapes, a line comment, a
+  // block comment. Strings match first and are returned verbatim, so a `//` inside a value stays
+  // data. Written as a single regular expression rather than a character loop because
+  // `noUncheckedIndexedAccess` — the very flag this test guards — types every `source[i]` as
+  // `string | undefined`, and a loop that fights the strictness it is verifying is the wrong shape.
+  return source.replace(
+    /("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g,
+    (_match, str: string | undefined) => str ?? "",
+  );
+}
+
+test("tsconfig.json declares every mandated compiler option", async () => {
+  const raw = await Bun.file(new URL("../tsconfig.json", import.meta.url)).text();
+  const parsed: unknown = JSON.parse(stripJsonComments(raw));
   const compilerOptions = readCompilerOptions(parsed);
 
   for (const [option, expected] of Object.entries(REQUIRED_COMPILER_OPTIONS)) {

@@ -1,5 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "600000",
+    "BASH_MAX_OUTPUT_LENGTH": "150000"
+  },
   "worktree": {
     "baseRef": "head"
   },
@@ -54,6 +58,7 @@
     ],
     "ask": ["Edit(.research/*.txt)", "Write(.research/*.txt)"],
     "deny": [
+      "Read(./.claude/skills/studio/knowledge/books/**)",
       "WebFetch",
       "WebSearch",
       "Bash(curl *)",
@@ -111,6 +116,41 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/graphify-guard.sh read"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git checkout *)",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-git-restore.sh",
+            "args": []
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git restore *)",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-git-restore.sh",
+            "args": []
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/typecheck-async.sh",
+            "args": [],
+            "async": true
           }
         ]
       }

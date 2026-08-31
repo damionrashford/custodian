@@ -45,9 +45,9 @@
 # `.env`             — a worktree that needs Vault credentials is doing integration work that
 #                      belongs in the main checkout. Copying secrets widens where they sit on disk
 #                      for the convenience of an agent that should not have them.
-# `.graphify/`       — 7.5M, and unnecessary: GRAPHIFY_OUT in .claude/settings.json is an absolute
-#                      path, so a worktree session reads the main checkout's graph. The guard hook
-#                      falls back to a path relative to itself only when that variable is unset.
+# `.graphify/`       — 6.8M, and a worktree does not need it. GRAPHIFY_OUT is now relative, so a
+#                      worktree resolves it to its own (absent) directory and the guard exits
+#                      silently rather than advising against a stale copy of the main graph.
 # `node_modules/`    — worktrees live under `.claude/worktrees/` inside the repo, and Bun's
 #                      resolution walks upward, so the root install already serves them. This is
 #                      the same upward walk LD-14 records as defeating package isolation; here it

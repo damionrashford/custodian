@@ -25,8 +25,7 @@ CLAUDE.local.md
 # token (.last-token); the plugin only self-ignores .superpowers/sdd/, so ignore the root.
 /.superpowers/
 /.worktrees/
-# studio design system — local-only artifacts (do not commit)
-design/drafts/
-design/.merge.lock
-design/reports/
+# studio design system — the whole thing is local. The token store lived at design/ and was
+# tracked; it moved under .studio/design/ so the design system's canonical state and its runtime
+# state sit together and neither is committed. Nothing in src/ or tests/ referenced it.
 .studio/

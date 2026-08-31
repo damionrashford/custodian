@@ -141,11 +141,67 @@ All 17 components + F1–F3 deployed and passing their eval gate; idempotency/au
 
 ## graphify
 
-This project has a knowledge graph at **`.graphify/`** — the path `GRAPHIFY_OUT` in `.claude/settings.json` sets, **not** `graphify-out/`. Every `graphify` command inherits that variable and resolves it automatically; you never pass a path. It holds god nodes, community structure and cross-file relationships for all 25 packages.
+The standing knowledge graph lives at **`.graphify/`**, set by `GRAPHIFY_OUT` in the tracked
+`.claude/settings.json`. Every command inherits that variable and resolves it; you never pass a path.
 
-Rules:
-- For codebase questions, run `graphify query "<question>"` **first**, before grepping. A PreToolUse hook enforces this. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If `.graphify/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
-- Read `.graphify/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` (AST-only, no API cost). The post-commit hook does this automatically; both hooks pin `GRAPHIFY_OUT` because they run outside the Claude session, where `.claude/settings.json` env does not apply.
-- The `PreToolUse` guards run through `.claude/hooks/graphify-guard.sh`, not `graphify hook-guard` directly. Upstream hardcodes `graphify-out/graph.json` into the advice it injects on every Read and Bash — a path that does not exist under this configuration — so the wrapper pins `GRAPHIFY_OUT` and rewrites that path. Left unwrapped, the guard tells every session and subagent to look somewhere empty; two code reviewers in one session read it, disbelieved it, and ignored the guard entirely. **`.claude/hooks/` stays git-ignored** — it hardcodes a binary path — so a fresh clone gets the misleading text back until the wrapper is recreated. `CLAUDE.local.md` carries the recreation steps.
+It is tracked, and relative, on purpose. It was previously set nowhere at all — only exported in one
+shell — so any fresh session silently fell back to graphify's default `graphify-out/` and diverged
+from every rule in this file. Four settings now travel with the repo:
+
+| Setting | Why |
+|---|---|
+| `GRAPHIFY_OUT=.graphify` | So the location is a fact of the repo rather than of one terminal |
+| `GRAPHIFY_QUERY_BUDGET=16000` | The stock 2000 reported 57 of 144 matching nodes and named no way to see the rest |
+| `GRAPHIFY_HOOK_STRICT=1` | Makes graphify-first mechanical instead of declared — see below |
+| `GRAPHIFY_VIZ_NODE_LIMIT=0` | Stops writing a 1.9MB `graph.html` on every commit that nothing in this workflow ever opens |
+
+**Strict mode is safe to leave on.** The first raw `Read` of an indexed, fresh, in-project file in a
+session is refused with a reason naming the exact next action. It fires **at most once per session**,
+claimed atomically through a marker file, and every later read in that session falls back to the soft
+nudge. It cannot fire at all when the graph is missing or stale for that file — both cases return
+earlier and softer — and any internal error fails open. So the worst case is one redirected read per
+session, and the failure direction is toward letting work through.
+
+### Use the whole tool, not just `query`
+
+Most of this surface has never been used here, and two commands answer questions the rules already
+demand answers to.
+
+| Command | What it answers | Why it matters here |
+|---|---|---|
+| `graphify query "<question>"` | A scoped subgraph for a question | The default move before grepping. A PreToolUse hook enforces it |
+| **`graphify affected "<symbol>"`** | **Reverse traversal — what breaks if this changes** | **This is `change-discipline.md`'s blast radius, computed.** The reviewer question "what still refers to the thing this replaced?" has a command |
+| `graphify path "<A>" "<B>"` | Shortest path between two nodes | Whether two components are actually connected, and through what |
+| `graphify explain "<concept>"` | A node and its neighbours in plain language | Cheaper than reading four files to learn one concept |
+| `graphify god-nodes` | The most connected nodes | Architectural hubs. `ok()`, `err()` and `Result` top this list, which is what a `Result`-returning codebase should look like |
+| `graphify update .` | Re-extract changed files, no LLM cost | The post-commit hook runs it |
+| `graphify check-update .` | Whether a semantic re-extraction is pending | AST updates are free; semantic ones are not, and the flag says when one is owed |
+| `graphify save-result` / `reflect` | Feed a Q&A outcome back, aggregate into a lessons doc | Unused. Worth trying once the graph is load-bearing enough to be wrong in interesting ways |
+| `graphify diagnose multigraph` | Same-endpoint edge collapse risk | Run before trusting an edge count |
+| `graphify tree` | A collapsible D3 tree of the graph | For a human, not for context |
+
+Read `.graphify/GRAPH_REPORT.md` only for broad architecture review, and `.graphify/wiki/index.md`
+for navigation when it exists — `query`, `affected`, `path` and `explain` all return less.
+
+### The source is patched, and the patch must be re-applied after every upgrade
+
+`scripts/patch-graphify.ts` fixes two defects in the installed package. Run it after
+`uv tool upgrade`; `tests/graphify-patch.test.ts` fails when the patches are missing.
+
+1. **The advice strings hardcoded `graphify-out/graph.json`** even though `cli.py` already imports
+   `_GRAPHIFY_OUT` on line 14. Under this repo's `GRAPHIFY_OUT` they named a directory that does not
+   exist, so the guard told every session and subagent to look somewhere empty. Two code reviewers
+   in one session read that text, disbelieved it, and ignored the guard entirely. The patch uses the
+   import that was already there.
+2. **`graphify query` hardcoded a 2000-token budget** with no environment override, so a query
+   matching 144 nodes reported 57 and named no way to see the rest beyond a one-line notice.
+   `GRAPHIFY_QUERY_BUDGET` now sets it, and `.claude/settings.json` sets it to 16000.
+
+The previous repair was a wrapper script that re-pinned the variable and rewrote the path with
+`sed`, plus the same pin repeated in `.git/hooks/post-commit` and `post-checkout`. Fixing the source
+deleted all of it: the hooks now call `graphify hook-guard` directly.
+
+**The general lesson.** When a tool's own output is wrong, check whether it already holds the right
+value before wrapping it. It did — the variable was imported and then ignored one line later — and
+the wrapper spent a machine-local script, two git-hook edits and a section of this file working
+around a two-character fix.

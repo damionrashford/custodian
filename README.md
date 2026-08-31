@@ -9,7 +9,7 @@ boundary during failover, and an erased subject cannot be recovered from a backu
 
 ## What this is
 
-Seven components implementing the serving, retrieval, execution and governance layers an agent
+8 components implementing the serving, retrieval, execution and governance layers an agent
 needs before it can run on someone else's data. It is not a framework you install — it is the
 infrastructure underneath one, built against a specification that resolves the questions most agent
 projects hit later: what happens on the second delivery of a request, where the prompt lives after a
@@ -71,14 +71,15 @@ subject key reaches the log, the cache, the idempotency ledger and the vector in
 ## Project structure
 
 ```
-src/               7 components, each with four layers and one barrel
+src/               8 components, each with four layers and one barrel
   primitives/        branded types, Result, the retention schedule
   custody/           envelope encryption, key destruction, the erasure workflow
   evidence/          hash-chained execution log, spans, cost reconciliation
   serving/           gateway, routing, idempotency, cache, streaming, identity
   knowledge/         tenant-scoped retrieval, chunking, context, memory
   agent/             the ReAct loop, tool catalogue, guardrails, composition root
-  governance/        prompt registry, eval gates, human-oversight lanes
+  governance/        prompt registry, eval gates, human-oversight lanes, the approval queue
+  surfaces/          agent states, the live channel, copy catalogue, vocabulary gates
 scripts/           repository checks no linter covers
 tests/             every test, mirrored one folder per component
 ```
@@ -104,7 +105,8 @@ the supported surface stay identical.
 ## Status
 
 Stages 0–5 are on `main`: toolchain gates, foundations, serving core, knowledge and context, agent
-execution, and safety and governance. 355 tests.
+execution, and safety and governance. The CI badge above reports the current state of the suite; a
+count written here would be wrong by the next commit, and was.
 
 Deliberately not built: microVM sandbox isolation, which is a deployment rather than a module;
 telemetry and autoscaling; learned router training, which needs captured production traffic; and

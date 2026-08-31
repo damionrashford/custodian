@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- An operator can review a completed run step by step: what the agent did, in what order, and
+  whether the record has been tampered with. The record is shown without decrypting anything, so a
+  run belonging to someone who has since been erased still shows that the steps happened without
+  bringing back what they said.
+- A viewer can watch a run as it happens rather than waiting for it to finish, and is told when a
+  frame was dropped instead of silently missing it. A viewer can only watch runs belonging to their
+  own tenant, and asking for someone else's run reveals nothing about whether it exists.
+
 - The agent can run a shell command, read and write files in its workspace, fetch a page, and render
   one in a browser. Each declares what class of action it performs, and anything that cannot be
   undone needs a person's approval before it runs — with no reviewer configured, those actions are
@@ -143,6 +151,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `snapshot` fields — always written with the same value — are one field.
 
 ### Security
+
+- A continuous-integration step no longer pastes a branch name straight into a shell script. Anyone
+  can open a pull request from a branch they name, so the name is untrusted input.
 
 - An AI disclosure is carried in the interaction itself, at first contact and in the same weight as
   the surrounding text, and is versioned so a deployment can say which wording was shown when.

@@ -1,4 +1,4 @@
-import { brand, type Brand, err, ok, type Result } from "@custodian/primitives";
+import { brand, type Brand, err, ok, type Namespace, type Result } from "@custodian/primitives";
 
 /**
  * A path the agent asked for, proven to stay inside its workspace.
@@ -18,6 +18,22 @@ export type PathRejection =
 
 /** Long enough for real trees, short enough that a path cannot be a payload. */
 const MAX_PATH_LENGTH = 512;
+
+/**
+ * Where one tenant's files live, and the only way to name a workspace root.
+ *
+ * The base is deployment configuration; the tenant half is a `Namespace`, whose sole constructor is
+ * `namespaceFor` in @custodian/knowledge and which takes a verified claim. That composition is what
+ * makes cross-tenant access unrepresentable rather than merely unlikely: a caller holding one
+ * tenant's claim has no vocabulary for another tenant's directory, so there is nothing for a check
+ * to be forgotten in front of. Deriving the root once at composition time from a boot identity would
+ * have looked equivalent and been the opposite — every tenant's request would read the boot tenant's
+ * files, and no test of the path checker would notice.
+ */
+export function workspaceRoot(base: string, namespace: Namespace): string {
+  const trimmed = base.endsWith("/") ? base.slice(0, -1) : base;
+  return `${trimmed}/${namespace}`;
+}
 
 /**
  * Resolves a model-supplied path against the workspace root and refuses anything that leaves it.

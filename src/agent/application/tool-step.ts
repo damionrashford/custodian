@@ -83,7 +83,15 @@ async function recordDeniedTool(
     return err({ kind: "failed", publicReason: FAILED_COPY });
   }
   const denied = appendEvents(
-    [toolCalled(scope.step.tool, sealed.value, "denied")],
+    // Nothing committed: approval runs before execution, so a denied call did not happen.
+    [
+      toolCalled({
+        tool: scope.step.tool,
+        sealedArguments: sealed.value,
+        status: "denied",
+        committed: [],
+      }),
+    ],
     scope.context,
     scope.request,
     scope.deps,
@@ -107,8 +115,19 @@ async function runTool(
 
   const executed = await tool.execute(scope.step.argumentsJson, namespaceFor(request.claim));
   if (!executed.ok) {
+    // A tool that returned a failure told us nothing about how far it got, so the record claims
+    // nothing rather than guessing. This is the one entry where an empty list is a gap and saying
+    // so is more honest than filling it — the tool's own failure shape is what would have to carry
+    // partial-effect information, and none of them do yet.
     const appended = appendEvents(
-      [toolCalled(tool.name, sealedArgs.value, "failed")],
+      [
+        toolCalled({
+          tool: tool.name,
+          sealedArguments: sealedArgs.value,
+          status: "failed",
+          committed: [],
+        }),
+      ],
       context,
       request,
       deps,
@@ -146,6 +165,9 @@ async function runTool(
       blocked: admitted.blocked,
       admitted: admitted.records,
       screened: deps.classifiers.length > 0,
+      // Straight from the tool, never inferred here: only the adapter knows whether its action
+      // changed anything, and a read and a write are both `acted` observations.
+      committed: observation.kind === "acted" ? observation.receipt.committed : [],
     }),
     context,
     request,

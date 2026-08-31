@@ -288,7 +288,20 @@ const DURABLE_STORE_LOCATIONS: Readonly<Record<string, string>> = {
   SqliteDeletionRegistry: "deletion-registry",
   SqliteVectorIndex: "vector-index",
   SqliteApprovalGate: "approval-queue",
+  WriteFileTool: "agent-workspace",
+  ReadFileTool: "agent-workspace",
 };
+
+/**
+ * How a class is recognised as persisting something. Keyed on the mechanism rather than on a
+ * `Sqlite` naming convention, which is what the previous version of this guard matched: it read
+ * `export class (Sqlite\w+)`, so the agent's file tools — a durable store built on `Bun.write` —
+ * were not merely unclassified but invisible, and the guard reported clean while a location sat
+ * outside the erasure data map. LD-11 is the general form: a gate is not enforcing until a
+ * violation of the shape it actually guards has failed it, and the shape here is persistence, not
+ * a prefix.
+ */
+const PERSISTENCE_MECHANISMS = /new Database\(|Bun\.write\(/;
 
 test("every durable store is classified in the erasure data map", async () => {
   const dataMap = await readRepoFile("src/custody/domain/erasure-workflow.ts");
@@ -299,7 +312,10 @@ test("every durable store is classified in the erasure data map", async () => {
   const unclassified: string[] = [];
   for await (const path of new Bun.Glob("src/*/infrastructure/*.ts").scan(".")) {
     const source = await readRepoFile(path);
-    for (const [, name] of source.matchAll(/export class (Sqlite\w+)/g)) {
+    if (!PERSISTENCE_MECHANISMS.test(source)) {
+      continue;
+    }
+    for (const [, name] of source.matchAll(/export class (\w+)/g)) {
       if (name === undefined) {
         continue;
       }

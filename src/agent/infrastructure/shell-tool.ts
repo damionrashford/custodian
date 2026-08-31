@@ -67,6 +67,10 @@ export class ShellTool implements Tool {
         output: [outcome.value.stdout, outcome.value.stderr]
           .filter((part) => part.length > 0)
           .join("\n"),
+        // A program ran. What it did inside the sandbox is not knowable from here, so the honest
+        // record is that it ran and under which runtime — the log's job is to say a side effect
+        // happened, not to invent an inventory of one.
+        committed: [`ran a ${parsed.value.runtime} program in the sandbox`],
       },
     });
   }

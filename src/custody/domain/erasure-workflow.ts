@@ -40,6 +40,18 @@ export const DATA_MAP = [
    * so it is disposed of on the execution-log metadata clock rather than cleared on request.
    */
   "approval-queue",
+  /**
+   * Files the agent writes for itself while working. A location personal data reaches for the
+   * ordinary reason: what the agent writes down is derived from what it was asked and what it
+   * retrieved.
+   *
+   * It is the first location in this map that is a directory rather than a store, which is how it
+   * was missed — the guard in `tests/standards.test.ts` recognised a durable store by the
+   * `Sqlite` prefix on its class name, so a store built on `Bun.write` was invisible to it. The
+   * guard now classifies by persistence mechanism instead (LD-11: a gate is not enforcing until a
+   * violation of the shape it guards has failed it).
+   */
+  "agent-workspace",
 ] as const;
 
 /**
